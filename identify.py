@@ -1,8 +1,10 @@
 #! /usr/bin/env python
 
-import os, subprocess
+import sys, os, subprocess
 from collections import Counter
 import pysam
+
+import smith_waterman
 
 def reverse_complement(seq):
     complement = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A',
@@ -47,7 +49,41 @@ def get_consensus_from_mafft_result(input_file):
 
 
 
-def identify(input_file, output_file, tumor_bam, alignment_margin = 300):
+def get_refined_bp(contig, fasta_file_ins, chr1, start1, end1, dir1, chr2, start2, end2, dir2, h_log):
+
+    start1 = max(1, start1)
+    start2 = max(1, start2)
+
+    region1_seq = fasta_file_ins.fetch(chr1, start1 - 1, end1)
+    region2_seq = fasta_file_ins.fetch(chr2, start2 - 1, end2)
+
+    if dir1 == '-': region1_seq = reverse_complement(region1_seq)
+    if dir2 == '+': region2_seq = reverse_complement(region2_seq)
+
+    sret = smith_waterman.sw_jump(contig, region1_seq, region2_seq)
+    if sret is None: return(None)
+    score, contig_align, region1_align, region2_align, contig_seq, region_seq = sret
+
+    bp_pos1 = start1 + region1_align[1] - 1 if dir1 == '+' else end1 - region1_align[1] - 1 
+    bp_pos2 = start2 + region2_align[1] - 1 if dir2 == '-' else end2 - region2_align[1] - 1
+
+    if contig_align[2] - contig_align[1] == 1:
+        inseq = '---'
+    elif contig_align[2] - contig_align[1] > 1:
+        inseq = contig[(contig_align[1]):(contig_align[2] - 1)]
+    else:
+        print("Alignment consistent!!", file = sys.stderr)
+
+    print(score, contig_align, region1_align, region2_align, file = h_log)
+    print(contig_seq, file = h_log)
+    print(region_seq, file = h_log)
+    print('', file = h_log)
+
+    return(bp_pos1, bp_pos2, inseq)
+
+
+
+def identify(input_file, output_file, tumor_bam, reference_fasta, alignment_margin = 300):
 
     """
     bamfile = pysam.AlignmentFile(tumor_bam, "rb")
@@ -97,12 +133,15 @@ def identify(input_file, output_file, tumor_bam, alignment_margin = 300):
     subprocess.call(["sort", "-k1,1", output_file + ".tmp.supporting_read.unsorted"], stdout = hout)
     hout.close()
 
-    
+    fasta_file_ins = pysam.FastaFile(reference_fasta)
+
     tmp_dir = "tmp"
     os.makedirs(tmp_dir)
  
     temp_key = ''
     hout = open(output_file + ".tmp.consensus.fastq", 'w') 
+    hout_log = open(tmp_dir + "/consensus_alignment.log", 'w')
+
     with open(output_file + ".tmp.supporting_read.sorted", 'r') as hin:
         for line in hin:
             F = line.rstrip('\n').split('\t')
@@ -116,13 +155,15 @@ def identify(input_file, output_file, tumor_bam, alignment_margin = 300):
                     hout3.close()
 
                     tconsensus = get_consensus_from_mafft_result(tmp_dir + '/' + temp_key + ".mafft_result.fa")
-                    print('@' + temp_key, file = hout)
-                    print(tconsensus, file = hout)
-                    print('+', file = hout)
-                    print(''.join(['I' for x in range(len(tconsensus))]), file = hout)
-               
+                    print(temp_key + '\n' + tconsensus, file = hout_log)
                     print(temp_key)
  
+                    chr1, start1, end1, dir1, chr2, start2, end2, dir2 = temp_key.split(',')
+                    start1, end1, start2, end2 = int(start1), int(end1), int(start2), int(end2)       
+                    bret = get_refined_bp(tconsensus, fasta_file_ins, chr1, start1, end1, dir1, chr2, start2, end2, dir2, hout_log)
+                    if bret is not None:  
+                        bp_pos1, bp_pos2, inseq = bret 
+                     
                 temp_key = F[0]          
                 hout2 = open(tmp_dir + '/' + temp_key + ".supporting_read.fa", 'w')
 
@@ -133,15 +174,19 @@ def identify(input_file, output_file, tumor_bam, alignment_margin = 300):
             hout2.close()
 
             hout3 = open(tmp_dir + '/' + temp_key + ".mafft_result.fa", 'w')
-            subprocess.check_call(["mafft", tmp_dir + '/' + temp_key + ".supporting_read.fa"], stdout = hout3)
+            subprocess.check_call(["mafft", tmp_dir + '/' + temp_key + ".supporting_read.fa"], stdout = hout3, stderr = subprocess.DEVNULL)
             hout3.close()
 
             tconsensus = get_consensus_from_mafft_result(tmp_dir + '/' + temp_key + ".mafft_result.fa")
-            print('@' + temp_key, file = hout)
-            print(tconsensus, file = hout)
-            print('+', file = hout)
-            print(''.join(['I' for x in range(len(contig))]), file = hout)
+            print(temp_key + '\n' + tconsensus, file = hout_log)
 
+            chr1, start1, end1, dir1, chr2, start2, end2, dir2 = temp_key.split(',')     
+            start1, end1, start2, end2 = int(start1), int(end1), int(start2), int(end2)
+            bret = get_refined_bp(tconsensus, fasta_file_ins, chr1, start1, end1, dir1, chr2, start2, end2, dir2, hout_log)
+            if bret is not None:
+                bp_pos1, bp_pos2, inseq = bret
+
+    hout_log.close()
     hout.close()
             
 
@@ -152,6 +197,8 @@ if __name__ == "__main__":
     input_file = sys.argv[1]
     output_file = sys.argv[2]
     tumor_bam = sys.argv[3]
+    reference_fasta = sys.argv[4]
 
-    identify(input_file, output_file, tumor_bam)
+    identify(input_file, output_file, tumor_bam, reference_fasta)
+
  
