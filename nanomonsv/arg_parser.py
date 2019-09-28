@@ -27,6 +27,12 @@ def create_parser():
 
     parse.add_argument("--debug", default = False, action = 'store_true', help = "keep intermediate files")
 
+    parse.add_argument("--split_alignment_check_margin", default = 50, type = int,
+                       help = "Two split alignments whose margin sizes are no more than this value is counted as candidate breakpoint")
+
+    parse.add_argument("--minimum_breakpoint_ambiguity", default = 20, type = int,
+                       help = "Sizes of ambiguities of breakpoint positions from the observed ones") 
+
     parse.set_defaults(func = parse_main)
     
 
