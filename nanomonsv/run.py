@@ -71,13 +71,22 @@ def parse_main(args):
 
 def get_main(args):
 
-    cluster_junction(args.tumor_prefix + ".junction.sorted.bedpe.gz", args.tumor_prefix + ".junction.sorted.clustered.bedpe",
+    """
+    cluster_rearrangement(args.tumor_prefix + ".rearrangement.sorted.bedpe.gz", args.tumor_prefix + ".rearrangement.sorted.clustered.bedpe",
                      args.cluster_margin_size)
 
-    filt_clustered_junction1(args.tumor_prefix + ".junction.sorted.clustered.bedpe", args.tumor_prefix + ".junction.sorted.clustered.filt1.bedpe",
+    filt_clustered_rearrangement1(args.tumor_prefix + ".rearrangement.sorted.clustered.bedpe", args.tumor_prefix + ".rearrangement.sorted.clustered.filt1.bedpe",
                              args.read_num_thres, args.median_mapQ_thres, args.max_overhang_size_thres)
 
-    filt_clustered_junction2(args.tumor_prefix + ".junction.sorted.clustered.filt1.bedpe", args.tumor_prefix + ".junction.sorted.clustered.filt2.bedpe", 
-                             args.control_prefix + ".junction.sorted.bedpe.gz")
+    filt_clustered_rearrangement2(args.tumor_prefix + ".rearrangement.sorted.clustered.filt1.bedpe", args.tumor_prefix + ".rearrangement.sorted.clustered.filt2.bedpe", 
+                             args.control_prefix + ".rearrangement.sorted.bedpe.gz")
 
+    """
+    cluster_deletion(args.tumor_prefix + ".deletion.sorted.bed.gz", args.tumor_prefix + ".deletion.sorted.clustered.bed")
+
+    filt_clustered_deletion1(args.tumor_prefix + ".deletion.sorted.clustered.bed", args.tumor_prefix + ".deletion.sorted.clustered.filt1.bed")
+
+    filt_clustered_deletion2(args.tumor_prefix + ".deletion.sorted.clustered.filt1.bed", args.tumor_prefix + ".deletion.sorted.clustered.filt2.bed",
+                             args.control_prefix + ".deletion.sorted.bed.gz")
+         
 
