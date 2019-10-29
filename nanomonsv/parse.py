@@ -73,8 +73,8 @@ def parse_alignment_info(input_bam, deletion_output_file, insertion_output_file,
 
                 if cigar[1] >= min_ins_size:
 
-                    tinfo = ','.join([str(query_start), str(query_pos_cur), str(query_end), str(query_length), mapping_quality,
-                                      str(num_M), str(num_I - cigar[1]), str(num_D), query_strand, str(is_supplementary), str(is_secondary)])
+                    tinfo = ','.join([str(query_start), str(query_pos_cur), str(query_end), str(query_length), query_strand, mapping_quality,
+                                      str(num_M), str(num_I - cigar[1]), str(num_D), str(is_supplementary), str(is_secondary)])
 
                     print('\t'.join([reference_name, str(reference_pos_cur), str(reference_pos_cur + 1), query_name, str(cigar[1]), '+', tinfo]), file = hout_i)
 
@@ -96,8 +96,8 @@ def parse_alignment_info(input_bam, deletion_output_file, insertion_output_file,
                         reference_end2 = reference_pos_cur
                     """
 
-                    tinfo = ','.join([str(query_start), str(query_pos_cur), str(query_end), str(query_length), mapping_quality,
-                                      str(num_M), str(num_I), str(num_D - cigar[1]), query_strand, str(is_supplementary), str(is_secondary)])
+                    tinfo = ','.join([str(query_start), str(query_pos_cur), str(query_end), str(query_length), query_strand, mapping_quality,
+                                      str(num_M), str(num_I), str(num_D - cigar[1]), str(is_supplementary), str(is_secondary)])
 
                     print('\t'.join([reference_name, str(reference_pos_cur), str(reference_pos_cur + cigar[1]), query_name, str(cigar[1]), '+', tinfo]), file = hout_d)
 
@@ -181,8 +181,8 @@ def extract_bedpe_junction(input_file, output_file, split_alignment_check_margin
             
             if abs(qpos2[1] - qpos1[2]) <= split_alignment_check_margin:
                 bp_flag = True
-                tchr1, tstart1, tend1, tmapQ1, tnumM1, tnumI1, tnumD1, tis_supp1 = query2target[qpos1]
-                tchr2, tstart2, tend2, tmapQ2, tnumM2, tnumI2, tnumD2, tis_supp2 = query2target[qpos2]
+                tchr1, tstart1, tend1, tmapQ1, tnumM1, tnumI1, tnumD1, tis_supp1, tis_2nd1 = query2target[qpos1]
+                tchr2, tstart2, tend2, tmapQ2, tnumM2, tnumI2, tnumD2, tis_supp2, tis_2nd2 = query2target[qpos2]
                 
                 if qpos2[1] - qpos1[2] > 0:
                     outward_ambiguity, inward_ambiguity = minimum_ambiguity, max(qpos2[1] - qpos1[2], minimum_ambiguity)
@@ -191,19 +191,19 @@ def extract_bedpe_junction(input_file, output_file, split_alignment_check_margin
                 
                 bchr1, bchr2 = tchr1, tchr2
                 if qpos1[4] == '+': 
-                    bstart1, bend1, bstrand1 = int(tend1) - inward_ambiguity, int(tend1) + outward_ambiguity, '+'
+                    bstart1, bend1, bstrand1 = max(int(tend1) - inward_ambiguity, 0), int(tend1) + outward_ambiguity, '+'
                 else:
-                    bstart1, bend1, bstrand1 = int(tstart1) - outward_ambiguity, int(tstart1) + inward_ambiguity, '-'
+                    bstart1, bend1, bstrand1 = max(int(tstart1) - outward_ambiguity, 0), int(tstart1) + inward_ambiguity, '-'
                 
                 if qpos2[4] == '+': 
-                    bstart2, bend2, bstrand2 = int(tstart2) - outward_ambiguity, int(tstart2) + inward_ambiguity, '-'
+                    bstart2, bend2, bstrand2 = max(int(tstart2) - outward_ambiguity, 0), int(tstart2) + inward_ambiguity, '-'
                 else:
-                    bstart2, bend2, bstrand2 = int(tend2) - inward_ambiguity, int(tend2) + outward_ambiguity, '+'
+                    bstart2, bend2, bstrand2 = max(int(tend2) - inward_ambiguity, 0), int(tend2) + outward_ambiguity, '+'
                 
                 bread_name = qpos1[0]
                 
-                binfo1 = ','.join([str(qpos1[1]), str(qpos1[2]), tmapQ1, tnumM1, tnumI1, tnumD1, tis_supp1])
-                binfo2 = ','.join([str(qpos2[1]), str(qpos2[2]), tmapQ2, tnumM2, tnumI2, tnumD2, tis_supp2])
+                binfo1 = ','.join([str(qpos1[1]), '*', str(qpos1[2]), str(qpos1[3]), qpos1[4], tmapQ1, tnumM1, tnumI1, tnumD1, tis_supp1, tis_2nd1])
+                binfo2 = ','.join([str(qpos2[1]), '*', str(qpos2[2]), str(qpos2[3]), qpos2[4], tmapQ2, tnumM2, tnumI2, tnumD2, tis_supp2, tis_2nd2])
                 
                 if bchr1 > bchr2 or (bchr1 == bchr2 and bstart1 > bstart2):
                     bchr1, bstart1, bend1, bstrand1, binfo1, bchr2, bstart2, bend2, bstrand2, binfo2 = \
@@ -228,7 +228,7 @@ def extract_bedpe_junction(input_file, output_file, split_alignment_check_margin
                 temp_read_name = F[0]
                 query2target = {}
 
-            query2target[(F[0], int(F[1]), int(F[2]), int(F[3]), F[4])] = (F[5], int(F[6]), int(F[7]), F[8], F[9], F[10], F[11], F[12])
+            query2target[(F[0], int(F[1]), int(F[2]), int(F[3]), F[4])] = (F[5], int(F[6]), int(F[7]), F[8], F[9], F[10], F[11], F[12], F[13])
 
     if temp_read_name != '' and len(query2target) > 1: print_bedpe_junction(query2target, hout)
 

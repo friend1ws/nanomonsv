@@ -138,35 +138,53 @@ def filt_clustered_rearrangement2(input_file, output_file, control_junction_bedp
 
 def cluster_deletion(input_file, output_file, deletion_cluster_margin_size = 10, check_margin_size = 50):
 
+    dcms = deletion_cluster_margin_size
     hout = open(output_file, 'w')
-
+    
     merged_bedpe = {}
     with gzip.open(input_file, 'rt') as hin:
         for line in hin:
             F = line.rstrip('\n').split('\t')
-            if int(F[4]) < 50: continue
+            if int(F[4]) < 90: continue
  
             for key in sorted(merged_bedpe):
 
-                bchr, bstart, bend = key
+                # bchr, bstart, bend = key
+                bchr1, bstart1, bend1, bdir1, bchr2, bstart2, bend2, bdir2 = key
                 breadids, bsize, binfo = merged_bedpe[key]
 
-                if F[0] != bchr or int(F[1]) > int(bend) + check_margin_size: 
+                if F[0] != bchr1 or int(F[1]) > int(bend1) + check_margin_size: 
 
-                    print('\t'.join([bchr, str(bstart), str(bend), breadids, bsize, '+', binfo]), file = hout)
+                    print('\t'.join([bchr1, str(bstart1), str(bend1), bchr2, str(bstart2), str(bend2), \
+                       breadids, '0', bdir1, bdir2, bsize, binfo]), file = hout)
                     del merged_bedpe[key]
+
+                    # print('\t'.join([bchr, str(bstart), str(bend), breadids, bsize, '+', binfo]), file = hout)
+                    # del merged_bedpe[key]
 
 
             match_flag = False
             for key in sorted(merged_bedpe):
 
-                bchr, bstart, bend = key 
+                # bchr, bstart, bend = key 
+                bchr1, bstart1, bend1, bdir1, bchr2, bstart2, bend2, bdir2 = key 
                 breadids, bsize, binfo = merged_bedpe[key]
 
-                if F[0] == bchr and abs(int(F[1]) - int(bstart)) <= deletion_cluster_margin_size and \
-                    abs(int(F[2]) - int(bend)) <= deletion_cluster_margin_size:
+                # if F[0] == bchr and abs(int(F[1]) - int(bstart)) <= deletion_cluster_margin_size and \
+                #     abs(int(F[2]) - int(bend)) <= deletion_cluster_margin_size:
+                # if F[0] == bchr1 and F[3] == bchr2 and F[8] == bdir1 and F[9] == bdir2 and \
+                #   int(F[2]) >= bstart1 and int(F[1]) <= bend1 and int(F[5]) >= bstart2 and int(F[4]) <= bend2:
+                if F[0] == bchr1 and int(F[1]) - dcms <= bend1 and int(F[1]) + dcms >= bstart1 and \
+                  int(F[2]) - dcms <= bend2 and int(F[2]) + dcms >= bstart2:
 
-                    ney_key = key
+                    new_start1 = min(int(F[1]) - dcms, bstart1)
+                    new_end1 = max(int(F[1]) + dcms, bend1)
+                    new_start2 = min(int(F[2]) - dcms, bstart2)
+                    new_end2 = max(int(F[2]) + dcms, bend2)
+                            
+                    new_key = (bchr1, new_start1, new_end1, bdir1, bchr2, new_start2, new_end2, bdir2)
+
+                    # ney_key = key
                     new_size = bsize + ';' + F[4]
                     new_readids = breadids + ';' + F[3]
                     new_info = binfo + ';' + F[6]
@@ -179,16 +197,21 @@ def cluster_deletion(input_file, output_file, deletion_cluster_margin_size = 10,
 
                     
             if not match_flag:
-                new_key = (F[0], F[1], F[2])
+                new_key = (F[0], int(F[1]) - dcms, int(F[1]) + dcms, '+', F[0], int(F[2]) - dcms, int(F[2]) + dcms, '-') 
+                # new_key = (F[0], F[1], F[2])
                 merged_bedpe[new_key] = (F[3], F[4], F[6])
 
 
         for key in sorted(merged_bedpe):
-            bchr, bstart, bene = key
+            # bchr, bstart, bene = key
+            bchr1, bstart1, bend1, bdir1, bchr2, bstart2, bend2, bdir2 = key
             breadids, bsize, binfo = merged_bedpe[key]
 
-            if F[0] != bchr or int(F[1]) > int(bend) + check_margin_size:  
-                print('\t'.join([bchr, str(bstart), str(bend), breadids, bsize, '+', binfo]), file = hout)
+            print('\t'.join([bchr1, str(bstart1), str(bend1), bchr2, str(bstart2), str(bend2), \
+              breadids, '0', bdir1, bdir2, bsize, binfo]), file = hout)
+
+            # if F[0] != bchr or int(F[1]) > int(bend) + check_margin_size:  
+            #     print('\t'.join([bchr, str(bstart), str(bend), breadids, bsize, '+', binfo]), file = hout)
 
     hout.close()
 
@@ -200,10 +223,10 @@ def filt_clustered_deletion1(input_file, output_file, read_num_thres = 3, median
     with open(input_file, 'r') as hin:
         for line in hin:
             F = line.rstrip('\n').split('\t')
-            read_ids = list(set(F[3].split(';')))
+            read_ids = list(set(F[6].split(';')))
             if len(read_ids) < read_num_thres: continue
 
-            info = F[6].split(';')
+            info = F[11].split(';')
 
             median_mapQ = statistics.median([int(x.split(',')[4]) for x in info])
             non_secondary_readnum = len([x.split(',')[10] for x in info if x.split(',')[10] == "False"])
@@ -227,13 +250,14 @@ def filt_clustered_deletion2(input_file, output_file, control_junction_bedpe, co
     with open(input_file, 'r') as hin:
         for line in hin:
             F = line.rstrip('\n').split('\t')
-            tchr, tstart, tend = F[0], F[1], F[2]
+            tchr1, tstart1, tend1, tchr2, tstart2, tend2 = F[0], F[1], F[2], F[3], F[4], F[5]
+            median_size = statistics.median([int(x) for x in F[10].split(';')])
 
             control_flag = False
             if control_junction_bedpe is not None:
                 tabix_error_flag = False
                 try:
-                    records = control_junction_db.fetch(F[0], int(tstart) - 50, int(tend) + 50)
+                    records = control_junction_db.fetch(F[0], int(tstart1) - 50, int(tend2) + 50)
                 except:
                     tabix_error_flag = True
 
@@ -241,7 +265,8 @@ def filt_clustered_deletion2(input_file, output_file, control_junction_bedpe, co
                     for record_line in records:
                         record = record_line.split('\t')
 
-                        if tchr == record[0] and int(tstart) - control_check_margin <= int(record[2]) and int(tend) + control_check_margin >= int(record[1]):
+                        if tchr1 == record[0] and int(tstart1) - control_check_margin <= int(record[2]) and int(tend2) + control_check_margin >= int(record[1]) \
+                            and int(record[2]) - int(record[1]) >= median_size * 0.5:
                             control_flag = True
 
 

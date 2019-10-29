@@ -71,7 +71,6 @@ def parse_main(args):
 
 def get_main(args):
 
-    """
     cluster_rearrangement(args.tumor_prefix + ".rearrangement.sorted.bedpe.gz", args.tumor_prefix + ".rearrangement.sorted.clustered.bedpe",
                      args.cluster_margin_size)
 
@@ -81,7 +80,7 @@ def get_main(args):
     filt_clustered_rearrangement2(args.tumor_prefix + ".rearrangement.sorted.clustered.filt1.bedpe", args.tumor_prefix + ".rearrangement.sorted.clustered.filt2.bedpe", 
                              args.control_prefix + ".rearrangement.sorted.bedpe.gz")
 
-    """
+
     cluster_deletion(args.tumor_prefix + ".deletion.sorted.bed.gz", args.tumor_prefix + ".deletion.sorted.clustered.bed")
 
     filt_clustered_deletion1(args.tumor_prefix + ".deletion.sorted.clustered.bed", args.tumor_prefix + ".deletion.sorted.clustered.filt1.bed")
