@@ -43,7 +43,13 @@ def create_parser():
 
     get.add_argument("tumor_prefix", type = str,
                       help = "Prefix of tumor data processed in parse step")
-        
+       
+    get.add_argument("tumor_bam_file", default = None, type = str,
+                      help = "Path to tumor BAM file")
+ 
+    get.add_argument("reference_fasta", metavar = "reference.fa", default = None, type = str,
+                     help = "the path to the reference genomoe sequence")
+
     get.add_argument("control_prefix", type = str,
                      help = "Prefix of matched control data processed in parse step")
 

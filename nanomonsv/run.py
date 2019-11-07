@@ -3,6 +3,7 @@
 import subprocess
 from .parse import *
 from .filt import *
+from .identify import *
 
 def parse_main(args):
 
@@ -71,6 +72,7 @@ def parse_main(args):
 
 def get_main(args):
 
+    """
     cluster_rearrangement(args.tumor_prefix + ".rearrangement.sorted.bedpe.gz", args.tumor_prefix + ".rearrangement.sorted.clustered.bedpe",
                      args.cluster_margin_size)
 
@@ -87,5 +89,9 @@ def get_main(args):
 
     filt_clustered_deletion2(args.tumor_prefix + ".deletion.sorted.clustered.filt1.bed", args.tumor_prefix + ".deletion.sorted.clustered.filt2.bed",
                              args.control_prefix + ".deletion.sorted.bed.gz")
-         
+    """
+     
+    identify(args.tumor_prefix + ".rearrangement.sorted.clustered.filt2.bedpe", args.tumor_prefix + ".deletion.sorted.clustered.filt2.bed",
+             args.tumor_prefix + ".refined_bp.txt", args.tumor_bam_file, args.reference_fasta)
+
 

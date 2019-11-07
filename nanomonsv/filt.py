@@ -77,11 +77,11 @@ def filt_clustered_rearrangement1(input_file, output_file, read_num_thres = 3, m
             info1 = F[10].split(';')
             info2 = F[11].split(';')
 
-            median_mapQ1 = statistics.median([int(x.split(',')[2]) for x in info1])
-            median_mapQ2 = statistics.median([int(x.split(',')[2]) for x in info2])
+            median_mapQ1 = statistics.median([int(x.split(',')[5]) for x in info1])
+            median_mapQ2 = statistics.median([int(x.split(',')[5]) for x in info2])
         
-            max_overhang_size1 = max([abs(int(x.split(',')[1]) - int(x.split(',')[0])) for x in info1])
-            max_overhang_size2 = max([abs(int(x.split(',')[1]) - int(x.split(',')[0])) for x in info2]) 
+            max_overhang_size1 = max([abs(int(x.split(',')[2]) - int(x.split(',')[0])) for x in info1])
+            max_overhang_size2 = max([abs(int(x.split(',')[2]) - int(x.split(',')[0])) for x in info2]) 
         
             if median_mapQ1 < median_mapQ_thres or median_mapQ2 < median_mapQ_thres: continue
             if max_overhang_size1 < max_overhang_size_thres or max_overhang_size2 < max_overhang_size_thres: continue
@@ -228,7 +228,7 @@ def filt_clustered_deletion1(input_file, output_file, read_num_thres = 3, median
 
             info = F[11].split(';')
 
-            median_mapQ = statistics.median([int(x.split(',')[4]) for x in info])
+            median_mapQ = statistics.median([int(x.split(',')[5]) for x in info])
             non_secondary_readnum = len([x.split(',')[10] for x in info if x.split(',')[10] == "False"])
             # max_overhang_size = max([abs(int(x.split(',')[1]) - int(x.split(',')[0])) for x in info2])
 
