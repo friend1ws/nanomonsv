@@ -44,20 +44,35 @@ def create_parser():
     get.add_argument("tumor_prefix", type = str,
                       help = "Prefix of tumor data processed in parse step")
        
-    get.add_argument("tumor_bam_file", default = None, type = str,
+    get.add_argument("tumor_bam", default = None, type = str,
                       help = "Path to tumor BAM file")
  
     get.add_argument("reference_fasta", metavar = "reference.fa", default = None, type = str,
                      help = "the path to the reference genomoe sequence")
 
-    get.add_argument("control_prefix", type = str,
+    get.add_argument("--control_prefix", type = str,
                      help = "Prefix of matched control data processed in parse step")
+
+    get.add_argument("--control_bam", type = str,
+                     help = "Path to control BAM file")
+
+    get.add_argument("--min_tumor_variant_read_num", default = 3, type = int,
+                     help = "Minimum required supporting read number for a tumor sample")
+
+    get.add_argument("--min_tumor_VAF", default = 0.05, type = float,
+                     help = "Minimum required variant allele frequency for a tumor sample")
+
+    get.add_argument("--max_control_variant_read_num", default = 1, type = int,
+                     help = "Maximum allowed supporting read number for a control sample")
+        
+    get.add_argument("--max_control_VAF", default = 0.03, type = float,
+                     help = "Maximum allowed variant allele frequeycy for a control sample")
 
     get.add_argument("--cluster_margin_size", default = 100, type = int,
                      help = "Two breakpoints are margined if they are within this threshould value")
 
-    get.add_argument("--read_num_thres", default = 3, type = int,
-                     help = "Minimum required supporting read number for structural variation candidates")
+    # get.add_argument("--read_num_thres", default = 3, type = int,
+    #                  help = "Minimum required supporting read number for structural variation candidates")
 
     get.add_argument("--median_mapQ_thres", default = 40, type = int,
                      help = "Threshould for median mapping quality")
@@ -65,8 +80,10 @@ def create_parser():
     get.add_argument("--max_overhang_size_thres", default = 300, type = int,
                      help = "Threshould for maximum overhang size")
 
-    get.add_argument("--control_read_num_thres", default = 0, type = int,
-                     help = "Filter if the number of supporting reads for the control sample is larger than this value")
+    # get.add_argument("--control_read_num_thres", default = 0, type = int,
+    #                  help = "Filter if the number of supporting reads for the control sample is larger than this value")
+
+    get.add_argument("--debug", default = False, action = 'store_true', help = "keep intermediate files")
 
     get.set_defaults(func = get_main)
     ##########

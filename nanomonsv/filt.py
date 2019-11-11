@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-import gzip, statistics
+import sys, gzip, statistics
 import pysam
 
 def cluster_rearrangement(input_file, output_file, cluster_margin_size = 100):
@@ -136,15 +136,22 @@ def filt_clustered_rearrangement2(input_file, output_file, control_junction_bedp
 
 
 
-def cluster_deletion(input_file, output_file, deletion_cluster_margin_size = 10, check_margin_size = 50):
+def cluster_insertion_deletion(input_file, output_file, deletion_cluster_margin_size = 10, check_margin_size = 50, size_margin_ratio = 0.2, maximum_unique_pairs = 100):
 
     dcms = deletion_cluster_margin_size
     hout = open(output_file, 'w')
     
     merged_bedpe = {}
+    skip_pos = 0
+    tmp_chr = None
+
     with gzip.open(input_file, 'rt') as hin:
         for line in hin:
             F = line.rstrip('\n').split('\t')
+            if F[0] == "hs37d5": continue
+
+            if F[0] != tmp_chr: tmp_chr, skip_pos = F[0], 0
+            if int(F[1]) < skip_pos: continue
             if int(F[4]) < 90: continue
  
             for key in sorted(merged_bedpe):
@@ -169,13 +176,16 @@ def cluster_deletion(input_file, output_file, deletion_cluster_margin_size = 10,
                 # bchr, bstart, bend = key 
                 bchr1, bstart1, bend1, bdir1, bchr2, bstart2, bend2, bdir2 = key 
                 breadids, bsize, binfo = merged_bedpe[key]
+                
+                bsize_vec = [float(x) for x in bsize.split(';')]
 
                 # if F[0] == bchr and abs(int(F[1]) - int(bstart)) <= deletion_cluster_margin_size and \
                 #     abs(int(F[2]) - int(bend)) <= deletion_cluster_margin_size:
                 # if F[0] == bchr1 and F[3] == bchr2 and F[8] == bdir1 and F[9] == bdir2 and \
                 #   int(F[2]) >= bstart1 and int(F[1]) <= bend1 and int(F[5]) >= bstart2 and int(F[4]) <= bend2:
                 if F[0] == bchr1 and int(F[1]) - dcms <= bend1 and int(F[1]) + dcms >= bstart1 and \
-                  int(F[2]) - dcms <= bend2 and int(F[2]) + dcms >= bstart2:
+                  int(F[2]) - dcms <= bend2 and int(F[2]) + dcms >= bstart2 and \
+                  float(F[4]) > (1 - size_margin_ratio) * min(bsize_vec) and float(F[4]) < (1 + size_margin_ratio) * max(bsize_vec):
 
                     new_start1 = min(int(F[1]) - dcms, bstart1)
                     new_end1 = max(int(F[1]) + dcms, bend1)
@@ -201,6 +211,13 @@ def cluster_deletion(input_file, output_file, deletion_cluster_margin_size = 10,
                 # new_key = (F[0], F[1], F[2])
                 merged_bedpe[new_key] = (F[3], F[4], F[6])
 
+            if len(merged_bedpe) > maximum_unique_pairs:
+
+                print("Exceeded maximum number of unique junction pairs at %s:%s" % (F[0], F[1]), file = sys.stderr)
+                print(sys.stderr, "Skip %s:%s" % (F[0], str(int(F[1]) + check_margin_size)), file = sys.stderr)
+                merged_bedpe = {}
+                skip_pos = int(F[1]) + check_margin_size
+
 
         for key in sorted(merged_bedpe):
             # bchr, bstart, bene = key
@@ -217,7 +234,7 @@ def cluster_deletion(input_file, output_file, deletion_cluster_margin_size = 10,
 
 
 
-def filt_clustered_deletion1(input_file, output_file, read_num_thres = 3, median_mapQ_thres = 40, max_overhang_size_thres = 300):
+def filt_clustered_insertion_deletion1(input_file, output_file, read_num_thres = 3, median_mapQ_thres = 40, max_overhang_size_thres = 300):
 
     hout = open(output_file, 'w')
     with open(input_file, 'r') as hin:
@@ -242,7 +259,7 @@ def filt_clustered_deletion1(input_file, output_file, read_num_thres = 3, median
     hout.close()
 
 
-def filt_clustered_deletion2(input_file, output_file, control_junction_bedpe, control_read_num_thres = 0, control_check_margin = 50):
+def filt_clustered_insertion_deletion2(input_file, output_file, control_junction_bedpe, control_read_num_thres = 0, control_check_margin = 50):
 
     hout = open(output_file, 'w')
     if control_junction_bedpe is not None: control_junction_db = pysam.TabixFile(control_junction_bedpe)
@@ -266,7 +283,8 @@ def filt_clustered_deletion2(input_file, output_file, control_junction_bedpe, co
                         record = record_line.split('\t')
 
                         if tchr1 == record[0] and int(tstart1) - control_check_margin <= int(record[2]) and int(tend2) + control_check_margin >= int(record[1]) \
-                            and int(record[2]) - int(record[1]) >= median_size * 0.5:
+                            and int(record[4]) >= median_size * 0.5:
+                            # and int(record[2]) - int(record[1]) >= median_size * 0.5:
                             control_flag = True
 
 
@@ -276,6 +294,36 @@ def filt_clustered_deletion2(input_file, output_file, control_junction_bedpe, co
 
     hout.close()
     if control_junction_bedpe is not None: control_junction_db.close()
+
+
+def filt_final(input_file, output_file, min_tumor_variant_read_num = 3, min_tumor_VAF = 0.05, max_control_variant_read_num = 1, max_control_VAF = 0.03, is_control = False):
+
+    hout = open(output_file, 'w')
+    header = ["Chr_1", "Pos_1", "Dir_1", "Chr_2", "Pos_2", "Dir_2", "Inserted_Seq", "Checked_Read_Num_Tumor", "Supporting_Read_Num_Tumor"]
+    if is_control: header = header + ["Checked_Read_Num_Control", "Supporting_Read_Num_Control"]
+
+    print('\t'.join(header), file = hout)
+    with open(input_file, 'r') as hin:
+        for line in hin:
+            F = line.rstrip('\n').split('\t')
+            checked_read_num_tumor, supporting_read_num_tumor = int(F[7]), int(F[8])
+            if is_control: checked_read_num_control, supporting_read_num_control = int(F[9]), int(F[10])
+
+            if checked_read_num_tumor == 0: continue
+            if supporting_read_num_tumor < min_tumor_variant_read_num: continue
+            if float(supporting_read_num_tumor) / float(checked_read_num_tumor) < min_tumor_VAF: continue
+
+            if is_control:
+                if checked_read_num_control == 0: continue
+                if supporting_read_num_control > max_control_variant_read_num: continue
+                if float(supporting_read_num_control) / float(checked_read_num_control) > max_control_VAF: continue
+
+            print('\t'.join(F), file = hout)
+
+    hout.close()
+
+    
+
 
 """
 if __name__ == "__main__":

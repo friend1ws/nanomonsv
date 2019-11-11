@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-import sys, os, subprocess
+import sys, os, subprocess, shutil 
 from collections import Counter
 import pysam
 
@@ -49,45 +49,70 @@ def get_consensus_from_mafft_result(input_file):
 
 
 
-def get_refined_bp(contig, fasta_file_ins, chr1, start1, end1, dir1, chr2, start2, end2, dir2, h_log):
+def get_refined_bp(contig, fasta_file_ins, chr1, start1, end1, dir1, chr2, start2, end2, dir2, mode, h_log, margin = 500):
 
     start1 = max(1, start1)
     start2 = max(1, start2)
 
-    region1_seq = fasta_file_ins.fetch(chr1, start1 - 1, end1)
-    region2_seq = fasta_file_ins.fetch(chr2, start2 - 1, end2)
+    if mode != "i":
 
-    if dir1 == '-': region1_seq = reverse_complement(region1_seq)
-    if dir2 == '+': region2_seq = reverse_complement(region2_seq)
+        region1_seq = fasta_file_ins.fetch(chr1, start1 - 1, end1)
+        region2_seq = fasta_file_ins.fetch(chr2, start2 - 1, end2)
 
-    sret = smith_waterman.sw_jump(contig, region1_seq, region2_seq)
-    if sret is None: return(None)
-    score, contig_align, region1_align, region2_align, contig_seq, region_seq = sret
+        if dir1 == '-': region1_seq = reverse_complement(region1_seq)
+        if dir2 == '+': region2_seq = reverse_complement(region2_seq)
 
-    bp_pos1 = start1 + region1_align[1] - 1 if dir1 == '+' else end1 - region1_align[1] + 1 
-    bp_pos2 = start2 + region2_align[0] - 1 if dir2 == '-' else end2 - region2_align[0] + 1
+        sret = smith_waterman.sw_jump(contig, region1_seq, region2_seq)
+        if sret is None: return(None)
+        score, contig_align, region1_align, region2_align, contig_seq, region_seq = sret
 
-    if contig_align[2] - contig_align[1] == 1:
-        inseq = '---'
-    elif contig_align[2] - contig_align[1] > 1:
-        inseq = contig[(contig_align[1]):(contig_align[2] - 1)]
+        bp_pos1 = start1 + region1_align[1] - 1 if dir1 == '+' else end1 - region1_align[1] + 1 
+        bp_pos2 = start2 + region2_align[0] - 1 if dir2 == '-' else end2 - region2_align[0] + 1
+
+        if contig_align[2] - contig_align[1] == 1:
+            inseq = '---'
+        elif contig_align[2] - contig_align[1] > 1:
+            inseq = contig[(contig_align[1]):(contig_align[2] - 1)]
+        else:
+            print("Alignment inconsistent!!", file = sys.stderr)
+
+        print(score, contig_align, region1_align, region2_align, file = h_log)
+        print(contig_seq, file = h_log)
+        print(region_seq, file = h_log)
+
+        return(bp_pos1, bp_pos2, inseq)
+    
     else:
-        print("Alignment consistent!!", file = sys.stderr)
+    
+        contig_start = contig[:min(margin, len(contig))]
+        contig_end = contig[-min(margin, len(contig)):]
 
-    print(score, contig_align, region1_align, region2_align, file = h_log)
-    print(contig_seq, file = h_log)
-    print(region_seq, file = h_log)
+        region_seq = fasta_file_ins.fetch(chr1, start1 - 100, end2 + 100)
+        sret = smith_waterman.sw_jump(region_seq, contig_start, contig_end)
+        if sret is None: return(None)
+        score, region_align, contig_start_align, contig_end_align, region_seq, contig_seq = sret
 
-    return(bp_pos1, bp_pos2, inseq)
+        bp_pos1 = start1 - 100 + region_align[1]
+        bp_pos2 = start1 - 100 + region_align[2]
 
+        inseq_start = contig_start_align[1]
+        inseq_end = len(contig) - (len(contig_end) - contig_end_align[0] + 1)
+        inseq = contig[inseq_start:inseq_end]
 
+        print(score, region_align, contig_start_align, contig_end_align, file = h_log)
+        print(region_seq, file = h_log)
+        print(contig_seq, file = h_log)
+
+        return(bp_pos1, bp_pos2, inseq)
+
+        
 def get_readid2alignment(input_file, mode, alignment_margin):
 
     readid2alignment = {}
     with open(input_file, 'r') as hin:
         for line in hin:
             F = line.rstrip('\n').split('\t')
-            key = ','.join([F[0], F[1], F[2], F[8], F[3], F[4], F[5], F[9]])
+            key = ','.join([F[0], F[1], F[2], F[8], F[3], F[4], F[5], F[9], mode])
             readids = F[6].split(';')
 
             if mode == "r":
@@ -112,50 +137,27 @@ def get_readid2alignment(input_file, mode, alignment_margin):
                     if readids[i] not in readid2alignment: readid2alignment[readids[i]] = []
                     readid2alignment[readids[i]].append((key, max(tpos - alignment_margin, 0), min(tpos + alignment_margin, tlen - 1), tstrand))
 
-    return(readid2alignment)
-
- 
-def identify(rearrangement_file, deletion_file, output_file, tumor_bam, reference_fasta, alignment_margin = 300):
-
-    bamfile = pysam.AlignmentFile(tumor_bam, "rb")
-
-    """
-    readid2alignment = {}
-    with open(input_file, 'r') as hin:
-        for line in hin:
-            F = line.rstrip('\n').split('\t')
-
-            key = ','.join([F[0], F[1], F[2], F[8], F[3], F[4], F[5], F[9]]) 
-
-            readids = F[6].split(';')
-
-            if mode == "r":
-                info1 = F[10].split(';')
-                info2 = F[11].split(';')
-            elif mode == "d":
+            elif mode == "i":
                 size = F[10].split(';')
                 info = F[11].split(';')
-
-            for i in range(len(readids)):
-
-                if mode == "r": 
-                    tinfo1 = info1[i].split(',')
-                    tinfo2 = info2[i].split(',')
-                    start1, end1, start2, end2 = int(tinfo1[0]), int(tinfo1[2]), int(tinfo2[0]), int(tinfo2[2])
-                    if readids[i] not in readid2alignment: readid2alignment[readids[i]] = []
-                    if start1 <= start2:
-                        readid2alignment[readids[i]].append((key, end1 - alignment_margin, start2 + alignment_margin, '+'))
-                    else:
-                        readid2alignment[readids[i]].append((key, end2 - alignment_margin, start1 + alignment_margin, '-'))
-
-                elif mode == "d":
+                for i in range(len(readids)):
                     tinfo = info[i].split(',')
                     tpos, tlen, tstrand = int(tinfo[1]), int(tinfo[3]), tinfo[4]
                     if readids[i] not in readid2alignment: readid2alignment[readids[i]] = []
-                    readid2alignment[readids[i]].append((key, max(tpos - alignment_margin, 0), min(tpos + alignment_margin, tlen - 1), tstrand))
-    """
+                    if tstrand == "+":
+                        readid2alignment[readids[i]].append((key, max(tpos - alignment_margin, 0), min(tpos + int(size[i]) + alignment_margin, tlen - 1), tstrand))
+                    else:
+                        readid2alignment[readids[i]].append((key, max(tpos - int(size[i]) - alignment_margin, 0), min(tpos + alignment_margin, tlen - 1), tstrand))
+
+    return(readid2alignment)
+
+ 
+def identify(rearrangement_file, insertion_file, deletion_file, output_file, tumor_bam, reference_fasta, debug, alignment_margin = 300):
+
+    bamfile = pysam.AlignmentFile(tumor_bam, "rb")
 
     readid2alignment = get_readid2alignment(rearrangement_file, 'r', alignment_margin)
+    readid2alignment.update(get_readid2alignment(insertion_file, 'i', alignment_margin))
     readid2alignment.update(get_readid2alignment(deletion_file, 'd', alignment_margin))
 
     hout = open(output_file + ".tmp.supporting_read.unsorted", 'w')
@@ -177,14 +179,17 @@ def identify(rearrangement_file, deletion_file, output_file, tumor_bam, referenc
     hout.close()
 
     hout = open(output_file + ".tmp.supporting_read.sorted", 'w')
-    subprocess.call(["sort", "-k1,1", output_file + ".tmp.supporting_read.unsorted"], stdout = hout)
+    subprocess.check_call(["sort", "-k1,1", output_file + ".tmp.supporting_read.unsorted"], stdout = hout)
     hout.close()
+    subprocess.check_call(["rm", "-rf", output_file + ".tmp.supporting_read.unsorted"])
 
+    
     fasta_file_ins = pysam.FastaFile(reference_fasta)
 
-    tmp_dir = "tmp"
+    tmp_dir = output_file + ".tmp_alignment_dir"
+    if os.path.exists(tmp_dir): shutil.rmtree(tmp_dir)
     os.makedirs(tmp_dir)
- 
+
     temp_key = ''
     # hout = open(output_file + ".tmp.consensus.fastq", 'w') 
     hout_log = open(tmp_dir + "/consensus_alignment.log", 'w')
@@ -204,17 +209,17 @@ def identify(rearrangement_file, deletion_file, output_file, tumor_bam, referenc
 
                     tconsensus = get_consensus_from_mafft_result(tmp_dir + '/' + temp_key + ".mafft_result.fa")
                     print(temp_key + '\n' + tconsensus, file = hout_log)
-                    print(temp_key)
- 
-                    chr1, start1, end1, dir1, chr2, start2, end2, dir2 = temp_key.split(',')
+                    # print(temp_key + '\n' + tconsensus)
+         
+                    chr1, start1, end1, dir1, chr2, start2, end2, dir2, mode = temp_key.split(',')
                     start1, end1, start2, end2 = int(start1), int(end1), int(start2), int(end2)       
-                    bret = get_refined_bp(tconsensus, fasta_file_ins, chr1, start1, end1, dir1, chr2, start2, end2, dir2, hout_log)
+                    bret = get_refined_bp(tconsensus, fasta_file_ins, chr1, start1, end1, dir1, chr2, start2, end2, dir2, mode, hout_log)
                     if bret is not None:  
                         bp_pos1, bp_pos2, inseq = bret 
                         print(bp_pos1, bp_pos2, inseq, file = hout_log)
                         print('', file = hout_log)
                         print('\t'.join([chr1, str(bp_pos1), dir1, chr2, str(bp_pos2), dir2, inseq]), file = hout)
- 
+
                 temp_key = F[0]          
                 hout2 = open(tmp_dir + '/' + temp_key + ".supporting_read.fa", 'w')
 
@@ -231,9 +236,9 @@ def identify(rearrangement_file, deletion_file, output_file, tumor_bam, referenc
             tconsensus = get_consensus_from_mafft_result(tmp_dir + '/' + temp_key + ".mafft_result.fa")
             print(temp_key + '\n' + tconsensus, file = hout_log)
 
-            chr1, start1, end1, dir1, chr2, start2, end2, dir2 = temp_key.split(',')     
+            chr1, start1, end1, dir1, chr2, start2, end2, dir2, mode = temp_key.split(',')     
             start1, end1, start2, end2 = int(start1), int(end1), int(start2), int(end2)
-            bret = get_refined_bp(tconsensus, fasta_file_ins, chr1, start1, end1, dir1, chr2, start2, end2, dir2, hout_log)
+            bret = get_refined_bp(tconsensus, fasta_file_ins, chr1, start1, end1, dir1, chr2, start2, end2, dir2, mode, hout_log)
             if bret is not None:
                 bp_pos1, bp_pos2, inseq = bret
                 print(bp_pos1, bp_pos2, inseq, file = hout_log)
@@ -242,11 +247,15 @@ def identify(rearrangement_file, deletion_file, output_file, tumor_bam, referenc
 
     hout_log.close()
     hout.close()
-            
+
+    if not debug:
+        subprocess.check_call(["rm", "-rf", output_file + ".tmp.supporting_read.sorted"])
+        shutil.rmtree(tmp_dir)
 
 
 if __name__ == "__main__":
 
+    """
     import sys
     rearrangement_file = sys.argv[1]
     deletion_file = sys.argv[2]
@@ -256,4 +265,18 @@ if __name__ == "__main__":
 
     identify(rearrangement_file, deletion_file, output_file, tumor_bam, reference_fasta)
 
- 
+    key = "X,104681514,104681542,+,X,104681515,104681543,-,i"
+    tconsensus = "ATATGATTTAATAACCAATTCACAGAAAAGTTTAAATGACTGATAATAGCTACATGTGTTTCCTCTAGTAGGGCCATATTCATTTGGGTAGGTTACCAAAATCTTTAAATTAAAATAACGCATTTTCAACAGTAGGTGGGATGCCAAGCAACAACCAAAGGATAAAGGAGTTGGTAGGGATAAGAGTCAGAACAGCCTCCATTACATTACTGAAATAGAAGATATATTTGCTTTAAAAATTTTAATTTGGAGGTTGTATAAGAATATCACTTAGTCTATATGGTACTATAGACAAATATATATAGAAATGTAGGCATTTAGTGCTATAAATTTCCCTCTACACACTGCTTTGAATGGGTCCCAGAGATTCTGGTATGTGGTGTCTTTGTTCTCGTTGGTTTCAAAGAACATCTTTATTTCTGCCTTCATTTCAATATGTACCCAGTAGTCATTCAGGAGCAGGTTGTTCAGTTTCCAGTGTAGTTGAGCAGCTTTGGTGAGATTCTTAATCTGAGTTCTAGTTTGATTGCACTGTGGTCTGAGAGATAGTTTGTTATAATTTCTGTTCTTTTACATTTGCTGAGGAGATTTACTTCAACTATGTGGTCAATTTTGGAATAGGTGTGGTGTGGTGCTGAAAAAAATGTATATTCTGTTGATTTGGGGGAGAGTTCTGTAGATGTCTATTAGGTCTGCTTGGTGAGGGTTCAATCCTGGGTATCCTTGACTGGATTAAGAAAATGTGGCTACACCATGGAATACTATGCAGCCATAAAATGATGAGTTCATATCCTTTAAGGGACAATGAATGAAACATCATTCTCAGTAAACTATCATAAAACAAAAACAAAGCATATTCTACTCATAGGTGGGAATTGAACAATGAGTCACATGGACACAGGAGGAATATCACCTCTGGGGACTGTGGTGGGGTCGGGGGGGAGGATAGCATTGGGAATATACCTAATTAGATGACACATAGTGGGTGCAGCGCCAGCATGCACATGTATACATGTAACTAACCTGCCAATGTGCATGTGTACTAAAACTTAGGTATAATAAAAAAAAAAAAAAATAATAATAATAAAAAAAAAAAAAAAAAAAAAAAAAAAATATAGTAACACTCCCAAATACTGATGAATGTGCTCAGACCAGGAGAAATCTTACATGGAAAATAAAATAAGTTCTTGAAATCTTAACTTTAATAAATCATTTAGTTGATTGATTTTACATCAAAATTCTGAAACTAAACTCATTGTAAAATATAAGCGATATATATATATATATACCATATTTTGTCACTTTCTGAGAGCTGAGCAACTATAGTTGCATATAAATCACTTTAAAACTTATGTAATAGTGAGAATTCATTTTAAATTATAGTATTTTTA"
+    """
+
+    key = "9,12910928,12910950,+,9,12910929,12910951,-,i"
+    tconsensus = "AACACATGAAGTATTTGGATCAGCTGGGTACAGTGGCTCACGCCTCTAATCTCAACACTTTGGGAGGCTGAGGCGGGTGGATCACTGAGGTCAGGAGTTTGAGACCAGCCTGGCCAACATAGTGAAGCTGTTTCTACTAAAATACAAAAATTAGCCAGGCGTGGCGGGCACCTGTAATCCCAGCTACTCAGGAGGCTAAGGCAGGAGAATCACTTGAACCTGGGAGGCAGAGGTTGCAGTGAGCCGAGATCGTGTCACTACACACTTCAACTTGGGTGACAGACTGAGATATACCTAATGCTAGATGACACATTAGTGGGTGCAGCGCACCAGCATAGCATGTATACATATGTAACTAACCTGCACAATGTGCACATGTCCCTAAAACTTAAGTATAATAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGTATTTGAATCAAGGTCTTTTGAAGTCTCAGGCATTGACCATCTTGGTCTGTGAAGTCCTCACTATGATAAATATGCCAATTATGCAGCCTTCAAGTAGATCCTCAGTTACATGTACTGAGGCAGGAAAGGACTAAAGCCAAAAGCTCAATTACAGGCACCACTATGGGAGTCAAGCCCCTTATTTGAGGCTGAAACAAAATATCAGAAACCCCCAAGGATAATCCAGACTTCGAAATTAGCAGGCGATCAACTGAAAAGTCAGACATTGTTCTATAT"
+
+    chr1, start1, end1, dir1, chr2, start2, end2, dir2, mode = key.split(',')
+    start1, end1, start2, end2 = int(start1), int(end1), int(start2), int(end2) 
+    hout_log = open("test.txt", 'w')
+    fasta_file_ins = pysam.FastaFile("/home/ubuntu/environment/workspace/seq_data/reference/GRCh37.fa")
+
+    bret = get_refined_bp(tconsensus, fasta_file_ins, chr1, start1, end1, dir1, chr2, start2, end2, dir2, mode, hout_log)
+    print(bret)
+

@@ -4,6 +4,7 @@ import subprocess
 from .parse import *
 from .filt import *
 from .identify import *
+from .long_read_validate import *
 
 def parse_main(args):
 
@@ -72,26 +73,61 @@ def parse_main(args):
 
 def get_main(args):
 
-    """
     cluster_rearrangement(args.tumor_prefix + ".rearrangement.sorted.bedpe.gz", args.tumor_prefix + ".rearrangement.sorted.clustered.bedpe",
                      args.cluster_margin_size)
 
     filt_clustered_rearrangement1(args.tumor_prefix + ".rearrangement.sorted.clustered.bedpe", args.tumor_prefix + ".rearrangement.sorted.clustered.filt1.bedpe",
-                             args.read_num_thres, args.median_mapQ_thres, args.max_overhang_size_thres)
+                             args.min_tumor_variant_read_num, args.median_mapQ_thres, args.max_overhang_size_thres)
 
     filt_clustered_rearrangement2(args.tumor_prefix + ".rearrangement.sorted.clustered.filt1.bedpe", args.tumor_prefix + ".rearrangement.sorted.clustered.filt2.bedpe", 
                              args.control_prefix + ".rearrangement.sorted.bedpe.gz")
 
 
-    cluster_deletion(args.tumor_prefix + ".deletion.sorted.bed.gz", args.tumor_prefix + ".deletion.sorted.clustered.bed")
+    cluster_insertion_deletion(args.tumor_prefix + ".deletion.sorted.bed.gz", args.tumor_prefix + ".deletion.sorted.clustered.bedpe")
 
-    filt_clustered_deletion1(args.tumor_prefix + ".deletion.sorted.clustered.bed", args.tumor_prefix + ".deletion.sorted.clustered.filt1.bed")
+    filt_clustered_insertion_deletion1(args.tumor_prefix + ".deletion.sorted.clustered.bedpe", args.tumor_prefix + ".deletion.sorted.clustered.filt1.bedpe",
+                                       args.min_tumor_variant_read_num, args.median_mapQ_thres, args.max_overhang_size_thres)
 
-    filt_clustered_deletion2(args.tumor_prefix + ".deletion.sorted.clustered.filt1.bed", args.tumor_prefix + ".deletion.sorted.clustered.filt2.bed",
-                             args.control_prefix + ".deletion.sorted.bed.gz")
-    """
-     
-    identify(args.tumor_prefix + ".rearrangement.sorted.clustered.filt2.bedpe", args.tumor_prefix + ".deletion.sorted.clustered.filt2.bed",
-             args.tumor_prefix + ".refined_bp.txt", args.tumor_bam_file, args.reference_fasta)
+    filt_clustered_insertion_deletion2(args.tumor_prefix + ".deletion.sorted.clustered.filt1.bedpe", args.tumor_prefix + ".deletion.sorted.clustered.filt2.bedpe",
+                                       args.control_prefix + ".deletion.sorted.bed.gz")
+
+    cluster_insertion_deletion(args.tumor_prefix + ".insertion.sorted.bed.gz", args.tumor_prefix + ".insertion.sorted.clustered.bedpe")
+
+    filt_clustered_insertion_deletion1(args.tumor_prefix + ".insertion.sorted.clustered.bedpe", args.tumor_prefix + ".insertion.sorted.clustered.filt1.bedpe",
+                                       args.min_tumor_variant_read_num, args.median_mapQ_thres, args.max_overhang_size_thres)
+
+    filt_clustered_insertion_deletion2(args.tumor_prefix + ".insertion.sorted.clustered.filt1.bedpe", args.tumor_prefix + ".insertion.sorted.clustered.filt2.bedpe",
+                                       args.control_prefix + ".insertion.sorted.bed.gz")
+
+    identify(args.tumor_prefix + ".rearrangement.sorted.clustered.filt2.bedpe", 
+             args.tumor_prefix + ".insertion.sorted.clustered.filt2.bedpe",
+             args.tumor_prefix + ".deletion.sorted.clustered.filt2.bedpe",
+             args.tumor_prefix + ".refined_bp.txt", args.tumor_bam, args.reference_fasta, args.debug)
+
+
+    validate_main(args.tumor_prefix + ".refined_bp.txt",
+                  args.tumor_bam,
+                  args.tumor_prefix + ".refined_bp.validated.txt",
+                  args.reference_fasta, 
+                  args.control_bam, args.debug)
+
+    is_control = True if args.control_bam is not None else False
+
+    filt_final(args.tumor_prefix + ".refined_bp.validated.txt",
+               args.tumor_prefix + ".nanomonsv.result.txt",
+               args.min_tumor_variant_read_num, args.min_tumor_VAF, args.max_control_variant_read_num, args.max_control_VAF, is_control)
+
+    if not args.debug:
+        subprocess.check_call(["rm", "-rf", args.tumor_prefix + ".rearrangement.sorted.clustered.bedpe"])
+        subprocess.check_call(["rm", "-rf", args.tumor_prefix + ".rearrangement.sorted.clustered.filt1.bedpe"])
+        subprocess.check_call(["rm", "-rf", args.tumor_prefix + ".rearrangement.sorted.clustered.filt2.bedpe"])
+        subprocess.check_call(["rm", "-rf", args.tumor_prefix + ".deletion.sorted.clustered.bedpe"])
+        subprocess.check_call(["rm", "-rf", args.tumor_prefix + ".deletion.sorted.clustered.filt1.bedpe"])
+        subprocess.check_call(["rm", "-rf", args.tumor_prefix + ".deletion.sorted.clustered.filt2.bedpe"])
+        subprocess.check_call(["rm", "-rf", args.tumor_prefix + ".insertion.sorted.clustered.bedpe"])
+        subprocess.check_call(["rm", "-rf", args.tumor_prefix + ".insertion.sorted.clustered.filt1.bedpe"])
+        subprocess.check_call(["rm", "-rf", args.tumor_prefix + ".insertion.sorted.clustered.filt2.bedpe"])
+        subprocess.check_call(["rm", "-rf", args.tumor_prefix + ".refined_bp.txt"])
+        subprocess.check_call(["rm", "-rf", args.tumor_prefix + ".refined_bp.validated.txt"])
 
 
