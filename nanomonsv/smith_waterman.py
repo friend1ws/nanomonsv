@@ -33,7 +33,7 @@ def sw_jump(contig, region1_seq, region2_seq, match_score = 1, mismatch_penalty 
 
             jump = np.max(H1_max[:i]) + (match_score if contig[i - 1] == region2_seq[j - 1] else - mismatch_penalty)
             jump_diff = i - np.argmax(H1_max[:i])
-            jump = jump - jump_cost * np.sqrt(jump_diff)
+            jump = jump - jump_cost * np.log(jump_diff)
  
             tscores = (0, match, delete, insert, jump)
             H2[i, j] = max(tscores)

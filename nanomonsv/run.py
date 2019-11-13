@@ -104,7 +104,6 @@ def get_main(args):
              args.tumor_prefix + ".deletion.sorted.clustered.filt2.bedpe",
              args.tumor_prefix + ".refined_bp.txt", args.tumor_bam, args.reference_fasta, args.debug)
 
-
     validate_main(args.tumor_prefix + ".refined_bp.txt",
                   args.tumor_bam,
                   args.tumor_prefix + ".refined_bp.validated.txt",
@@ -129,5 +128,4 @@ def get_main(args):
         subprocess.check_call(["rm", "-rf", args.tumor_prefix + ".insertion.sorted.clustered.filt2.bedpe"])
         subprocess.check_call(["rm", "-rf", args.tumor_prefix + ".refined_bp.txt"])
         subprocess.check_call(["rm", "-rf", args.tumor_prefix + ".refined_bp.validated.txt"])
-
 

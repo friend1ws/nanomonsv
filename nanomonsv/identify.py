@@ -49,15 +49,18 @@ def get_consensus_from_mafft_result(input_file):
 
 
 
-def get_refined_bp(contig, fasta_file_ins, chr1, start1, end1, dir1, chr2, start2, end2, dir2, mode, h_log, margin = 500):
+def get_refined_bp(contig, fasta_file_ins, chr1, start1, end1, dir1, chr2, start2, end2, dir2, mode, h_log, rd_margin = 20, i_margin = 500):
 
     start1 = max(1, start1)
     start2 = max(1, start2)
 
     if mode != "i":
 
-        region1_seq = fasta_file_ins.fetch(chr1, start1 - 1, end1)
-        region2_seq = fasta_file_ins.fetch(chr2, start2 - 1, end2)
+        bstart1, bend1 = max(int(start1) - rd_margin, 1), int(end1) + rd_margin
+        bstart2, bend2 = max(int(start2) - rd_margin, 1), int(end2) + rd_margin
+
+        region1_seq = fasta_file_ins.fetch(chr1, bstart1 - 1, bend1)
+        region2_seq = fasta_file_ins.fetch(chr2, bstart2 - 1, bend2)
 
         if dir1 == '-': region1_seq = reverse_complement(region1_seq)
         if dir2 == '+': region2_seq = reverse_complement(region2_seq)
@@ -66,8 +69,8 @@ def get_refined_bp(contig, fasta_file_ins, chr1, start1, end1, dir1, chr2, start
         if sret is None: return(None)
         score, contig_align, region1_align, region2_align, contig_seq, region_seq = sret
 
-        bp_pos1 = start1 + region1_align[1] - 1 if dir1 == '+' else end1 - region1_align[1] + 1 
-        bp_pos2 = start2 + region2_align[0] - 1 if dir2 == '-' else end2 - region2_align[0] + 1
+        bp_pos1 = bstart1 + region1_align[1] - 1 if dir1 == '+' else bend1 - region1_align[1] + 1 
+        bp_pos2 = bstart2 + region2_align[0] - 1 if dir2 == '-' else bend2 - region2_align[0] + 1
 
         if contig_align[2] - contig_align[1] == 1:
             inseq = '---'
@@ -84,8 +87,8 @@ def get_refined_bp(contig, fasta_file_ins, chr1, start1, end1, dir1, chr2, start
     
     else:
     
-        contig_start = contig[:min(margin, len(contig))]
-        contig_end = contig[-min(margin, len(contig)):]
+        contig_start = contig[:min(i_margin, len(contig))]
+        contig_end = contig[-min(i_margin, len(contig)):]
 
         region_seq = fasta_file_ins.fetch(chr1, start1 - 100, end2 + 100)
         sret = smith_waterman.sw_jump(region_seq, contig_start, contig_end)
@@ -182,7 +185,6 @@ def identify(rearrangement_file, insertion_file, deletion_file, output_file, tum
     subprocess.check_call(["sort", "-k1,1", output_file + ".tmp.supporting_read.unsorted"], stdout = hout)
     hout.close()
     subprocess.check_call(["rm", "-rf", output_file + ".tmp.supporting_read.unsorted"])
-
     
     fasta_file_ins = pysam.FastaFile(reference_fasta)
 

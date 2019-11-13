@@ -74,10 +74,10 @@ def create_parser():
     # get.add_argument("--read_num_thres", default = 3, type = int,
     #                  help = "Minimum required supporting read number for structural variation candidates")
 
-    get.add_argument("--median_mapQ_thres", default = 40, type = int,
+    get.add_argument("--median_mapQ_thres", default = 20, type = int,
                      help = "Threshould for median mapping quality")
 
-    get.add_argument("--max_overhang_size_thres", default = 300, type = int,
+    get.add_argument("--max_overhang_size_thres", default = 100, type = int,
                      help = "Threshould for maximum overhang size")
 
     # get.add_argument("--control_read_num_thres", default = 0, type = int,
