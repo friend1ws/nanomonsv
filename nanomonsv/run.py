@@ -107,13 +107,16 @@ def get_main(args):
     validate_main(args.tumor_prefix + ".refined_bp.txt",
                   args.tumor_bam,
                   args.tumor_prefix + ".refined_bp.validated.txt",
+                  args.tumor_prefix + ".validated.tumor_sread.txt",
                   args.reference_fasta, 
                   args.control_bam, args.debug)
 
     is_control = True if args.control_bam is not None else False
 
     filt_final(args.tumor_prefix + ".refined_bp.validated.txt",
+               args.tumor_prefix + ".validated.tumor_sread.txt",
                args.tumor_prefix + ".nanomonsv.result.txt",
+               args.tumor_prefix + ".nanomonsv.supporting_read.txt",
                args.min_tumor_variant_read_num, args.min_tumor_VAF, args.max_control_variant_read_num, args.max_control_VAF, is_control)
 
     if not args.debug:
@@ -128,4 +131,4 @@ def get_main(args):
         subprocess.check_call(["rm", "-rf", args.tumor_prefix + ".insertion.sorted.clustered.filt2.bedpe"])
         subprocess.check_call(["rm", "-rf", args.tumor_prefix + ".refined_bp.txt"])
         subprocess.check_call(["rm", "-rf", args.tumor_prefix + ".refined_bp.validated.txt"])
-
+        subprocess.check_call(["rm", "-rf", args.tumor_prefix + ".validated.tumor_sread.txt"])

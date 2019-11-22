@@ -296,12 +296,13 @@ def filt_clustered_insertion_deletion2(input_file, output_file, control_junction
     if control_junction_bedpe is not None: control_junction_db.close()
 
 
-def filt_final(input_file, output_file, min_tumor_variant_read_num = 3, min_tumor_VAF = 0.05, max_control_variant_read_num = 1, max_control_VAF = 0.03, is_control = False):
+def filt_final(input_file, input_sread_file, output_file, output_sread_file, min_tumor_variant_read_num = 3, min_tumor_VAF = 0.05, max_control_variant_read_num = 1, max_control_VAF = 0.03, is_control = False):
 
     hout = open(output_file, 'w')
     header = ["Chr_1", "Pos_1", "Dir_1", "Chr_2", "Pos_2", "Dir_2", "Inserted_Seq", "Checked_Read_Num_Tumor", "Supporting_Read_Num_Tumor"]
     if is_control: header = header + ["Checked_Read_Num_Control", "Supporting_Read_Num_Control"]
 
+    key2ikey = {}    
     print('\t'.join(header), file = hout)
     with open(input_file, 'r') as hin:
         for line in hin:
@@ -320,9 +321,46 @@ def filt_final(input_file, output_file, min_tumor_variant_read_num = 3, min_tumo
 
             print('\t'.join(F), file = hout)
 
+            key = ','.join(F[:6])
+            ikey = ','.join(F[:7])
+            key2ikey[key] = ikey
+
     hout.close()
 
     
+    hout = open(output_sread_file, 'w') 
+    with open(input_sread_file, 'r') as hin:
+        for line in hin:
+            F = line.rstrip('\n').split('\t')
+            key = F[0]
+            read_id = F[1]
+
+            score1, cstart1, cend1, sstart1, send1, strand1 = int(F[2]), int(F[3]), int(F[4]), int(F[5]), int(F[6]), F[7]
+            score2, cstart2, cend2, sstart2, send2, strand2 = int(F[8]), int(F[9]), int(F[10]), int(F[11]), int(F[12]), F[13]
+
+            if key in key2ikey:
+
+                ikey = key2ikey[key]
+                tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq = ikey.split(',')
+                
+                if score1 >= score2:
+                    sstrand = strand1
+                    if sstrand == '+':
+                        spos = (float(send1 - sstart1) / float(cend1 - cstart1)) * (200 - cstart1) + sstart1
+                    else:
+                        spos = (float(sstart1 - send1) / float(cend1 - cstart1)) * (200 - cstart1) + send1
+                else:
+                    sstrand = strand2
+                    if sstrand == '+':
+                        spos = (float(send1 - sstart1) / float(cend1 - cstart1)) * (200 - cstart1) + sstart1 - len(tinseq) - 1
+                    else:
+                        spos = (float(sstart1 - send1) / float(cend1 - cstart1)) * (200 - cstart1) + send1 + len(tinseq) + 1
+                  
+                print(key2ikey[key] + '\t' + read_id + '\t' + str(int(spos)) + '\t' + sstrand, file = hout)
+
+
+    hout.close()
+
 
 
 """

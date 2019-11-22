@@ -111,6 +111,7 @@ def long_read_validate_by_alignment(sv_file, output_file, bam_file, reference, d
     temp_junc_seq = ""
     temp_total_read_count = 0
     key2sread = {}
+    key2sread_info = {}
     key2sread_count = {}
     key2sread_count_all = {}
     with open(output_file + ".tmp3.long_read_seq.sorted") as hin:
@@ -133,6 +134,7 @@ def long_read_validate_by_alignment(sv_file, output_file, bam_file, reference, d
                         alignment_info_var_2[key][2] > end_pos_thres * len(variant_seq_2))]
 
                     key2sread[temp_key] = supporting_read_keys
+                    key2sread_info[temp_key] = { key: alignment_info_var_1[key] + alignment_info_var_2[key] for key in supporting_read_keys}
                     key2sread_count[temp_key] = len(supporting_read_keys)
                     key2sread_count_all[temp_key] = len(all_keys)
 
@@ -142,7 +144,7 @@ def long_read_validate_by_alignment(sv_file, output_file, bam_file, reference, d
                 temp_key = F[0]
                 temp_total_read_count = 0
                 FF = temp_key.split(',')
-                variant_seq_1, variant_seq_2reference_local_seq_1 = key2contig[temp_key]
+                variant_seq_1, variant_seq_2 = key2contig[temp_key]
                 with open(tmp_dir + '/' + F[0] + ".variant_seq_1.fa", 'w') as hout1:
                     print('>' + F[0] + '\n' + variant_seq_1, file = hout1)
                 with open(tmp_dir + '/' + F[0] + ".variant_seq_2.fa", 'w') as hout1:
@@ -169,6 +171,7 @@ def long_read_validate_by_alignment(sv_file, output_file, bam_file, reference, d
                 alignment_info_var_2[key][2] > end_pos_thres * len(variant_seq_2))]
 
             key2sread[temp_key] = supporting_read_keys
+            key2sread_info[temp_key] = { key: alignment_info_var_1[key] + alignment_info_var_2[key] for key in supporting_read_keys}
             key2sread_count[temp_key] = len(supporting_read_keys)
             key2sread_count_all[temp_key] = len(all_keys)
 
@@ -176,16 +179,16 @@ def long_read_validate_by_alignment(sv_file, output_file, bam_file, reference, d
     shutil.rmtree(tmp_dir)
     if not debug: subprocess.call(["rm" ,"-rf", output_file + ".tmp3.long_read_seq.sorted"])
 
-    return([key2sread_count, key2sread_count_all, key2sread])
+    return([key2sread_count, key2sread_count_all, key2sread_info])
 
 
 
-def validate_main(result_file, tumor_bam, output, reference, control_bam, debug):
+def validate_main(result_file, tumor_bam, output, sread_file, reference, control_bam, debug):
 
-    key2sread_count_tumor, key2sread_count_all_tumor, key2sread_tumor = long_read_validate_by_alignment(result_file, output, tumor_bam, reference, debug, score_ratio_thres = 1.3, start_pos_thres = 0.1, end_pos_thres = 0.9, var_ref_margin_thres = 20)
+    key2sread_count_tumor, key2sread_count_all_tumor, key2sread_info_tumor = long_read_validate_by_alignment(result_file, output, tumor_bam, reference, debug, score_ratio_thres = 1.3, start_pos_thres = 0.1, end_pos_thres = 0.9, var_ref_margin_thres = 20)
 
     if control_bam is not None:
-        key2sread_count_control, key2sread_count_all_control, key2sread_control = long_read_validate_by_alignment(result_file, output, control_bam, reference, debug, score_ratio_thres = 1.3, start_pos_thres = 0.1, end_pos_thres = 0.9, var_ref_margin_thres = 20)
+        key2sread_count_control, key2sread_count_all_control, key2sread_info_control = long_read_validate_by_alignment(result_file, output, control_bam, reference, debug, score_ratio_thres = 1.3, start_pos_thres = 0.1, end_pos_thres = 0.9, var_ref_margin_thres = 20)
 
     hout = open(output, 'w')
     with open(result_file, 'r') as hin:
@@ -211,7 +214,15 @@ def validate_main(result_file, tumor_bam, output, reference, control_bam, debug)
                 # print('\t'.join(F) + '\t' + str(sread_count_all_tumor) + '\t' + str(sread_count_tumor) + '\t' + sread_id, file = hout)
                 print('\t'.join(F) + '\t' + str(sread_count_all_tumor) + '\t' + str(sread_count_tumor), file = hout)
 
+    hout.close()
 
+    hout = open(sread_file, 'w')
+    for key in key2sread_info_tumor:
+        for sread in key2sread_info_tumor[key]:
+            sinfo = '\t'.join([str(x) for x in key2sread_info_tumor[key][sread]])
+            print(key + '\t' + sread + '\t' + sinfo, file = hout)
+
+    hout.close()
 
 if __name__ == "__main__":
 
