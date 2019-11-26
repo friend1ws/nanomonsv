@@ -44,9 +44,12 @@ def long_read_validate_by_alignment(sv_file, output_file, bam_file, reference, d
 
         if read.qname in rname2key:
 
+            read_seq = read.query_sequence
+            if flags[4] == "1": read_seq = reverse_complement(read_seq)
+
             for key in rname2key[read.qname]:
 
-                print(key + '\t' + read.qname + '\t' + read.query_sequence, file = hout)
+                print(key + '\t' + read.qname + '\t' + read_seq, file = hout)
 
     hout.close()
     bam_ps.close()
