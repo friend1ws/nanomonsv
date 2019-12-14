@@ -23,6 +23,10 @@ before_script:
   - pip install pysam==0.15.2
   - pip install numpy==1.15.1
 
+  - git clone https://github.com/friend1ws/onebreak.git
+  - cd onebreak
+  - pip install .
+  - cd ..
 
 script:
   - pip install .
