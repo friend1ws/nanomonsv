@@ -19,6 +19,7 @@ before_script:
   - cd ../..
 
   - pip install requests
+  - pip install scipy==1.1.0
   - pip install statistics==1.0.3.5
   - pip install pysam==0.15.2
   - pip install numpy==1.15.1
