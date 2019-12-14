@@ -1,0 +1,29 @@
+language: python
+python:
+  - "3.5"
+  - "3.6"
+before_script:
+
+  - wget https://github.com/samtools/htslib/releases/download/1.10/htslib-1.10.tar.bz2
+  - tar jxvf htslib-1.10.tar.bz2
+  - cd htslib-1.10 && ./configure && make && sudo make install
+
+  - wget http://ftp.debian.org/debian/pool/main/m/mafft/mafft_7.407-2_amd64.deb
+  - sudo dpkg -i mafft_7.407-2_amd64.deb
+
+  - wget https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library/archive/v1.1.tar.gz
+  - tar zxvf v1.1.tar.gz 
+  - cd Complete-Striped-Smith-Waterman-Library-1.1/src
+  - gcc -Wall -O3 -pipe -fPIC -shared -rdynamic -o libssw.so ssw.c ssw.h
+  - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD
+  - cd ../..
+
+  - pip install requests
+  - pip install statistics==1.0.3.5
+  - pip install pysam==0.15.2
+  - pip install numpy==1.15.1
+
+
+script:
+  - pip install .
+  - python setup.py test
