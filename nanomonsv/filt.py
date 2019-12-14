@@ -321,7 +321,7 @@ def filt_final(input_file, input_sread_file, output_file, output_sread_file, min
 
             print('\t'.join(F), file = hout)
 
-            key = ','.join(F[:6])
+            key = ','.join(F[:6]) + ',' +  str(len(F[6] if F[6] != "---" else ''))
             ikey = ','.join(F[:7])
             key2ikey[key] = ikey
 

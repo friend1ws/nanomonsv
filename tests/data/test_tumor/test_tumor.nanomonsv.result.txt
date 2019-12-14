@@ -1,0 +1,4 @@
+Chr_1	Pos_1	Dir_1	Chr_2	Pos_2	Dir_2	Inserted_Seq	Checked_Read_Num_Tumor	Supporting_Read_Num_Tumor	Checked_Read_Num_Control	Supporting_Read_Num_Control
+10	89700295	+	10	89712341	-	AAGAGATTATACTTTGTGTA	19	17	41	0
+15	84810725	-	7	150746657	+	---	51	9	42	0
+18	66379460	+	18	66382826	-	---	35	6	28	0

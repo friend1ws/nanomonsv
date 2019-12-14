@@ -278,7 +278,7 @@ def long_read_validate_by_alignment(sv_file, output_file, bam_file, reference, d
 
 
 
-def validate_main(result_file, tumor_bam, output, sread_file, reference, control_bam, debug):
+def long_read_validate_main(result_file, tumor_bam, output, sread_file, reference, control_bam, debug):
 
     key2sread_count_tumor, key2sread_count_all_tumor, key2sread_info_tumor = long_read_validate_by_alignment(result_file, output, tumor_bam, reference, debug, score_ratio_thres = 1.2, start_pos_thres = 0.1, end_pos_thres = 0.9, var_ref_margin_thres = 20)
 
@@ -329,7 +329,7 @@ if __name__ == "__main__":
     reference = sys.argv[4]
     control_bam = sys.argv[5]
 
-    validate_main(result_file, tumor_bam, output, output + ".sread.txt", reference, control_bam, False)
+    long_read_validate_main(result_file, tumor_bam, output, output + ".sread.txt", reference, control_bam, False)
 
 
 

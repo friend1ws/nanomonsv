@@ -104,7 +104,7 @@ def get_main(args):
              args.tumor_prefix + ".deletion.sorted.clustered.filt2.bedpe",
              args.tumor_prefix + ".refined_bp.txt", args.tumor_bam, args.reference_fasta, args.debug)
 
-    validate_main(args.tumor_prefix + ".refined_bp.txt",
+    long_read_validate_main(args.tumor_prefix + ".refined_bp.txt",
                   args.tumor_bam,
                   args.tumor_prefix + ".refined_bp.validated.txt",
                   args.tumor_prefix + ".validated.tumor_sread.txt",
@@ -132,3 +132,23 @@ def get_main(args):
         subprocess.check_call(["rm", "-rf", args.tumor_prefix + ".refined_bp.txt"])
         subprocess.check_call(["rm", "-rf", args.tumor_prefix + ".refined_bp.validated.txt"])
         subprocess.check_call(["rm", "-rf", args.tumor_prefix + ".validated.tumor_sread.txt"])
+
+
+def validate_main(args):
+
+    long_read_validate_main(args.sv_list,
+                            args.tumor_bam,
+                            args.output + ".validated.txt",
+                            args.output + ".validated.tumor_sread.txt",
+                            args.reference_fasta,
+                            args.control_bam, 
+                            args.debug)
+
+    is_control = True if args.control_bam is not None else False
+
+    filt_final(args.output + ".validated.txt",
+               args.output + ".validated.tumor_sread.txt",
+               args.output, 
+               args.output + ".supporting_read.txt",
+               0, 0, 0, 0, is_control)
+    

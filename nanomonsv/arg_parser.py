@@ -48,7 +48,7 @@ def create_parser():
                       help = "Path to tumor BAM file")
  
     get.add_argument("reference_fasta", metavar = "reference.fa", default = None, type = str,
-                     help = "the path to the reference genomoe sequence")
+                     help = "the path to the reference genome sequence")
 
     get.add_argument("--control_prefix", type = str,
                      help = "Prefix of matched control data processed in parse step")
@@ -88,7 +88,31 @@ def create_parser():
     get.set_defaults(func = get_main)
     ##########
 
-  
+    ##########
+    # validate 
+    validate = subparsers.add_parser("validate",
+                                     help = "Validate GenomonSV format SV list using nanopore sequence reads")
+ 
+    validate.add_argument("sv_list", default = None, type = str,
+                          help = "Path to GenomonSV format SV list file")
+
+    validate.add_argument("tumor_bam", default = None, type = str,
+                          help = "Path to tumor BAM file")
+
+    validate.add_argument("output", type = str,
+                       help = "Path to output file")
+
+    validate.add_argument("reference_fasta", metavar = "reference.fa", default = None, type = str,
+                          help = "Path to the reference genome sequence")
+
+    validate.add_argument("--control_bam", default = None, type = str,
+                          help = "Path to control BAM file")
+
+    validate.add_argument("--debug", default = False, action = 'store_true', help = "keep intermediate files")
+
+    validate.set_defaults(func = validate_main)
+    ##########
+    
     return parser
   
 
