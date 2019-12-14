@@ -2,6 +2,7 @@ language: python
 python:
   - "3.5"
   - "3.6"
+  - "3.7"
 before_script:
 
   - wget https://github.com/samtools/htslib/releases/download/1.10/htslib-1.10.tar.bz2
@@ -23,9 +24,6 @@ before_script:
   - pip install statistics==1.0.3.5
   - pip install pysam==0.15.2
   - pip install numpy==1.15.1
-
-  - git clone https://github.com/friend1ws/onebreak.git
-  - cd onebreak && pip install . && cd ../
 
 script:
   - pip install .
