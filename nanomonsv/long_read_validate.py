@@ -2,8 +2,119 @@
 
 import os, tempfile, subprocess, shutil
 import pysam
-from onebreak.long_read_validate import ssw_check
-from onebreak.my_seq import reverse_complement
+
+from .pyssw import *
+from .my_seq import reverse_complement
+# from onebreak.long_read_validate import ssw_check
+# from onebreak.my_seq import reverse_complement
+
+def ssw_check(target, query):
+
+    nMatch = 2
+    nMismatch = 2
+    nOpen = 3
+    nExt = 1
+    sLibPath = ""
+ 
+    lEle = []
+    dRc = {} 
+    dEle2Int = {}
+    dInt2Ele = {}
+    # init DNA score matrix
+    lEle = ['A', 'C', 'G', 'T', 'N']
+    dRc = {'A':'T', 'C':'G', 'G':'C', 'T':'A', 'N': 'N', 'a':'T', 'c':'G', 'g':'C', 't':'A', 'n': 'N'} 
+    for i,ele in enumerate(lEle):
+        dEle2Int[ele] = i
+        dEle2Int[ele.lower()] = i
+        dInt2Ele[i] = ele
+    nEleNum = len(lEle)
+    lScore = [0 for i in range(nEleNum**2)]
+    for i in range(nEleNum-1):
+        for j in range(nEleNum-1):
+            if lEle[i] == lEle[j]:
+                lScore[i*nEleNum+j] = nMatch
+            else:
+                lScore[i*nEleNum+j] = -nMismatch
+
+    # translate score matrix to ctypes
+    mat = (len(lScore) * ct.c_int8) ()
+    mat[:] = lScore
+
+    # set flag
+    nFlag = 1
+
+    # check whether libssw.so is in LD_LIBRARY_PATH
+    sLibPath = ""
+    for ld_path in os.environ["LD_LIBRARY_PATH"].split(':'):
+        # print ld_path
+        if os.path.exists(ld_path + "/libssw.so"):
+            sLibPath = ld_path # + "/libssw.so"
+            break
+    if sLibPath == "":
+        print("cannot find libssw.so in LD_LIBRARY_PATH", file = sys.stderr)
+        sys.exit(1)
+
+    ssw = ssw_lib.CSsw(sLibPath)
+    # supporting_reads = []
+    alignment_info = {}
+
+    # iterate query sequence
+    for sQId,sQSeq,sQQual in read(query):
+
+        sQSeq = sQSeq.strip('\n')
+
+        # build query profile
+        qNum = to_int(sQSeq, lEle, dEle2Int)
+        qProfile = ssw.ssw_init(qNum, ct.c_int32(len(sQSeq)), mat, len(lEle), 2)
+
+        # for reverse complement
+        # import pdb; pdb.set_trace()
+        sQRcSeq = ''.join([dRc[x] for x in sQSeq[::-1]])
+        qRcNum = to_int(sQRcSeq, lEle, dEle2Int)
+        qRcProfile = ssw.ssw_init(qRcNum, ct.c_int32(len(sQSeq)), mat, len(lEle), 2)
+
+        # set mask len
+        if len(sQSeq) > 30:
+            nMaskLen = int(len(sQSeq) / 2)
+        else:
+            nMaskLen = 15
+
+        # iter target sequence
+        for sRId,sRSeq,_ in read(target):
+
+            rNum = to_int(sRSeq, lEle, dEle2Int)
+
+            # format ofres: (nScore, nScore2, nRefBeg, nRefEnd, nQryBeg, nQryEnd, nRefEnd2, nCigarLen, lCigar)
+            res = align_one(ssw, qProfile, rNum, len(sRSeq), nOpen, nExt, nFlag, nMaskLen)
+
+            # align rc query
+            resRc = align_one(ssw, qRcProfile, rNum, len(sRSeq), nOpen, nExt, nFlag, nMaskLen)
+    
+            # build cigar and trace back path
+            if resRc == None or res[0] > resRc[0]:
+                resPrint = res
+                rstart, rend = resPrint[2] + 1, resPrint[3] + 1
+                qstart, qend = resPrint[4] + 1, resPrint[5] + 1
+                strand = '+'
+                sCigar, sQ, sA, sR = buildPath(sQSeq, sRSeq, res[4], res[2], res[8])
+            else:
+                resPrint = resRc
+                rstart, rend = resPrint[2] + 1, resPrint[3] + 1
+                qstart, qend = len(sQSeq) - resPrint[5], len(sQSeq) - resPrint[4] 
+                strand = '-'
+                sCigar, sQ, sA, sR = buildPath(sQRcSeq, sRSeq, resRc[4], resRc[2], resRc[8])
+
+            # import pdb; pdb.set_trace()
+            # if int(resPrint[0]) > score_ratio_thres * len(sRSeq) and int(resPrint[2]) + 1 < start_pos_thres * len(sRSeq) and int(resPrint[3]) + 1 > end_pos_thres * len(sRSeq):
+            # supporting_reads.append([sQId, resPrint[0], resPrint[2] + 1, resPrint[3] + 1])
+            # alignment_info[sQId] = [resPrint[0], resPrint[2] + 1, resPrint[3] + 1, resPrint[4] + 1, resPrint[5] + 1, strand]
+            alignment_info[sQId] = [resPrint[0], rstart, rend, qstart, qend, strand]
+        ssw.init_destroy(qProfile)
+        ssw.init_destroy(qRcProfile)
+       
+    # return(supporting_reads)
+    return(alignment_info)
+
 
 def long_read_validate_by_alignment(sv_file, output_file, bam_file, reference, debug, validate_sequence_length = 200, score_ratio_thres = 1.4, start_pos_thres = 0.2, end_pos_thres = 0.8, var_ref_margin_thres = 10):
     
