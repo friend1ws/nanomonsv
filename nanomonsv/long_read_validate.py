@@ -6,7 +6,18 @@ from onebreak.long_read_validate import ssw_check
 from onebreak.my_seq import reverse_complement
 
 def long_read_validate_by_alignment(sv_file, output_file, bam_file, reference, debug, validate_sequence_length = 200, score_ratio_thres = 1.4, start_pos_thres = 0.2, end_pos_thres = 0.8, var_ref_margin_thres = 10):
+    
+    def is_short_del_dup(key):
+        keys = key.split(',')
+        if keys[6] == "---": keys[6] == ''
+        if keys[0] == keys[3] and keys[2] == '+' and keys[5] == '-' and int(keys[4]) - int(keys[1]) + len(keys[6]) < 100:
+            return(True)
+        elif keys[0] == keys[3] and keys[2] == '-' and keys[5] == '+' and int(keys[4]) - int(keys[1]) + len(keys[6]) < 100:
+            return(True)
+        else:
+            return(False)
 
+    
     bam_ps = pysam.AlignmentFile(bam_file, "rb")
 
     rname2key = {}
@@ -14,7 +25,8 @@ def long_read_validate_by_alignment(sv_file, output_file, bam_file, reference, d
         for line in hin:
             F = line.rstrip('\n').split('\t')               
             tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq = F[0], int(F[1]), F[2], F[3], int(F[4]), F[5], F[6]
-            key = ','.join([tchr1, str(tpos1), tdir1, tchr2, str(tpos2), tdir2])
+            if tinseq == "---": tinseq = ''
+            key = ','.join([tchr1, str(tpos1), tdir1, tchr2, str(tpos2), tdir2, str(len(tinseq))])
 
             for read in bam_ps.fetch(tchr1, max(tpos1 - 100, 0), tpos1 + 100):
 
@@ -69,12 +81,12 @@ def long_read_validate_by_alignment(sv_file, output_file, bam_file, reference, d
             F = line.rstrip('\n').split('\t')
 
             tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq = F[0], int(F[1]), F[2], F[3], int(F[4]), F[5], F[6]
-            key = ','.join([tchr1, str(tpos1), tdir1, tchr2, str(tpos2), tdir2])
             if tinseq == "---": tinseq = ''
+            key = ','.join([tchr1, str(tpos1), tdir1, tchr2, str(tpos2), tdir2, str(len(tinseq))])
  
             # reference_local_seq
-            # reference_local_seq_1 = reference_fasta.fetch(tchr1, max(tpos1 - validate_sequence_length - 1, 0), tpos1 + validate_sequence_length - 1) 
-            # reference_local_seq_2 = reference_fasta.fetch(tchr2, max(tpos2 - validate_sequence_length - 1, 0), tpos2 + validate_sequence_length - 1)  
+            reference_local_seq_1 = reference_fasta.fetch(tchr1, max(tpos1 - validate_sequence_length - 1, 0), tpos1 + validate_sequence_length - 1) 
+            reference_local_seq_2 = reference_fasta.fetch(tchr2, max(tpos2 - validate_sequence_length - 1, 0), tpos2 + validate_sequence_length - 1)  
 
             # variant_seq
             variant_seq = ""
@@ -84,8 +96,11 @@ def long_read_validate_by_alignment(sv_file, output_file, bam_file, reference, d
                 tseq = reference_fasta.fetch(tchr1, tpos1 - 1, tpos1 + validate_sequence_length - 1)
                 tseq = reverse_complement(tseq)
 
-            variant_seq = tseq + tinseq
- 
+            if tdir1 == "+":
+                variant_seq = tseq + tinseq
+            else:
+                variant_seq = tseq + reverse_complement(tinseq)
+
             if tdir2 == '-':
                 tseq = reference_fasta.fetch(tchr2, tpos2 - 1, tpos2 + validate_sequence_length - 1)
             else:
@@ -99,7 +114,11 @@ def long_read_validate_by_alignment(sv_file, output_file, bam_file, reference, d
 
             # print(key)
             # key2contig[key] = [variant_seq, reference_local_seq_1,reference_local_seq_2]
-            key2contig[key] = [variant_seq_1, variant_seq_2]
+            # if add_reference_alignment:
+            #     key2contig[key] = [variant_seq_1, variant_seq_2, reference_local_seq_1,reference_local_seq_2]
+            # else:
+            #     key2contig[key] = [variant_seq_1, variant_seq_2]
+            key2contig[key] = [variant_seq_1, variant_seq_2, reference_local_seq_1,reference_local_seq_2]
 
        
     # import pdb; pdb.set_trace()
@@ -126,15 +145,32 @@ def long_read_validate_by_alignment(sv_file, output_file, bam_file, reference, d
                     hout2.close()
                     alignment_info_var_1 = ssw_check(tmp_dir + '/' + temp_key + ".variant_seq_1.fa", tmp_dir + '/' + temp_key + ".long_read_seq.fa")
                     alignment_info_var_2 = ssw_check(tmp_dir + '/' + temp_key + ".variant_seq_2.fa", tmp_dir + '/' + temp_key + ".long_read_seq.fa")
-                    all_keys = list(set(alignment_info_var_1))
+                    if is_short_del_dup(temp_key):
+                        alignment_info_ref_1 = ssw_check(tmp_dir + '/' + temp_key + ".reference_local_seq_1.fa", tmp_dir + '/' + temp_key + ".long_read_seq.fa")
+                        alignment_info_ref_2 = ssw_check(tmp_dir + '/' + temp_key + ".reference_local_seq_2.fa", tmp_dir + '/' + temp_key + ".long_read_seq.fa")
 
-                    supporting_read_keys = [key for key in all_keys if \
-                        (alignment_info_var_1[key][0] > score_ratio_thres * len(variant_seq_1) and \
-                        alignment_info_var_1[key][1] < start_pos_thres * len(variant_seq_1) and \
-                        alignment_info_var_1[key][2] > end_pos_thres * len(variant_seq_1)) or \
-                        (alignment_info_var_2[key][0] > score_ratio_thres * len(variant_seq_2) and \
-                        alignment_info_var_2[key][1] < start_pos_thres * len(variant_seq_2) and \
-                        alignment_info_var_2[key][2] > end_pos_thres * len(variant_seq_2))]
+                    all_keys = list(set(list(alignment_info_var_1.keys()) + list(alignment_info_var_2.keys())))
+
+                    if is_short_del_dup(temp_key):
+                        supporting_read_keys = [key for key in all_keys if \
+                            (alignment_info_var_1[key][0] > score_ratio_thres * len(variant_seq_1) and \
+                            alignment_info_var_1[key][1] < start_pos_thres * len(variant_seq_1) and \
+                            alignment_info_var_1[key][2] > end_pos_thres * len(variant_seq_1) and \
+                            alignment_info_var_1[key][0] >= alignment_info_ref_1[key][0] + var_ref_margin_thres and \
+                            alignment_info_var_1[key][0] >= alignment_info_ref_2[key][0] + var_ref_margin_thres) or \
+                            (alignment_info_var_2[key][0] > score_ratio_thres * len(variant_seq_2) and \
+                            alignment_info_var_2[key][1] < start_pos_thres * len(variant_seq_2) and \
+                            alignment_info_var_2[key][2] > end_pos_thres * len(variant_seq_2) and \
+                            alignment_info_var_2[key][0] >= alignment_info_ref_1[key][0] + var_ref_margin_thres and \
+                            alignment_info_var_2[key][0] >= alignment_info_ref_1[key][0] + var_ref_margin_thres)]
+                    else:
+                        supporting_read_keys = [key for key in all_keys if \
+                            (alignment_info_var_1[key][0] > score_ratio_thres * len(variant_seq_1) and \
+                            alignment_info_var_1[key][1] < start_pos_thres * len(variant_seq_1) and \
+                            alignment_info_var_1[key][2] > end_pos_thres * len(variant_seq_1)) or \
+                            (alignment_info_var_2[key][0] > score_ratio_thres * len(variant_seq_2) and \
+                            alignment_info_var_2[key][1] < start_pos_thres * len(variant_seq_2) and \
+                            alignment_info_var_2[key][2] > end_pos_thres * len(variant_seq_2))]
 
                     key2sread[temp_key] = supporting_read_keys
                     key2sread_info[temp_key] = { key: alignment_info_var_1[key] + alignment_info_var_2[key] for key in supporting_read_keys}
@@ -147,11 +183,36 @@ def long_read_validate_by_alignment(sv_file, output_file, bam_file, reference, d
                 temp_key = F[0]
                 temp_total_read_count = 0
                 FF = temp_key.split(',')
-                variant_seq_1, variant_seq_2 = key2contig[temp_key]
+    
+                """
+                if add_reference_alignment:
+                    variant_seq_1, variant_seq_2, reference_local_seq_1, reference_local_seq_2 = key2contig[temp_key]
+                    with open(tmp_dir + '/' + F[0] + ".variant_seq_1.fa", 'w') as hout1:
+                        print('>' + F[0] + '\n' + variant_seq_1, file = hout1) 
+                    with open(tmp_dir + '/' + F[0] + ".variant_seq_2.fa", 'w') as hout1:
+                        print('>' + F[0] + '\n' + variant_seq_2, file = hout1)
+                    with open(tmp_dir + '/' + F[0] + ".reference_local_seq_1.fa", 'w') as hout1:
+                        print('>' + F[0] + '\n' + reference_local_seq_1, file = hout1)
+                    with open(tmp_dir + '/' + F[0] + ".reference_local_seq_2.fa", 'w') as hout1:
+                        print('>' + F[0] + '\n' + reference_local_seq_2, file = hout1)
+
+                else:
+                    variant_seq_1, variant_seq_2 = key2contig[temp_key]
+                    with open(tmp_dir + '/' + F[0] + ".variant_seq_1.fa", 'w') as hout1:
+                        print('>' + F[0] + '\n' + variant_seq_1, file = hout1)
+                    with open(tmp_dir + '/' + F[0] + ".variant_seq_2.fa", 'w') as hout1:
+                        print('>' + F[0] + '\n' + variant_seq_2, file = hout1)
+                """
+
+                variant_seq_1, variant_seq_2, reference_local_seq_1, reference_local_seq_2 = key2contig[temp_key]
                 with open(tmp_dir + '/' + F[0] + ".variant_seq_1.fa", 'w') as hout1:
-                    print('>' + F[0] + '\n' + variant_seq_1, file = hout1)
+                    print('>' + F[0] + '\n' + variant_seq_1, file = hout1) 
                 with open(tmp_dir + '/' + F[0] + ".variant_seq_2.fa", 'w') as hout1:
                     print('>' + F[0] + '\n' + variant_seq_2, file = hout1)
+                with open(tmp_dir + '/' + F[0] + ".reference_local_seq_1.fa", 'w') as hout1:
+                    print('>' + F[0] + '\n' + reference_local_seq_1, file = hout1) 
+                with open(tmp_dir + '/' + F[0] + ".reference_local_seq_2.fa", 'w') as hout1:
+                    print('>' + F[0] + '\n' + reference_local_seq_2, file = hout1)
 
             print('>' + F[1] + '\n' + F[2], file = hout2)
             temp_total_read_count = temp_total_read_count + 1
@@ -161,6 +222,7 @@ def long_read_validate_by_alignment(sv_file, output_file, bam_file, reference, d
         if temp_key != "":
             hout2.close()
 
+            """
             alignment_info_var_1 = ssw_check(tmp_dir + '/' + temp_key + ".variant_seq_1.fa", tmp_dir + '/' + temp_key + ".long_read_seq.fa")
             alignment_info_var_2 = ssw_check(tmp_dir + '/' + temp_key + ".variant_seq_2.fa", tmp_dir + '/' + temp_key + ".long_read_seq.fa")
             all_keys = list(set(alignment_info_var_1))
@@ -172,6 +234,36 @@ def long_read_validate_by_alignment(sv_file, output_file, bam_file, reference, d
                 (alignment_info_var_2[key][0] > score_ratio_thres * len(variant_seq_2) and \
                 alignment_info_var_2[key][1] < start_pos_thres * len(variant_seq_2) and \
                 alignment_info_var_2[key][2] > end_pos_thres * len(variant_seq_2))]
+            """
+
+            alignment_info_var_1 = ssw_check(tmp_dir + '/' + temp_key + ".variant_seq_1.fa", tmp_dir + '/' + temp_key + ".long_read_seq.fa")
+            alignment_info_var_2 = ssw_check(tmp_dir + '/' + temp_key + ".variant_seq_2.fa", tmp_dir + '/' + temp_key + ".long_read_seq.fa")
+            if is_short_del_dup(temp_key):
+                alignment_info_ref_1 = ssw_check(tmp_dir + '/' + temp_key + ".reference_local_seq_1.fa", tmp_dir + '/' + temp_key + ".long_read_seq.fa")
+                alignment_info_ref_2 = ssw_check(tmp_dir + '/' + temp_key + ".reference_local_seq_2.fa", tmp_dir + '/' + temp_key + ".long_read_seq.fa")
+
+            all_keys = list(set(alignment_info_var_1))
+
+            if is_short_del_dup(temp_key):
+                supporting_read_keys = [key for key in all_keys if \
+                    (alignment_info_var_1[key][0] > score_ratio_thres * len(variant_seq_1) and \
+                    alignment_info_var_1[key][1] < start_pos_thres * len(variant_seq_1) and \
+                    alignment_info_var_1[key][2] > end_pos_thres * len(variant_seq_1) and \
+                    alignment_info_var_1[key][0] >= alignment_info_ref_1[key][0] + var_ref_margin_thres and \
+                    alignment_info_var_1[key][0] >= alignment_info_ref_2[key][0] + var_ref_margin_thres) or \
+                    (alignment_info_var_2[key][0] > score_ratio_thres * len(variant_seq_2) and \
+                    alignment_info_var_2[key][1] < start_pos_thres * len(variant_seq_2) and \
+                    alignment_info_var_2[key][2] > end_pos_thres * len(variant_seq_2) and \
+                    alignment_info_var_2[key][0] >= alignment_info_ref_1[key][0] + var_ref_margin_thres and \
+                    alignment_info_var_2[key][0] >= alignment_info_ref_1[key][0] + var_ref_margin_thres)]
+            else:   
+                supporting_read_keys = [key for key in all_keys if \
+                    (alignment_info_var_1[key][0] > score_ratio_thres * len(variant_seq_1) and \
+                    alignment_info_var_1[key][1] < start_pos_thres * len(variant_seq_1) and \
+                    alignment_info_var_1[key][2] > end_pos_thres * len(variant_seq_1)) or \
+                    (alignment_info_var_2[key][0] > score_ratio_thres * len(variant_seq_2) and \
+                    alignment_info_var_2[key][1] < start_pos_thres * len(variant_seq_2) and \
+                    alignment_info_var_2[key][2] > end_pos_thres * len(variant_seq_2))]
 
             key2sread[temp_key] = supporting_read_keys
             key2sread_info[temp_key] = { key: alignment_info_var_1[key] + alignment_info_var_2[key] for key in supporting_read_keys}
@@ -188,10 +280,10 @@ def long_read_validate_by_alignment(sv_file, output_file, bam_file, reference, d
 
 def validate_main(result_file, tumor_bam, output, sread_file, reference, control_bam, debug):
 
-    key2sread_count_tumor, key2sread_count_all_tumor, key2sread_info_tumor = long_read_validate_by_alignment(result_file, output, tumor_bam, reference, debug, score_ratio_thres = 1.3, start_pos_thres = 0.1, end_pos_thres = 0.9, var_ref_margin_thres = 20)
+    key2sread_count_tumor, key2sread_count_all_tumor, key2sread_info_tumor = long_read_validate_by_alignment(result_file, output, tumor_bam, reference, debug, score_ratio_thres = 1.2, start_pos_thres = 0.1, end_pos_thres = 0.9, var_ref_margin_thres = 20)
 
     if control_bam is not None:
-        key2sread_count_control, key2sread_count_all_control, key2sread_info_control = long_read_validate_by_alignment(result_file, output, control_bam, reference, debug, score_ratio_thres = 1.3, start_pos_thres = 0.1, end_pos_thres = 0.9, var_ref_margin_thres = 20)
+        key2sread_count_control, key2sread_count_all_control, key2sread_info_control = long_read_validate_by_alignment(result_file, output, control_bam, reference, debug, score_ratio_thres = 1.2, start_pos_thres = 0.1, end_pos_thres = 0.9, var_ref_margin_thres = 20)
 
     hout = open(output, 'w')
     with open(result_file, 'r') as hin:
@@ -199,7 +291,8 @@ def validate_main(result_file, tumor_bam, output, sread_file, reference, control
         for line in hin:
             F = line.rstrip('\n').split('\t')
             tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq = F[0], int(F[1]), F[2], F[3], int(F[4]), F[5], F[6]
-            key = ','.join([tchr1, str(tpos1), tdir1, tchr2, str(tpos2), tdir2])
+            if tinseq == "---": tinseq = ''
+            key = ','.join([tchr1, str(tpos1), tdir1, tchr2, str(tpos2), tdir2, str(len(tinseq))])
 
             sread_count_tumor = key2sread_count_tumor[key] if key in key2sread_count_tumor else 0
             sread_count_all_tumor = key2sread_count_all_tumor[key] if key in key2sread_count_all_tumor else 0
@@ -236,6 +329,7 @@ if __name__ == "__main__":
     reference = sys.argv[4]
     control_bam = sys.argv[5]
 
-    validate_main(result_file, tumor_bam, output, reference, control_bam)
+    validate_main(result_file, tumor_bam, output, output + ".sread.txt", reference, control_bam, False)
+
 
 
