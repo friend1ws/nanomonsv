@@ -44,6 +44,7 @@ class TestMain(unittest.TestCase):
 
         with gzip.open(tmp_dir + "/test_tumor.insertion.sorted.bed.gz", 'rt') as hin: record_num = len(hin.readlines())
         self.assertTrue(record_num == 35)
+
         shutil.rmtree(tmp_dir)
 
 
@@ -75,6 +76,29 @@ class TestMain(unittest.TestCase):
         with open(tumor_prefix_dst + ".nanomonsv.supporting_read.txt", 'r') as hin: record_num = len(hin.readlines()) 
         self.assertTrue(record_num == 32) 
    
+        shutil.rmtree(tmp_dir)
+
+
+    def test_validate(self):
+        
+        cur_dir = os.path.dirname(os.path.abspath(__file__))
+        tmp_dir = tempfile.mkdtemp()
+
+        sv_list = cur_dir + "/data/test_tumor/test_tumor.nanomonsv.result.txt"
+        tumor_bam = cur_dir + "/resource/bam/test_tumor.bam"
+        output_file = tmp_dir + "/test_tumor.validate.txt"
+        ctrl_bam = cur_dir + "/resource/bam/test_ctrl.bam"
+        ref_genome = cur_dir + "/resource/reference_genome/GRCh37.fa"
+
+        nanomonsv_validate_args = ["validate", sv_list, tumor_bam, output_file, ref_genome, "--control_bam", ctrl_bam]
+        print("nanomonsv " + ' '.join(nanomonsv_validate_args))
+ 
+        args = self.parser.parse_args(nanomonsv_validate_args)
+        nanomonsv.run.validate_main(args)
+
+        self.assertTrue(filecmp.cmp(output_file, sv_list, shallow=False))
+        shutil.rmtree(tmp_dir)
+
 
 if __name__ == "__main__":
    unittest.main()

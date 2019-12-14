@@ -151,4 +151,8 @@ def validate_main(args):
                args.output, 
                args.output + ".supporting_read.txt",
                0, 0, 0, 0, is_control)
+
+    if not args.debug:
+        subprocess.check_call(["rm", "-rf", args.output + ".validated.txt"])
+        subprocess.check_call(["rm", "-rf", args.output + ".validated.tumor_sread.txt"])
     

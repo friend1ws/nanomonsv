@@ -23,6 +23,8 @@ def long_read_validate_by_alignment(sv_file, output_file, bam_file, reference, d
     rname2key = {}
     with open(sv_file, 'r') as hin:
         for line in hin:
+            if line.startswith("#") or line.startswith("Chr_1"): continue 
+
             F = line.rstrip('\n').split('\t')               
             tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq = F[0], int(F[1]), F[2], F[3], int(F[4]), F[5], F[6]
             if tinseq == "---": tinseq = ''
@@ -78,6 +80,8 @@ def long_read_validate_by_alignment(sv_file, output_file, bam_file, reference, d
     with open(sv_file, 'r') as hin:
 
         for line in hin:
+            if line.startswith("#") or line.startswith("Chr_1"): continue
+
             F = line.rstrip('\n').split('\t')
 
             tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq = F[0], int(F[1]), F[2], F[3], int(F[4]), F[5], F[6]
@@ -289,6 +293,8 @@ def long_read_validate_main(result_file, tumor_bam, output, sread_file, referenc
     with open(result_file, 'r') as hin:
 
         for line in hin:
+            if line.startswith("#") or line.startswith("Chr_1"): continue
+
             F = line.rstrip('\n').split('\t')
             tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq = F[0], int(F[1]), F[2], F[3], int(F[4]), F[5], F[6]
             if tinseq == "---": tinseq = ''
@@ -303,12 +309,12 @@ def long_read_validate_main(result_file, tumor_bam, output, sread_file, referenc
                 sread_count_all_control = key2sread_count_all_control[key] if key in key2sread_count_all_control else 0
 
             if control_bam is not None:
-                print('\t'.join(F) + '\t' + str(sread_count_all_tumor) + '\t' + str(sread_count_tumor) + '\t' + \
+                print('\t'.join(F[:7]) + '\t' + str(sread_count_all_tumor) + '\t' + str(sread_count_tumor) + '\t' + \
                       str(sread_count_all_control) + '\t' + str(sread_count_control), file = hout)
                       # str(sread_count_all_control) + '\t' + str(sread_count_control) + '\t' + sread_id, file = hout)
             else:
                 # print('\t'.join(F) + '\t' + str(sread_count_all_tumor) + '\t' + str(sread_count_tumor) + '\t' + sread_id, file = hout)
-                print('\t'.join(F) + '\t' + str(sread_count_all_tumor) + '\t' + str(sread_count_tumor), file = hout)
+                print('\t'.join(F[:7]) + '\t' + str(sread_count_all_tumor) + '\t' + str(sread_count_tumor), file = hout)
 
     hout.close()
 
