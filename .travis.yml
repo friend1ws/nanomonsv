@@ -6,7 +6,7 @@ before_script:
 
   - wget https://github.com/samtools/htslib/releases/download/1.10/htslib-1.10.tar.bz2
   - tar jxvf htslib-1.10.tar.bz2
-  - cd htslib-1.10 && ./configure && make && sudo make install
+  - cd htslib-1.10 && ./configure && make && sudo make install && cd ../
 
   - wget http://ftp.debian.org/debian/pool/main/m/mafft/mafft_7.407-2_amd64.deb
   - sudo dpkg -i mafft_7.407-2_amd64.deb
@@ -24,9 +24,7 @@ before_script:
   - pip install numpy==1.15.1
 
   - git clone https://github.com/friend1ws/onebreak.git
-  - cd onebreak
-  - pip install .
-  - cd ..
+  - cd onebreak && pip install . && cd ../
 
 script:
   - pip install .
