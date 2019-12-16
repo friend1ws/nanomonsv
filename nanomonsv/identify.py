@@ -76,6 +76,7 @@ def get_refined_bp(contig, fasta_file_ins, chr1, start1, end1, dir1, chr2, start
             inseq = '---'
         elif contig_align[2] - contig_align[1] > 1:
             inseq = contig[(contig_align[1]):(contig_align[2] - 1)]
+            if dir1 == '-': inseq = reverse_complement(inseq)
         else:
             print("Alignment inconsistent!!", file = sys.stderr)
 
