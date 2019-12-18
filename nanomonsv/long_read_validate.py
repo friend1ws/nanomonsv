@@ -116,7 +116,7 @@ def ssw_check(target, query):
     return(alignment_info)
 
 
-def long_read_validate_by_alignment(sv_file, output_file, bam_file, reference, debug, validate_sequence_length = 200, score_ratio_thres = 1.4, start_pos_thres = 0.2, end_pos_thres = 0.8, var_ref_margin_thres = 10):
+def long_read_validate_by_alignment(sv_file, output_file, bam_file, reference, debug, variant_sread_min_mapq = 30, validate_sequence_length = 200, score_ratio_thres = 1.4, start_pos_thres = 0.2, end_pos_thres = 0.8, var_ref_margin_thres = 10):
     
     def is_short_del_dup(key):
         keys = key.split(',')
@@ -132,6 +132,7 @@ def long_read_validate_by_alignment(sv_file, output_file, bam_file, reference, d
     bam_ps = pysam.AlignmentFile(bam_file, "rb")
 
     rname2key = {}
+    key2rname2mapq = {}
     with open(sv_file, 'r') as hin:
         for line in hin:
             if line.startswith("#") or line.startswith("Chr_1"): continue 
@@ -141,15 +142,25 @@ def long_read_validate_by_alignment(sv_file, output_file, bam_file, reference, d
             if tinseq == "---": tinseq = ''
             key = ','.join([tchr1, str(tpos1), tdir1, tchr2, str(tpos2), tdir2, str(len(tinseq))])
 
+            if key not in key2rname2mapq: key2rname2mapq[key] = {}
+            
             for read in bam_ps.fetch(tchr1, max(tpos1 - 100, 0), tpos1 + 100):
 
                 if read.qname not in rname2key: rname2key[read.qname] = []
                 rname2key[read.qname].append(key)
 
+                if read.qname not in key2rname2mapq[key]: key2rname2mapq[key][read.qname] = [None, None]
+                key2rname2mapq[key][read.qname][0] = read.mapping_quality 
+
             for read in bam_ps.fetch(tchr2, max(tpos2 - 100, 0), tpos2 + 100):
 
                 if read.qname not in rname2key: rname2key[read.qname] = []
                 rname2key[read.qname].append(key)
+
+                if read.qname not in key2rname2mapq[key]: key2rname2mapq[key][read.qname] = [None, None]
+                key2rname2mapq[key][read.qname][1] = read.mapping_quality
+
+
 
     # remove duplicated keys
     for rname in rname2key:
@@ -264,33 +275,39 @@ def long_read_validate_by_alignment(sv_file, output_file, bam_file, reference, d
                         alignment_info_ref_1 = ssw_check(tmp_dir + '/' + temp_key + ".reference_local_seq_1.fa", tmp_dir + '/' + temp_key + ".long_read_seq.fa")
                         alignment_info_ref_2 = ssw_check(tmp_dir + '/' + temp_key + ".reference_local_seq_2.fa", tmp_dir + '/' + temp_key + ".long_read_seq.fa")
 
-                    all_keys = list(set(list(alignment_info_var_1.keys()) + list(alignment_info_var_2.keys())))
+                    all_rnames = list(set(list(alignment_info_var_1.keys()) + list(alignment_info_var_2.keys())))
 
                     if is_short_del_dup(temp_key):
-                        supporting_read_keys = [key for key in all_keys if \
-                            (alignment_info_var_1[key][0] > score_ratio_thres * len(variant_seq_1) and \
-                            alignment_info_var_1[key][1] < start_pos_thres * len(variant_seq_1) and \
-                            alignment_info_var_1[key][2] > end_pos_thres * len(variant_seq_1) and \
-                            alignment_info_var_1[key][0] >= alignment_info_ref_1[key][0] + var_ref_margin_thres and \
-                            alignment_info_var_1[key][0] >= alignment_info_ref_2[key][0] + var_ref_margin_thres) or \
-                            (alignment_info_var_2[key][0] > score_ratio_thres * len(variant_seq_2) and \
-                            alignment_info_var_2[key][1] < start_pos_thres * len(variant_seq_2) and \
-                            alignment_info_var_2[key][2] > end_pos_thres * len(variant_seq_2) and \
-                            alignment_info_var_2[key][0] >= alignment_info_ref_1[key][0] + var_ref_margin_thres and \
-                            alignment_info_var_2[key][0] >= alignment_info_ref_1[key][0] + var_ref_margin_thres)]
+                        supporting_reads = [rname for rname in all_rnames if \
+                            (alignment_info_var_1[rname][0] > score_ratio_thres * len(variant_seq_1) and \
+                            alignment_info_var_1[rname][1] < start_pos_thres * len(variant_seq_1) and \
+                            alignment_info_var_1[rname][2] > end_pos_thres * len(variant_seq_1) and \
+                            alignment_info_var_1[rname][0] >= alignment_info_ref_1[rname][0] + var_ref_margin_thres and \
+                            alignment_info_var_1[rname][0] >= alignment_info_ref_2[rname][0] + var_ref_margin_thres) or \
+                            (alignment_info_var_2[rname][0] > score_ratio_thres * len(variant_seq_2) and \
+                            alignment_info_var_2[rname][1] < start_pos_thres * len(variant_seq_2) and \
+                            alignment_info_var_2[rname][2] > end_pos_thres * len(variant_seq_2) and \
+                            alignment_info_var_2[rname][0] >= alignment_info_ref_1[rname][0] + var_ref_margin_thres and \
+                            alignment_info_var_2[rname][0] >= alignment_info_ref_1[rname][0] + var_ref_margin_thres)]
                     else:
-                        supporting_read_keys = [key for key in all_keys if \
-                            (alignment_info_var_1[key][0] > score_ratio_thres * len(variant_seq_1) and \
-                            alignment_info_var_1[key][1] < start_pos_thres * len(variant_seq_1) and \
-                            alignment_info_var_1[key][2] > end_pos_thres * len(variant_seq_1)) or \
-                            (alignment_info_var_2[key][0] > score_ratio_thres * len(variant_seq_2) and \
-                            alignment_info_var_2[key][1] < start_pos_thres * len(variant_seq_2) and \
-                            alignment_info_var_2[key][2] > end_pos_thres * len(variant_seq_2))]
+                        supporting_reads = [rname for rname in all_rnames if \
+                            (alignment_info_var_1[rname][0] > score_ratio_thres * len(variant_seq_1) and \
+                            alignment_info_var_1[rname][1] < start_pos_thres * len(variant_seq_1) and \
+                            alignment_info_var_1[rname][2] > end_pos_thres * len(variant_seq_1)) or \
+                            (alignment_info_var_2[rname][0] > score_ratio_thres * len(variant_seq_2) and \
+                            alignment_info_var_2[rname][1] < start_pos_thres * len(variant_seq_2) and \
+                            alignment_info_var_2[rname][2] > end_pos_thres * len(variant_seq_2))]
 
-                    key2sread[temp_key] = supporting_read_keys
-                    key2sread_info[temp_key] = { key: alignment_info_var_1[key] + alignment_info_var_2[key] for key in supporting_read_keys}
-                    key2sread_count[temp_key] = len(supporting_read_keys)
-                    key2sread_count_all[temp_key] = len(all_keys)
+                    # filtering by mapping qualities
+                    supporting_reads = [rname for rname in supporting_reads if \
+                        rname in key2rname2mapq[temp_key] and \
+                        key2rname2mapq[temp_key][rname][0] is not None and key2rname2mapq[temp_key][rname][0] >= variant_sread_min_mapq and \
+                        key2rname2mapq[temp_key][rname][1] is not None and key2rname2mapq[temp_key][rname][1] >= variant_sread_min_mapq]
+
+                    key2sread[temp_key] = supporting_reads
+                    key2sread_info[temp_key] = { rname: alignment_info_var_1[rname] + alignment_info_var_2[rname] for rname in supporting_reads}
+                    key2sread_count[temp_key] = len(supporting_reads)
+                    key2sread_count_all[temp_key] = len(all_rnames)
 
                     # print(temp_key + '\t' + str(key2sread_count_all[temp_key]) + '\t' + str(key2sread_count[temp_key]))
 
@@ -299,26 +316,6 @@ def long_read_validate_by_alignment(sv_file, output_file, bam_file, reference, d
                 temp_total_read_count = 0
                 FF = temp_key.split(',')
     
-                """
-                if add_reference_alignment:
-                    variant_seq_1, variant_seq_2, reference_local_seq_1, reference_local_seq_2 = key2contig[temp_key]
-                    with open(tmp_dir + '/' + F[0] + ".variant_seq_1.fa", 'w') as hout1:
-                        print('>' + F[0] + '\n' + variant_seq_1, file = hout1) 
-                    with open(tmp_dir + '/' + F[0] + ".variant_seq_2.fa", 'w') as hout1:
-                        print('>' + F[0] + '\n' + variant_seq_2, file = hout1)
-                    with open(tmp_dir + '/' + F[0] + ".reference_local_seq_1.fa", 'w') as hout1:
-                        print('>' + F[0] + '\n' + reference_local_seq_1, file = hout1)
-                    with open(tmp_dir + '/' + F[0] + ".reference_local_seq_2.fa", 'w') as hout1:
-                        print('>' + F[0] + '\n' + reference_local_seq_2, file = hout1)
-
-                else:
-                    variant_seq_1, variant_seq_2 = key2contig[temp_key]
-                    with open(tmp_dir + '/' + F[0] + ".variant_seq_1.fa", 'w') as hout1:
-                        print('>' + F[0] + '\n' + variant_seq_1, file = hout1)
-                    with open(tmp_dir + '/' + F[0] + ".variant_seq_2.fa", 'w') as hout1:
-                        print('>' + F[0] + '\n' + variant_seq_2, file = hout1)
-                """
-
                 variant_seq_1, variant_seq_2, reference_local_seq_1, reference_local_seq_2 = key2contig[temp_key]
                 with open(tmp_dir + '/' + F[0] + ".variant_seq_1.fa", 'w') as hout1:
                     print('>' + F[0] + '\n' + variant_seq_1, file = hout1) 
@@ -337,53 +334,46 @@ def long_read_validate_by_alignment(sv_file, output_file, bam_file, reference, d
         if temp_key != "":
             hout2.close()
 
-            """
-            alignment_info_var_1 = ssw_check(tmp_dir + '/' + temp_key + ".variant_seq_1.fa", tmp_dir + '/' + temp_key + ".long_read_seq.fa")
-            alignment_info_var_2 = ssw_check(tmp_dir + '/' + temp_key + ".variant_seq_2.fa", tmp_dir + '/' + temp_key + ".long_read_seq.fa")
-            all_keys = list(set(alignment_info_var_1))
-
-            supporting_read_keys = [key for key in all_keys if \
-                (alignment_info_var_1[key][0] > score_ratio_thres * len(variant_seq_1) and \
-                alignment_info_var_1[key][1] < start_pos_thres * len(variant_seq_1) and \
-                alignment_info_var_1[key][2] > end_pos_thres * len(variant_seq_1)) or \
-                (alignment_info_var_2[key][0] > score_ratio_thres * len(variant_seq_2) and \
-                alignment_info_var_2[key][1] < start_pos_thres * len(variant_seq_2) and \
-                alignment_info_var_2[key][2] > end_pos_thres * len(variant_seq_2))]
-            """
-
             alignment_info_var_1 = ssw_check(tmp_dir + '/' + temp_key + ".variant_seq_1.fa", tmp_dir + '/' + temp_key + ".long_read_seq.fa")
             alignment_info_var_2 = ssw_check(tmp_dir + '/' + temp_key + ".variant_seq_2.fa", tmp_dir + '/' + temp_key + ".long_read_seq.fa")
             if is_short_del_dup(temp_key):
                 alignment_info_ref_1 = ssw_check(tmp_dir + '/' + temp_key + ".reference_local_seq_1.fa", tmp_dir + '/' + temp_key + ".long_read_seq.fa")
                 alignment_info_ref_2 = ssw_check(tmp_dir + '/' + temp_key + ".reference_local_seq_2.fa", tmp_dir + '/' + temp_key + ".long_read_seq.fa")
 
-            all_keys = list(set(alignment_info_var_1))
+            # all_rnames = list(set(alignment_info_var_1))
+            all_rnames = list(set(list(alignment_info_var_1.keys()) + list(alignment_info_var_2.keys())))
 
             if is_short_del_dup(temp_key):
-                supporting_read_keys = [key for key in all_keys if \
-                    (alignment_info_var_1[key][0] > score_ratio_thres * len(variant_seq_1) and \
-                    alignment_info_var_1[key][1] < start_pos_thres * len(variant_seq_1) and \
-                    alignment_info_var_1[key][2] > end_pos_thres * len(variant_seq_1) and \
-                    alignment_info_var_1[key][0] >= alignment_info_ref_1[key][0] + var_ref_margin_thres and \
-                    alignment_info_var_1[key][0] >= alignment_info_ref_2[key][0] + var_ref_margin_thres) or \
-                    (alignment_info_var_2[key][0] > score_ratio_thres * len(variant_seq_2) and \
-                    alignment_info_var_2[key][1] < start_pos_thres * len(variant_seq_2) and \
-                    alignment_info_var_2[key][2] > end_pos_thres * len(variant_seq_2) and \
-                    alignment_info_var_2[key][0] >= alignment_info_ref_1[key][0] + var_ref_margin_thres and \
-                    alignment_info_var_2[key][0] >= alignment_info_ref_1[key][0] + var_ref_margin_thres)]
+                supporting_reads = [rname for rname in all_rnames if \
+                    (alignment_info_var_1[rname][0] > score_ratio_thres * len(variant_seq_1) and \
+                    alignment_info_var_1[rname][1] < start_pos_thres * len(variant_seq_1) and \
+                    alignment_info_var_1[rname][2] > end_pos_thres * len(variant_seq_1) and \
+                    alignment_info_var_1[rname][0] >= alignment_info_ref_1[rname][0] + var_ref_margin_thres and \
+                    alignment_info_var_1[rname][0] >= alignment_info_ref_2[rname][0] + var_ref_margin_thres) or \
+                    (alignment_info_var_2[rname][0] > score_ratio_thres * len(variant_seq_2) and \
+                    alignment_info_var_2[rname][1] < start_pos_thres * len(variant_seq_2) and \
+                    alignment_info_var_2[rname][2] > end_pos_thres * len(variant_seq_2) and \
+                    alignment_info_var_2[rname][0] >= alignment_info_ref_1[rname][0] + var_ref_margin_thres and \
+                    alignment_info_var_2[rname][0] >= alignment_info_ref_1[rname][0] + var_ref_margin_thres)]
             else:   
-                supporting_read_keys = [key for key in all_keys if \
-                    (alignment_info_var_1[key][0] > score_ratio_thres * len(variant_seq_1) and \
-                    alignment_info_var_1[key][1] < start_pos_thres * len(variant_seq_1) and \
-                    alignment_info_var_1[key][2] > end_pos_thres * len(variant_seq_1)) or \
-                    (alignment_info_var_2[key][0] > score_ratio_thres * len(variant_seq_2) and \
-                    alignment_info_var_2[key][1] < start_pos_thres * len(variant_seq_2) and \
-                    alignment_info_var_2[key][2] > end_pos_thres * len(variant_seq_2))]
+                supporting_reads = [rname for rname in all_rnames if \
+                    (alignment_info_var_1[rname][0] > score_ratio_thres * len(variant_seq_1) and \
+                    alignment_info_var_1[rname][1] < start_pos_thres * len(variant_seq_1) and \
+                    alignment_info_var_1[rname][2] > end_pos_thres * len(variant_seq_1)) or \
+                    (alignment_info_var_2[rname][0] > score_ratio_thres * len(variant_seq_2) and \
+                    alignment_info_var_2[rname][1] < start_pos_thres * len(variant_seq_2) and \
+                    alignment_info_var_2[rname][2] > end_pos_thres * len(variant_seq_2))]
 
-            key2sread[temp_key] = supporting_read_keys
-            key2sread_info[temp_key] = { key: alignment_info_var_1[key] + alignment_info_var_2[key] for key in supporting_read_keys}
-            key2sread_count[temp_key] = len(supporting_read_keys)
-            key2sread_count_all[temp_key] = len(all_keys)
+            # filtering by mapping qualities
+            supporting_reads = [rname for rname in supporting_reads if \
+                rname in key2rname2mapq[temp_key] and \
+                key2rname2mapq[temp_key][rname][0] is not None and key2rname2mapq[temp_key][rname][0] >= variant_sread_min_mapq and \
+                key2rname2mapq[temp_key][rname][1] is not None and key2rname2mapq[temp_key][rname][1] >= variant_sread_min_mapq] 
+
+            key2sread[temp_key] = supporting_reads
+            key2sread_info[temp_key] = { rname: alignment_info_var_1[rname] + alignment_info_var_2[rname] for rname in supporting_reads}
+            key2sread_count[temp_key] = len(supporting_reads)
+            key2sread_count_all[temp_key] = len(all_rnames)
 
 
     shutil.rmtree(tmp_dir)
