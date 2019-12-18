@@ -117,7 +117,7 @@ def get_main(args):
                args.tumor_prefix + ".validated.tumor_sread.txt",
                args.tumor_prefix + ".nanomonsv.result.txt",
                args.tumor_prefix + ".nanomonsv.supporting_read.txt",
-               args.min_tumor_variant_read_num, args.min_tumor_VAF, args.max_control_variant_read_num, args.max_control_VAF, is_control)
+               args.min_tumor_variant_read_num, args.min_tumor_VAF, args.max_control_variant_read_num, args.max_control_VAF, False, is_control)
 
     if not args.debug:
         subprocess.check_call(["rm", "-rf", args.tumor_prefix + ".rearrangement.sorted.clustered.bedpe"])
@@ -150,7 +150,7 @@ def validate_main(args):
                args.output + ".validated.tumor_sread.txt",
                args.output, 
                args.output + ".supporting_read.txt",
-               0, 0, float("inf"), float("inf"), is_control)
+               0, 0, float("inf"), float("inf"), True, is_control)
 
     if not args.debug:
         subprocess.check_call(["rm", "-rf", args.output + ".validated.txt"])

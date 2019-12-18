@@ -37,15 +37,15 @@ class TestMain(unittest.TestCase):
         nanomonsv.run.parse_main(args)
 
         with gzip.open(tmp_dir + "/test_tumor.rearrangement.sorted.bedpe.gz", 'rt') as hin: record_num = len(hin.readlines())
-        self.assertTrue(record_num == 26)
+        self.assertTrue(record_num == 58)
 
         with gzip.open(tmp_dir + "/test_tumor.deletion.sorted.bed.gz", 'rt') as hin: record_num = len(hin.readlines())
-        self.assertTrue(record_num == 205)
+        self.assertTrue(record_num == 359)
 
         with gzip.open(tmp_dir + "/test_tumor.insertion.sorted.bed.gz", 'rt') as hin: record_num = len(hin.readlines())
-        self.assertTrue(record_num == 35)
+        self.assertTrue(record_num == 44)
 
-        shutil.rmtree(tmp_dir)
+        # shutil.rmtree(tmp_dir)
 
 
     def test_get(self):
@@ -71,12 +71,12 @@ class TestMain(unittest.TestCase):
         nanomonsv.run.get_main(args)
 
         with open(tumor_prefix_dst + ".nanomonsv.result.txt", 'r') as hin: record_num = len(hin.readlines())
-        self.assertTrue(record_num == 4)
+        self.assertTrue(record_num == 5)
 
         with open(tumor_prefix_dst + ".nanomonsv.supporting_read.txt", 'r') as hin: record_num = len(hin.readlines()) 
-        self.assertTrue(record_num == 32) 
+        self.assertTrue(record_num == 43) 
    
-        shutil.rmtree(tmp_dir)
+        # shutil.rmtree(tmp_dir)
 
 
     def test_validate(self):
@@ -84,7 +84,7 @@ class TestMain(unittest.TestCase):
         cur_dir = os.path.dirname(os.path.abspath(__file__))
         tmp_dir = tempfile.mkdtemp()
 
-        sv_list = cur_dir + "/data/test_tumor/test_tumor.nanomonsv.result.txt"
+        sv_list = cur_dir + "/resource/validate/test_tumor_sv_list.txt"
         tumor_bam = cur_dir + "/resource/bam/test_tumor.bam"
         output_file = tmp_dir + "/test_tumor.validate.txt"
         ctrl_bam = cur_dir + "/resource/bam/test_ctrl.bam"
@@ -97,7 +97,7 @@ class TestMain(unittest.TestCase):
         nanomonsv.run.validate_main(args)
 
         self.assertTrue(filecmp.cmp(output_file, sv_list, shallow=False))
-        shutil.rmtree(tmp_dir)
+        # shutil.rmtree(tmp_dir)
 
 
 if __name__ == "__main__":

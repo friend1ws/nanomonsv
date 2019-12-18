@@ -296,7 +296,7 @@ def filt_clustered_insertion_deletion2(input_file, output_file, control_junction
     if control_junction_bedpe is not None: control_junction_db.close()
 
 
-def filt_final(input_file, input_sread_file, output_file, output_sread_file, min_tumor_variant_read_num = 3, min_tumor_VAF = 0.05, max_control_variant_read_num = 1, max_control_VAF = 0.03, is_control = False):
+def filt_final(input_file, input_sread_file, output_file, output_sread_file, min_tumor_variant_read_num = 3, min_tumor_VAF = 0.05, max_control_variant_read_num = 1, max_control_VAF = 0.03, is_no_filt = False, is_control = False):
 
     hout = open(output_file, 'w')
     header = ["Chr_1", "Pos_1", "Dir_1", "Chr_2", "Pos_2", "Dir_2", "Inserted_Seq", "Checked_Read_Num_Tumor", "Supporting_Read_Num_Tumor"]
@@ -310,14 +310,15 @@ def filt_final(input_file, input_sread_file, output_file, output_sread_file, min
             checked_read_num_tumor, supporting_read_num_tumor = int(F[7]), int(F[8])
             if is_control: checked_read_num_control, supporting_read_num_control = int(F[9]), int(F[10])
 
-            if checked_read_num_tumor == 0: continue
-            if supporting_read_num_tumor < min_tumor_variant_read_num: continue
-            if float(supporting_read_num_tumor) / float(checked_read_num_tumor) < min_tumor_VAF: continue
+            if not is_no_filt:
+                if checked_read_num_tumor == 0: continue
+                if supporting_read_num_tumor < min_tumor_variant_read_num: continue
+                if float(supporting_read_num_tumor) / float(checked_read_num_tumor) < min_tumor_VAF: continue
 
-            if is_control:
-                if checked_read_num_control == 0: continue
-                if supporting_read_num_control > max_control_variant_read_num: continue
-                if float(supporting_read_num_control) / float(checked_read_num_control) > max_control_VAF: continue
+                if is_control:
+                    if checked_read_num_control == 0: continue
+                    if supporting_read_num_control > max_control_variant_read_num: continue
+                    if float(supporting_read_num_control) / float(checked_read_num_control) > max_control_VAF: continue
 
             print('\t'.join(F), file = hout)
 

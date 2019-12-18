@@ -11,7 +11,10 @@ samtools view -bh s3://eva-bucket-tokyo/kataoka-lab/long_read_sequencing/cell-li
 samtools view -bh s3://eva-bucket-tokyo/kataoka-lab/long_read_sequencing/cell-line/minimap2/COLO829.bam 15:84810625-84810825 > test_bam_tmp/t4.bam
 samtools view -bh s3://eva-bucket-tokyo/kataoka-lab/long_read_sequencing/cell-line/minimap2/COLO829.bam 18:66379362-66379562 > test_bam_tmp/t5.bam
 samtools view -bh s3://eva-bucket-tokyo/kataoka-lab/long_read_sequencing/cell-line/minimap2/COLO829.bam 18:66382728-66382928 > test_bam_tmp/t6.bam
-samtools cat test_bam_tmp/t1.bam test_bam_tmp/t2.bam test_bam_tmp/t3.bam test_bam_tmp/t4.bam test_bam_tmp/t5.bam test_bam_tmp/t6.bam > test_bam_tmp/t.bam
+samtools view -bh s3://eva-bucket-tokyo/kataoka-lab/long_read_sequencing/cell-line/minimap2/COLO829.bam 6:132024942-132025142 > test_bam_tmp/t7.bam
+samtools view -bh s3://eva-bucket-tokyo/kataoka-lab/long_read_sequencing/cell-line/minimap2/COLO829.bam 7:144088694-144088894 > test_bam_tmp/t8.bam
+samtools view -bh s3://eva-bucket-tokyo/kataoka-lab/long_read_sequencing/cell-line/minimap2/COLO829.bam 7:143959126-143959326 > test_bam_tmp/t9.bam
+samtools cat test_bam_tmp/t1.bam test_bam_tmp/t2.bam test_bam_tmp/t3.bam test_bam_tmp/t4.bam test_bam_tmp/t5.bam test_bam_tmp/t6.bam test_bam_tmp/t7.bam test_bam_tmp/t8.bam test_bam_tmp/t9.bam > test_bam_tmp/t.bam
 samtools sort test_bam_tmp/t.bam > test_tumor.bam
 samtools index test_tumor.bam
 rm -rf test_bam_tmp/*
@@ -22,7 +25,10 @@ samtools view -bh s3://eva-bucket-tokyo/kataoka-lab/long_read_sequencing/cell-li
 samtools view -bh s3://eva-bucket-tokyo/kataoka-lab/long_read_sequencing/cell-line/minimap2/COLO829BL.bam 15:84810625-84810825 > test_bam_tmp/t4.bam
 samtools view -bh s3://eva-bucket-tokyo/kataoka-lab/long_read_sequencing/cell-line/minimap2/COLO829BL.bam 18:66379362-66379562 > test_bam_tmp/t5.bam
 samtools view -bh s3://eva-bucket-tokyo/kataoka-lab/long_read_sequencing/cell-line/minimap2/COLO829BL.bam 18:66382728-66382928 > test_bam_tmp/t6.bam
-samtools cat test_bam_tmp/t1.bam test_bam_tmp/t2.bam test_bam_tmp/t3.bam test_bam_tmp/t4.bam test_bam_tmp/t5.bam test_bam_tmp/t6.bam > test_bam_tmp/t.bam
+samtools view -bh s3://eva-bucket-tokyo/kataoka-lab/long_read_sequencing/cell-line/minimap2/COLO829BL.bam 6:132024942-132025142 > test_bam_tmp/t7.bam
+samtools view -bh s3://eva-bucket-tokyo/kataoka-lab/long_read_sequencing/cell-line/minimap2/COLO829BL.bam 7:144088694-144088894 > test_bam_tmp/t8.bam
+samtools view -bh s3://eva-bucket-tokyo/kataoka-lab/long_read_sequencing/cell-line/minimap2/COLO829BL.bam 7:143959126-143959326 > test_bam_tmp/t9.bam
+samtools cat test_bam_tmp/t1.bam test_bam_tmp/t2.bam test_bam_tmp/t3.bam test_bam_tmp/t4.bam test_bam_tmp/t5.bam test_bam_tmp/t6.bam test_bam_tmp/t7.bam test_bam_tmp/t8.bam test_bam_tmp/t9.bam > test_bam_tmp/t.bam
 samtools sort test_bam_tmp/t.bam > test_ctrl.bam
 samtools index test_ctrl.bam
 rm -rf test_bam_tmp
