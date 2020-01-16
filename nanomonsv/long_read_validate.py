@@ -116,7 +116,7 @@ def ssw_check(target, query):
     return(alignment_info)
 
 
-def long_read_validate_by_alignment(sv_file, output_file, bam_file, reference, debug, variant_sread_min_mapq = 30, validate_sequence_length = 200, score_ratio_thres = 1.4, start_pos_thres = 0.2, end_pos_thres = 0.8, var_ref_margin_thres = 10):
+def long_read_validate_by_alignment(sv_file, output_file, bam_file, reference, debug, variant_sread_min_mapq = 0, validate_sequence_length = 200, score_ratio_thres = 1.4, start_pos_thres = 0.2, end_pos_thres = 0.8, var_ref_margin_thres = 10):
     
     def is_short_del_dup(key):
         keys = key.split(',')
