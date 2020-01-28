@@ -101,7 +101,7 @@ def get_refined_bp(contig, fasta_file_ins, chr1, start1, end1, dir1, chr2, start
 
         inseq_start = contig_start_align[1]
         inseq_end = len(contig) - (len(contig_end) - contig_end_align[0] + 1)
-        inseq = contig[inseq_start:inseq_end]
+        inseq = contig[inseq_start:(inseq_end + 1)]
 
         print(score, region_align, contig_start_align, contig_end_align, file = h_log)
         print(region_seq, file = h_log)

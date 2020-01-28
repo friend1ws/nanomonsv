@@ -109,7 +109,7 @@ def get_main(args):
                   args.tumor_prefix + ".refined_bp.validated.txt",
                   args.tumor_prefix + ".validated.tumor_sread.txt",
                   args.reference_fasta, 
-                  args.control_bam, args.debug)
+                  args.control_bam, args.var_read_min_mapq, args.debug)
 
     is_control = True if args.control_bam is not None else False
 
@@ -142,6 +142,7 @@ def validate_main(args):
                             args.output + ".validated.tumor_sread.txt",
                             args.reference_fasta,
                             args.control_bam, 
+                            args.var_read_min_mapq,
                             args.debug)
 
     is_control = True if args.control_bam is not None else False

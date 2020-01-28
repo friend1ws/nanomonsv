@@ -45,7 +45,7 @@ class TestMain(unittest.TestCase):
         with gzip.open(tmp_dir + "/test_tumor.insertion.sorted.bed.gz", 'rt') as hin: record_num = len(hin.readlines())
         self.assertTrue(record_num == 44)
 
-        # shutil.rmtree(tmp_dir)
+        shutil.rmtree(tmp_dir)
 
 
     def test_get(self):
@@ -74,9 +74,9 @@ class TestMain(unittest.TestCase):
         self.assertTrue(record_num == 5)
 
         with open(tumor_prefix_dst + ".nanomonsv.supporting_read.txt", 'r') as hin: record_num = len(hin.readlines()) 
-        self.assertTrue(record_num == 43) 
+        self.assertTrue(record_num == 47) 
    
-        # shutil.rmtree(tmp_dir)
+        shutil.rmtree(tmp_dir)
 
 
     def test_validate(self):
@@ -97,7 +97,7 @@ class TestMain(unittest.TestCase):
         nanomonsv.run.validate_main(args)
 
         self.assertTrue(filecmp.cmp(output_file, sv_list, shallow=False))
-        # shutil.rmtree(tmp_dir)
+        shutil.rmtree(tmp_dir)
 
 
 if __name__ == "__main__":

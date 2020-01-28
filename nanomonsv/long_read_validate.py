@@ -383,12 +383,12 @@ def long_read_validate_by_alignment(sv_file, output_file, bam_file, reference, d
 
 
 
-def long_read_validate_main(result_file, tumor_bam, output, sread_file, reference, control_bam, debug):
+def long_read_validate_main(result_file, tumor_bam, output, sread_file, reference, control_bam, var_read_min_mapq, debug):
 
-    key2sread_count_tumor, key2sread_count_all_tumor, key2sread_info_tumor = long_read_validate_by_alignment(result_file, output, tumor_bam, reference, debug, score_ratio_thres = 1.2, start_pos_thres = 0.1, end_pos_thres = 0.9, var_ref_margin_thres = 20)
+    key2sread_count_tumor, key2sread_count_all_tumor, key2sread_info_tumor = long_read_validate_by_alignment(result_file, output, tumor_bam, reference, debug, variant_sread_min_mapq = var_read_min_mapq, score_ratio_thres = 1.2, start_pos_thres = 0.1, end_pos_thres = 0.9, var_ref_margin_thres = 20)
 
     if control_bam is not None:
-        key2sread_count_control, key2sread_count_all_control, key2sread_info_control = long_read_validate_by_alignment(result_file, output, control_bam, reference, debug, score_ratio_thres = 1.2, start_pos_thres = 0.1, end_pos_thres = 0.9, var_ref_margin_thres = 20)
+        key2sread_count_control, key2sread_count_all_control, key2sread_info_control = long_read_validate_by_alignment(result_file, output, control_bam, reference, debug, variant_sread_min_mapq = var_read_min_mapq, score_ratio_thres = 1.2, start_pos_thres = 0.1, end_pos_thres = 0.9, var_ref_margin_thres = 20)
 
     hout = open(output, 'w')
     with open(result_file, 'r') as hin:

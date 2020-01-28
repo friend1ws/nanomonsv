@@ -80,6 +80,9 @@ def create_parser():
     get.add_argument("--max_overhang_size_thres", default = 100, type = int,
                      help = "Threshould for maximum overhang size")
 
+    get.add_argument("--var_read_min_mapq", default = 0, type = int,
+                     help = "Threshould for mapping quality in validate step")
+
     # get.add_argument("--control_read_num_thres", default = 0, type = int,
     #                  help = "Filter if the number of supporting reads for the control sample is larger than this value")
 
@@ -107,6 +110,9 @@ def create_parser():
 
     validate.add_argument("--control_bam", default = None, type = str,
                           help = "Path to control BAM file")
+
+    validate.add_argument("--var_read_min_mapq", default = 40, type = int,
+                          help = "Threshould for mapping quality in validate step")
 
     validate.add_argument("--debug", default = False, action = 'store_true', help = "keep intermediate files")
 
