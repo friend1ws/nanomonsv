@@ -38,8 +38,8 @@ setup(
         'Topic :: Scientific/Engineering :: Bio-Informatics'
     ],
 
-    packages = find_packages(exclude = ['tests']),
-    package_data={},
+    packages = find_packages(exclude = ['tests', 'LINE_db']),
+    package_data={'nanomonsv': ['data/*']},
 
     # install_requires = ["annot_utils>=0.3.0", "pysam>=0.9.0", "intron_retention_utils>=0.6.0"],
     entry_points = {'console_scripts': ['nanomonsv = nanomonsv:main']}

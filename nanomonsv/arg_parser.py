@@ -96,7 +96,7 @@ def create_parser():
     validate = subparsers.add_parser("validate",
                                      help = "Validate GenomonSV format SV list using nanopore sequence reads")
  
-    validate.add_argument("sv_list", default = None, type = str,
+    validate.add_argument("sv_list_file", default = None, type = str,
                           help = "Path to GenomonSV format SV list file")
 
     validate.add_argument("tumor_bam", default = None, type = str,
@@ -118,7 +118,31 @@ def create_parser():
 
     validate.set_defaults(func = validate_main)
     ##########
+
+    ##########
+    # insert_classify
+    insert_classify = subparsers.add_parser("insert_classify",
+                                            help = "Classify long insertion into LINE1, Alu, SVA, and so on")
     
+    insert_classify.add_argument("sv_list_file", default = None, type =str,
+                                 help = "Path to nanomonsv get result file")
+    
+    insert_classify.add_argument("output_file", type = str,
+                                 help = "Path to output file")
+
+    insert_classify.add_argument("reference_fasta", metavar = "reference.fa", default = None, type = str,
+                                 help = "Path to the reference genome sequence")
+
+    insert_classify.add_argument("--grc", default = False, action = 'store_true',
+                                 help = "Deprecated. This is not used any more. Convert chromosome names to Genome Reference Consortium nomenclature (default: %(default)s)")
+
+    insert_classify.add_argument("--genome_id", choices = ["hg19", "hg38", "mm10"], default = "hg19",
+                                 help = "Genome id used for selecting UCSC-GRC chromosome name corresponding files (default: %(default)s)")
+
+
+    insert_classify.set_defaults(func = insert_classify_main)
+    ##########
+
     return parser
   
 

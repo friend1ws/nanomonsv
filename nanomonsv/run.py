@@ -1,10 +1,11 @@
 #! /usr/bin/env python
 
-import subprocess
+import os, subprocess, shutil
 from .parse import *
 from .filt import *
 from .identify import *
 from .long_read_validate import *
+from .insert_classify import *
 
 def parse_main(args):
 
@@ -156,4 +157,58 @@ def validate_main(args):
     if not args.debug:
         subprocess.check_call(["rm", "-rf", args.output + ".validated.txt"])
         subprocess.check_call(["rm", "-rf", args.output + ".validated.tumor_sread.txt"])
+
+
+def insert_classify_main(args):
+
+    import tempfile
+    import annot_utils.exon
+
+    make_fasta_file(args.sv_list_file, args.output_file + ".tmp.fasta", args.output_file + ".tmp.seq_id.txt")
+
+    ##########
+    # processed pseudo gene
+    annot_utils.exon.make_exon_info(args.output_file + ".tmp.exon.bed.gz", "gencode", args.genome_id, args.grc, True)
+
+    """
+    with open(args.output_file + ".tmp.minimap2.sam", 'w') as hout:
+        subprocess.check_call(["minimap2", "-ax", "splice", args.reference_fasta, args.output_file + ".tmp.fasta"], stdout = hout)
+
+    sam2bed_split(args.output_file + ".tmp.minimap2.sam", args.output_file + ".tmp.minimap2.filt.bed")
     
+    with open(args.output_file + ".tmp.minimap2.filt.exon.bed", 'w') as hout:
+        subprocess.check_call(["bedtools", "intersect", "-a", args.output_file + ".tmp.minimap2.filt.bed", 
+                               "-b", args.output_file + ".tmp.exon.bed.gz", "-wo"], stdout = hout)
+ 
+    pp_proc_filt_exon(args.output_file + ".tmp.minimap2.filt.exon.bed", args.output_file + ".tmp.ppseudo.txt")
+    ##########
+
+    ##########
+    # repeat masker
+    output_dir = os.path.dirname(args.output_file)
+    tmpdir_rmsk = tempfile.mkdtemp()
+    # tmpdir_rmsk = "tmp"
+    subprocess.check_call(["RepeatMasker", "-species", "human", args.output_file + ".tmp.fasta", "-dir", tmpdir_rmsk])
+
+    summarize_rmsk(tmpdir_rmsk + '/' + os.path.basename(args.output_file + ".tmp.fasta") + ".out", args.output_file + ".tmp.rmsk.txt")
+
+    check_tsd_polyAT(args.output_file + ".tmp.fasta", args.output_file + ".tmp.seq_id.txt", 
+                     args.reference_fasta, args.output_file + ".tmp.tsd.polyAT.txt")
+
+    shutil.rmtree(tmpdir_rmsk)
+    ##########
+    
+    ##########
+    # alignment to reference genome
+    with open(args.output_file + ".tmp.minimap2.sam", 'w') as hout:
+        print(' '.join(["bwa", "mem", "-h", "200", args.reference_fasta, args.output_file + ".tmp.fasta"]))
+        subprocess.check_call(["bwa", "mem", "-h", "200", args.reference_fasta, args.output_file + ".tmp.fasta"], stdout = hout)
+
+    summarize_bwa_alignment(args.output_file + ".tmp.minimap2.sam", args.output_file + ".tmp.seq_id.txt", args.output_file + ".tmp.alignment.txt")
+    """
+
+    orgaize_info(args.output_file + ".tmp.rmsk.txt", args.output_file + ".tmp.alignment.txt", 
+                 args.output_file + ".tmp.tsd.polyAT.txt", args.output_file + ".tmp.seq_id.txt", 
+                 args.output_file + ".tmp.org.txt", args.genome_id)
+
+

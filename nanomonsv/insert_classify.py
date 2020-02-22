@@ -1,7 +1,10 @@
 #! /user/bin/env python
 
-import sys
+import sys, re, pkg_resources
 import pysam
+import swalign
+
+from .my_seq import get_seq, reverse_complement
 
 def make_fasta_file(input_file, output_file, seq_id_file):
 
@@ -17,9 +20,9 @@ def make_fasta_file(input_file, output_file, seq_id_file):
 
             print(">seq" + str(sid) + ',' + str(len(F[6])), file = hout1)
             print(F[6], file = hout1)
+            print("seq" + str(sid) + ',' + str(len(F[6])) + '\t' + key, file = hout2)
             sid = sid + 1
-            print("seq" + str(sid) + '\t' + key, file = hout2)
-            
+ 
 
 
 def sam2bed_split(input_file, output_file):
@@ -137,9 +140,6 @@ def pp_proc_filt_exon(input_file, output_file):
             match_ratio2 = float(F[12]) / (int(F[2]) - int(F[1]))
             if min(match_ratio1, match_ratio2) >= 0.95: key2exon_match_num[key] = key2exon_match_num[key] + 1
 
-            # if F[1] == "82247561":
-            #     import pdb; pdb.set_trace()
-
             if int(F[7]) - int(F[1]) > 10:
                 if F[5] == '+':
                     aln_start = min(aln_end, aln_start + (int(F[7]) - int(F[1])))
@@ -254,6 +254,243 @@ def summarize_rmsk(input_file, output_file):
         if temp_key != '':
             repeat_class, L1_ratio, Alu_ratio, SVA_ratio, repeat_info = proc_rmsk_info(temp_key, temp_rmsk_info)
             print(temp_key + '\t' + repeat_class + '\t' + L1_ratio + ',' + Alu_ratio + ',' + SVA_ratio + '\t' + ';'.join(repeat_info), file = hout)
+
+
+
+def check_tsd_polyAT(input_file, seq_list, reference, output_file):
+
+    match = 1
+    mismatch = -8
+    scoring = swalign.NucleotideScoringMatrix(match, mismatch)
+    sw = swalign.LocalAlignment(scoring, gap_penalty=-8, gap_extension_penalty=-8)
+
+    sid2skey = {}
+    with open(seq_list, 'r') as hin:
+        for line in hin:
+            F = line.rstrip('\n').split('\t')
+            sid2skey[F[0]] = F[1]
+
+    with open(input_file, 'r') as hin, open(output_file, 'w') as hout:
+        for line in hin:
+            sid = line.rstrip('\n').lstrip('>')
+            seq = hin.readline().rstrip('\n')
+            skey = sid2skey[sid]
+
+            tchr, tpos1, _, _, tpos2, _, tlen = skey.split(',')
+
+            match1 = re.search(r'^([ACGT]{1,20}?)TTTTTTTTTT', seq)
+            match2 = re.search(r'AAAAAAAAAA([ACGT]{1,20}?)$', seq)
+            tsd1 = None
+            tsd2 = None
+            is_polyA = False
+            is_polyT = False
+
+            if seq.startswith('TTTTTTTTTT') or match1 is not None: is_polyT = True
+            if seq.endswith('AAAAAAAAAA') or match2 is not None: is_polyA = True
+
+
+            tsd_cand1 = seq[:20]
+            local_seq1 = get_seq(reference, tchr, int(tpos2), int(tpos2) + len(tsd_cand1))
+            alignment1 = sw.align(tsd_cand1, local_seq1)
+            if alignment1.q_pos <= 2 and alignment1.matches >= 5 and alignment1.identity >= 0.8: 
+                tsd1 = alignment1.query[(alignment1.q_pos):(alignment1.q_pos + alignment1.matches)]  
+
+
+            tsd_cand2 = reverse_complement(seq[-20:])
+            local_seq2 = reverse_complement(get_seq(reference, tchr, int(tpos1) - len(tsd_cand2), int(tpos1)))
+            alignment2 = sw.align(tsd_cand2, local_seq2)
+            if alignment2.q_pos <= 2 and alignment2.matches >= 5 and alignment2.identity >= 0.8: 
+                tsd2 = reverse_complement(alignment2.query[(alignment2.q_pos):(alignment2.q_pos + alignment2.matches)])
+
+            if tsd1 is not None and tsd2 is None: 
+                tsd = tsd1
+            elif tsd1 is None and tsd2 is not None:
+                tsd = tsd2
+            elif tsd1 is not None and tsd2 is not None:
+                tsd = tsd1 if len(tsd1) >= len(tsd2) else tsd2
+            else:
+                tsd = None
+
+            polyAT = None
+            if is_polyT: polyAT = "polyT"
+            if is_polyA: polyAT = "polyA"
+
+            print(sid + '\t' + str(polyAT) + '\t' + str(tsd) + '\t' + tsd_cand1 + '\t' + local_seq1 + '\t' + tsd_cand2 + '\t' + local_seq2, file = hout) 
+
+
+
+def summarize_bwa_alignment(input_sam, seq_list, output_file):
+
+    samfile = pysam.AlignmentFile(input_sam, 'r')
+
+    inserted_positions = []
+    with open(seq_list, 'r') as hin:
+        for line in hin:
+            F = line.rstrip('\n').split('\t')
+            tchr, tstart, _, _, tend, _, _ = F[1].split(',')
+            inserted_positions.append((tchr, int(tstart), int(tend)))
+
+
+    samfile = pysam.AlignmentFile(input_sam, 'r')
+    hout = open(output_file, 'w') 
+    for read in samfile.fetch():
+
+        if read.is_secondary or read.is_supplementary: continue
+        mapping_quality = read.mapping_quality
+        if mapping_quality < 30: continue
+ 
+        query_name = read.query_name
+        key = query_name
+
+        query_strand = '-' if read.is_reverse else '+'
+        reference_name = read.reference_name
+        reference_start = read.reference_start + 1
+        reference_end = read.reference_end
+        mapping_quality = read.mapping_quality
+        query_length = read.infer_read_length()
+
+        if query_strand == '+':
+            query_start = read.query_alignment_start + 1 
+            query_end = read.query_alignment_end
+        else:
+            query_start = query_length - read.query_alignment_end + 1
+            query_end = query_length - read.query_alignment_start
+
+        inserted_pos = "---"
+        for inserted_position in inserted_positions:
+            ichr, istart, iend = inserted_position
+            if reference_name == ichr and reference_end > istart - 5000 and reference_start < iend + 5000:
+                inserted_pos = ichr + ',' + str(istart) + ',' + str(iend)
+
+        print(query_name + '\t' + ','.join([str(query_start), str(query_end), query_strand, str(mapping_quality), reference_name, str(reference_start), str(reference_end)]) + '\t' + inserted_pos, file = hout)
+
+    samfile.close()
+    hout.close()
+
+
+def orgaize_info(rmsk_file, alignment_file, tsd_file, seq_list, output_file, genome_id):
+
+    key2rmsk = {}
+    with open(rmsk_file, 'r') as hin:
+        for line in hin:
+            F = line.rstrip('\n').split('\t')
+            key2rmsk[F[0]] = [F[1], F[2], F[3]]
+
+    key2alignment = {}
+    with open(alignment_file, 'r') as hin:
+        for line in hin:
+            F = line.rstrip('\n').split('\t')
+            key2alignment[F[0]] = [F[1], F[2]]
+
+
+    key2tsd_polyAT = {}
+    with open(tsd_file, 'r') as hin:
+        for line in hin:
+            F = line.rstrip('\n').split('\t')
+            key2tsd_polyAT[F[0]] = [F[1], F[2]]
+
+    keys = list(set(list(key2rmsk) + list(key2alignment) + list(key2tsd_polyAT)))
+
+    if genome_id == "hg38":
+        line1_tb = pysam.TabixFile(pkg_resources.resource_filename("nanomonsv", "data/LINE1.hg38.bed.gz"))
+    else:
+        line1_tb = pysam.TabixFile(pkg_resources.resource_filename("nanomonsv", "data/LINE1.hg19.bed.gz"))
+
+    with open(output_file, 'w') as hout:
+
+        # header = ["Insertion_Key", "Repeat_Type", "L1_Ratio", "Alu_Ratio", "Repeat_Info", "Alignemnt_Info", "Inserted_Pos", "Is_PolyA_T", "Target_Site_Duplication"]
+        # print('\t'.join(header), file = hout) 
+        for key in keys:
+
+            repeat_type, class_ratios, rmsk_info = key2rmsk[key] if key in key2rmsk else ["None", "---", "---"]
+            alignment_info, inserted_pos = key2alignment[key] if key in key2alignment else ["---", "---"]
+            is_polyAT, tsd = key2tsd_polyAT[key] if key in key2tsd_polyAT else ["---", "---"]
+
+            line1_ratio = float(class_ratios.split(',')[0]) if class_ratios != "---" else 0.0
+
+
+            line1_info = None
+            overlap_ratio = None
+            transduction_class = None
+
+            if repeat_type.endswith("LINE1"): transduction_class = "Solo"
+
+            if alignment_info == "---" or is_polyAT == None: 
+                # print('\t'.join(F) + '\t' + str(line1_info) + '\t' + str(overlap_ratio) + '\t' + str(transduction_class))
+                print('\t'.join([key, repeat_type, class_ratios, rmsk_info, alignment_info, inserted_pos, is_polyAT, tsd,
+                                 str(line1_info), str(transduction_class)]), file = hout)
+                continue
+
+            _, _, astrand, _, achr, astart, aend = alignment_info.split(',')
+            if not achr.startswith("chr"): achr = "chr" + achr
+            source_dir = '+' if (astrand == '+' and is_polyAT == "polyT") or (astrand == '-' and is_polyAT == "polyA") else '-'
+
+            if key == "seq104,319":
+                import pdb; pdb.set_trace()
+            
+            tabix_error_flag = 0
+            if source_dir == '+':
+                cur_L1_pos = float("Inf")
+                is_rmsk, is_1000g, is_gnomad = False, False, False
+                try:
+                    records = line1_tb.fetch(achr, int(astart) - 50, int(aend) + 5000)
+                except Exception as inst:
+                    tabix_error_flag = 1
+                if tabix_error_flag == 0:
+                    for record in records:
+                        FF = record.split('\t')
+                        if FF[5] == '+': continue
+                        if int(FF[1]) > cur_L1_pos: continue
+                        line1_info = FF[3]
+
+                        if "umary_LINE1" in line1_info:
+                            if is_rmsk: continue
+                            is_1000g = True
+                        elif "gnomAD-SV" in line1_info:
+                            if is_1000g or is_rmsk: continue
+                            is_gnomad = True
+                        else:
+                            is_rmsk = True
+
+                        if line1_ratio < 0.01:
+                            transduction_class = "Orphan"
+                        else:
+                            transduction_class = "Partnered"
+                        cur_L1_pos = int(FF[1])
+
+            elif source_dir == '-':
+                cur_L1_pos = -float("Inf")
+                is_rmsk, is_1000g, is_gnomad = False, False, False
+                try:
+                    records = line1_tb.fetch(achr, int(astart) - 5000, int(aend) + 50)
+                except Exception as inst:
+                    tabix_error_flag = 1
+                if tabix_error_flag == 0:
+                    for record in records:
+                        FF = record.split('\t')
+                        if FF[5] == '-': continue
+                        if int(FF[1]) < cur_L1_pos: continue 
+                        line1_info = FF[3]
+
+                        if "umary_LINE1" in line1_info:                  
+                            if is_rmsk: continue
+                            is_1000g = True
+                        elif "gnomAD-SV" in line1_info:
+                            if is_1000g or is_rmsk: continue
+                            is_gnomad = True
+                        else:
+                            is_rmsk = True
+
+                        if line1_ratio < 0.01:
+                            transduction_class = "Orphan"
+                        else:
+                            transduction_class = "Partnered"
+                        cur_L1_pos = int(FF[1])
+
+
+            print('\t'.join([key, repeat_type, class_ratios, rmsk_info, alignment_info, inserted_pos, is_polyAT, tsd, 
+                             str(line1_info), str(transduction_class)]), file = hout)
+ 
 
 
 
