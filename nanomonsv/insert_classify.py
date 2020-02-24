@@ -111,20 +111,26 @@ def sam2bed_split(input_file, output_file):
 
 
 
-def pp_proc_filt_exon(input_file, output_file):
+def pp_proc_filt_exon(input_file, seq_list, output_file):
 
     key2aln_info = {}
     key2insert_len = {}
     key2total_match = {}
     key2exon_match_num = {}
 
+    sid2skey = {}
+    with open(seq_list, 'r') as hin:
+        for line in hin:
+            F = line.rstrip('\n').split('\t')
+            sid2skey[F[0]] = F[1]
+
     with open(input_file, 'r') as hin, open(output_file, 'w') as hout:
         for line in hin:
             F = line.rstrip('\n').split('\t')
             insert_key_info = F[3].split(',')
-            insert_key = ','.join(insert_key_info[:7])
-            insert_len = int(insert_key_info[6])
-            aln_start, aln_end = int(insert_key_info[7]), int(insert_key_info[8])
+            insert_key = ','.join(insert_key_info[:2])
+            insert_len = int(insert_key_info[1])
+            aln_start, aln_end = int(insert_key_info[2]), int(insert_key_info[3])
 
             gene = F[9]
             exon_num = F[10]
@@ -243,7 +249,7 @@ def summarize_rmsk(input_file, output_file):
                 if temp_key != '':
 
                     repeat_class, L1_ratio, Alu_ratio, SVA_ratio, repeat_info = proc_rmsk_info(temp_key, temp_rmsk_info)
-                    print(temp_key + '\t' + repeat_class + '\t' + L1_ratio + ',' + Alu_ratio + ',' + SVA_ratio + '\t' + ';'.join(repeat_info), file = hout)
+                    print(temp_key + '\t' + repeat_class + '\t' + L1_ratio + '\t' + Alu_ratio + '\t' + SVA_ratio + '\t' + ';'.join(repeat_info), file = hout)
 
                 temp_key = F[4]
                 temp_rmsk_info = []
@@ -253,7 +259,7 @@ def summarize_rmsk(input_file, output_file):
      
         if temp_key != '':
             repeat_class, L1_ratio, Alu_ratio, SVA_ratio, repeat_info = proc_rmsk_info(temp_key, temp_rmsk_info)
-            print(temp_key + '\t' + repeat_class + '\t' + L1_ratio + ',' + Alu_ratio + ',' + SVA_ratio + '\t' + ';'.join(repeat_info), file = hout)
+            print(temp_key + '\t' + repeat_class + '\t' + L1_ratio + '\t' + Alu_ratio + '\t' + SVA_ratio + '\t' + ';'.join(repeat_info), file = hout)
 
 
 
@@ -368,13 +374,13 @@ def summarize_bwa_alignment(input_sam, seq_list, output_file):
     hout.close()
 
 
-def orgaize_info(rmsk_file, alignment_file, tsd_file, seq_list, output_file, genome_id):
+def organize_info(rmsk_file, alignment_file, tsd_file, seq_list, output_file, genome_id):
 
     key2rmsk = {}
     with open(rmsk_file, 'r') as hin:
         for line in hin:
             F = line.rstrip('\n').split('\t')
-            key2rmsk[F[0]] = [F[1], F[2], F[3]]
+            key2rmsk[F[0]] = [F[1], F[2], F[3], F[4], F[5]]
 
     key2alignment = {}
     with open(alignment_file, 'r') as hin:
@@ -402,13 +408,11 @@ def orgaize_info(rmsk_file, alignment_file, tsd_file, seq_list, output_file, gen
         # print('\t'.join(header), file = hout) 
         for key in keys:
 
-            repeat_type, class_ratios, rmsk_info = key2rmsk[key] if key in key2rmsk else ["None", "---", "---"]
+            repeat_type, line1_ratio, alu_ratio, sva_ratio, rmsk_info = key2rmsk[key] if key in key2rmsk else ["None", 0.0, 0.0, 0.0, "---"]
             alignment_info, inserted_pos = key2alignment[key] if key in key2alignment else ["---", "---"]
             is_polyAT, tsd = key2tsd_polyAT[key] if key in key2tsd_polyAT else ["---", "---"]
-
-            line1_ratio = float(class_ratios.split(',')[0]) if class_ratios != "---" else 0.0
-
-
+            
+            line1_ratio = float(line1_ratio)
             line1_info = None
             overlap_ratio = None
             transduction_class = None
@@ -417,7 +421,8 @@ def orgaize_info(rmsk_file, alignment_file, tsd_file, seq_list, output_file, gen
 
             if alignment_info == "---" or is_polyAT == None: 
                 # print('\t'.join(F) + '\t' + str(line1_info) + '\t' + str(overlap_ratio) + '\t' + str(transduction_class))
-                print('\t'.join([key, repeat_type, class_ratios, rmsk_info, alignment_info, inserted_pos, is_polyAT, tsd,
+                print('\t'.join([key, repeat_type, str(line1_ratio), str(alu_ratio), str(sva_ratio), 
+                                 rmsk_info, alignment_info, inserted_pos, is_polyAT, tsd,
                                  str(line1_info), str(transduction_class)]), file = hout)
                 continue
 
@@ -425,9 +430,6 @@ def orgaize_info(rmsk_file, alignment_file, tsd_file, seq_list, output_file, gen
             if not achr.startswith("chr"): achr = "chr" + achr
             source_dir = '+' if (astrand == '+' and is_polyAT == "polyT") or (astrand == '-' and is_polyAT == "polyA") else '-'
 
-            if key == "seq104,319":
-                import pdb; pdb.set_trace()
-            
             tabix_error_flag = 0
             if source_dir == '+':
                 cur_L1_pos = float("Inf")
@@ -488,9 +490,80 @@ def orgaize_info(rmsk_file, alignment_file, tsd_file, seq_list, output_file, gen
                         cur_L1_pos = int(FF[1])
 
 
-            print('\t'.join([key, repeat_type, class_ratios, rmsk_info, alignment_info, inserted_pos, is_polyAT, tsd, 
+            print('\t'.join([key, repeat_type, str(line1_ratio), str(alu_ratio), str(sva_ratio),
+                             rmsk_info, alignment_info, inserted_pos, is_polyAT, tsd, 
                              str(line1_info), str(transduction_class)]), file = hout)
  
+
+
+def annotate_sv_file(sv_file, source_file, ppseudo_file, seq_list, output_file):
+
+    sid2skey = {}
+    with open(seq_list, 'r') as hin:
+        for line in hin:
+            F = line.rstrip('\n').split('\t')
+            sid2skey[F[0]] = F[1]
+
+    skey2source_info = {}
+    with open(source_file, 'r') as hin:
+        for line in hin:
+            F = line.rstrip('\n').split('\t')
+            skey = sid2skey[F[0]]
+            skey2source_info[skey] = F[1:]
+
+    skey2ppseudo_info = {}
+    with open(ppseudo_file, 'r') as hin:
+        for line in hin:
+            F = line.rstrip('\n').split('\t')
+            skey = sid2skey[F[0]]
+            if skey in skey2ppseudo_info:
+                tmatch_ratio = float(skey2ppseudo_info[skey][1])
+                if float(F[2]) > tmatch_ratio:
+                    skey2ppseudo_info[skey] = F[1:4]
+            else:
+                skey2ppseudo_info[skey] = F[1:4]
+
+
+    with open(sv_file, 'r') as hin, open(output_file, 'w') as hout:
+        header = hin.readline().rstrip('\n')
+        print(header + '\t' + '\t'.join(["Insert_Type", "Is_Inversion", "L1_Raito", "Alu_Ratio", "SV_Ratio", "RMSK_Info",
+                                         "Alignment_Info", "Inserted_Pos", "Is_PolyA_T", "Target_Site_Duplication", "L1_Source_Info",
+                                         "PSD_Gene", "PSD_Overlap_Ratio", "PDS_Exon_Num"]), file = hout) 
+        for line in hin:
+            F = line.rstrip('\n').split('\t')
+            skey = ','.join(F[:6] + [str(len(F[6]))])
+
+            if skey not in skey2source_info:
+                print('\t'.join(F) + '\t' + "None" + '\t' + '\t'.join(["---"] * 13), file = hout)
+                continue
+        
+            source_info = skey2source_info[skey]
+            ppseudo_line = '\t'.join(skey2ppseudo_info[skey]) if skey in skey2ppseudo_info else "---\t---\t---"
+
+            insert_type = "None"
+            if source_info[10] == "Orphan":
+                insert_type = "Orphan_L1"
+            elif source_info[10] == "Partnered":
+                insert_type = "Partnered_L1"
+            elif source_info[10] == "Solo":
+                insert_type = "Solo_L1"
+            elif source_info[0] == "Alu":
+                insert_type = "Alu"
+            elif source_info[0] == "SVA":
+                insert_type = "SVA"
+            elif skey in skey2ppseudo_info:
+                insert_type = "PSD"
+
+            is_inversion = "---"
+            if source_info[0].startswith("Simple"):
+                is_inversion = "Simple"
+            elif source_info[0].startswith("Inverted"):
+                is_inversion = "Inverted"
+            elif source_info[0].startswith("Other"):
+                is_inversion = "Other"
+
+            print('\t'.join(F) + '\t' + insert_type + '\t' + is_inversion + '\t' + \
+                  '\t'.join(source_info[1:10]) + '\t' + ppseudo_line, file = hout)
 
 
 
