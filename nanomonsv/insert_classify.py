@@ -374,6 +374,100 @@ def summarize_bwa_alignment(input_sam, seq_list, output_file):
     hout.close()
 
 
+
+def summarize_bwa_alignment2(input_sam, seq_list, output_file):
+
+    samfile = pysam.AlignmentFile(input_sam, 'r')
+
+
+    inserted_positions = []
+    with open(seq_list, 'r') as hin:
+        for line in hin:
+            F = line.rstrip('\n').split('\t')
+            tchr, tstart, _, _, tend, _, _ = F[1].split(',')
+            inserted_positions.append((tchr, int(tstart), int(tend)))
+
+
+    samfile = pysam.AlignmentFile(input_sam, 'r')
+
+    query2align_supp = {}
+    query2align_primary = {}
+    query2align_ins = {}
+
+    hout = open(output_file, 'w') 
+    for read in samfile.fetch():
+
+        if read.is_unmapped: continue
+        if read.is_secondary: continue
+
+        query_name = read.query_name
+        key = query_name
+
+        query_strand = '-' if read.is_reverse else '+'
+        reference_name = read.reference_name
+        reference_start = read.reference_start + 1
+        reference_end = read.reference_end
+        mapping_quality = read.mapping_quality
+        query_length = read.infer_read_length()
+
+        cigartuples = read.cigartuples
+        left_hard_clipping_size, right_hard_clipping_size = 0, 0
+        if cigartuples[0][0] == 5: left_hard_clipping_size = cigartuples[0][1]
+        if cigartuples[-1][0] == 5: right_hard_clipping_size = cigartuples[-1][1]
+
+        if not read.is_supplementary:
+            if query_strand == '+':
+                query_start = read.query_alignment_start + 1 
+                query_end = read.query_alignment_end
+            else:
+                query_start = query_length - read.query_alignment_end + 1
+                query_end = query_length - read.query_alignment_start
+        else:
+            if query_strand == '+':
+                query_start = left_hard_clipping_size + 1
+                query_end = query_length - right_hard_clipping_size
+            else:
+                query_start = right_hard_clipping_size + 1
+                query_end = query_length - left_hard_clipping_size
+
+        align_info = ','.join([str(query_start), str(query_end), query_strand, str(mapping_quality), reference_name, str(reference_start), str(reference_end)])
+
+
+        if read.is_supplementary:
+            if query_name not in query2align_supp: query2align_supp[query_name] = []
+            query2align_supp[query_name].append(align_info + ",s")
+        else:
+            if read.mapping_quality >= 30:
+                query2align_primary[query_name] = align_info + ",p"
+
+                inserted_pos = "---"
+                for inserted_position in inserted_positions:
+                    ichr, istart, iend = inserted_position
+                    if reference_name == ichr and reference_end > istart - 5000 and reference_start < iend + 5000:
+                        inserted_pos = ichr + ',' + str(istart) + ',' + str(iend)
+                query2align_ins[query_name] = inserted_pos
+
+    samfile.close()
+
+    hout = open(output_file, 'w')
+    for query in sorted(query2align_primary):
+        align_primary = query2align_primary[query]
+        _, _, _, _, pchr, pstart, pend, _ = align_primary.split(',')
+        align_ins = query2align_ins[query]
+        align_info_final = align_primary
+        if query in query2align_supp:
+            for elm in query2align_supp[query]:
+                _, _, _, _, schr, sstart, send, _ = elm.split(',')
+                if int(pstart) - 5000 <= int(send) and int(pend) + 5000 >= int(sstart):
+                    align_info_final = align_info_final + ';' + elm
+        print("%s\t%s\t%s" % (query, align_info_final, align_ins), file = hout)
+
+
+    hout.close()
+
+
+
+
 def organize_info(rmsk_file, alignment_file, tsd_file, seq_list, output_file, genome_id):
 
     key2rmsk = {}
@@ -404,12 +498,10 @@ def organize_info(rmsk_file, alignment_file, tsd_file, seq_list, output_file, ge
 
     with open(output_file, 'w') as hout:
 
-        # header = ["Insertion_Key", "Repeat_Type", "L1_Ratio", "Alu_Ratio", "Repeat_Info", "Alignemnt_Info", "Inserted_Pos", "Is_PolyA_T", "Target_Site_Duplication"]
-        # print('\t'.join(header), file = hout) 
         for key in keys:
 
             repeat_type, line1_ratio, alu_ratio, sva_ratio, rmsk_info = key2rmsk[key] if key in key2rmsk else ["None", 0.0, 0.0, 0.0, "---"]
-            alignment_info, inserted_pos = key2alignment[key] if key in key2alignment else ["---", "---"]
+            alignment_infos, inserted_pos = key2alignment[key] if key in key2alignment else ["---", "---"]
             is_polyAT, tsd = key2tsd_polyAT[key] if key in key2tsd_polyAT else ["---", "---"]
             
             line1_ratio = float(line1_ratio)
@@ -419,15 +511,25 @@ def organize_info(rmsk_file, alignment_file, tsd_file, seq_list, output_file, ge
 
             if repeat_type.endswith("LINE1"): transduction_class = "Solo"
 
-            if alignment_info == "---" or is_polyAT == None: 
-                # print('\t'.join(F) + '\t' + str(line1_info) + '\t' + str(overlap_ratio) + '\t' + str(transduction_class))
+            if alignment_infos == "---" or is_polyAT == None: 
                 print('\t'.join([key, repeat_type, str(line1_ratio), str(alu_ratio), str(sva_ratio), 
-                                 rmsk_info, alignment_info, inserted_pos, is_polyAT, tsd,
+                                 rmsk_info, alignment_infos, inserted_pos, is_polyAT, tsd,
                                  str(line1_info), str(transduction_class)]), file = hout)
                 continue
 
-            _, _, astrand, _, achr, astart, aend = alignment_info.split(',')
+
+            achr, astart, aend, astrand = None, None, None, None
+            aqstart, aqend = None, None
+            for alignment_info in alignment_infos.split(';'):
+                tqstart, tqend, tastrand, _, tachr, tastart, taend, _ = alignment_info.split(',')
+                if achr is None:
+                    achr, astart, aend, astrand, aqstart, aqend = tachr, int(tastart), int(taend), tastrand, int(tqstart), int(tqend)
+                else:
+                    if (is_polyAT == "polyT" and int(tqstart) < aqstart) or (is_polyAT == "polyA" and int(tqend) > aqend):
+                        achr, astart, aend, astrand, aqstart, aqend = tachr, int(tastart), int(taend), tastrand, int(tqstart), int(tqend)
+
             if not achr.startswith("chr"): achr = "chr" + achr
+
             source_dir = '+' if (astrand == '+' and is_polyAT == "polyT") or (astrand == '-' and is_polyAT == "polyA") else '-'
 
             tabix_error_flag = 0
@@ -491,7 +593,7 @@ def organize_info(rmsk_file, alignment_file, tsd_file, seq_list, output_file, ge
 
 
             print('\t'.join([key, repeat_type, str(line1_ratio), str(alu_ratio), str(sva_ratio),
-                             rmsk_info, alignment_info, inserted_pos, is_polyAT, tsd, 
+                             rmsk_info, alignment_infos, inserted_pos, is_polyAT, tsd, 
                              str(line1_info), str(transduction_class)]), file = hout)
  
 
@@ -540,7 +642,7 @@ def annotate_sv_file(sv_file, source_file, ppseudo_file, seq_list, output_file):
             source_info = skey2source_info[skey]
             ppseudo_line = '\t'.join(skey2ppseudo_info[skey]) if skey in skey2ppseudo_info else "---\t---\t---"
 
-            insert_type = "None"
+            insert_type = "---"
             if source_info[10] == "Orphan":
                 insert_type = "Orphan_L1"
             elif source_info[10] == "Partnered":
@@ -554,7 +656,7 @@ def annotate_sv_file(sv_file, source_file, ppseudo_file, seq_list, output_file):
             elif skey in skey2ppseudo_info:
                 insert_type = "PSD"
 
-            is_inversion = "---"
+            is_inversion = "NA"
             if source_info[0].startswith("Simple"):
                 is_inversion = "Simple"
             elif source_info[0].startswith("Inverted"):
