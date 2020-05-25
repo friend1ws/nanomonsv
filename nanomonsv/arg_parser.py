@@ -139,6 +139,7 @@ def create_parser():
     insert_classify.add_argument("--genome_id", choices = ["hg19", "hg38", "mm10"], default = "hg19",
                                  help = "Genome id used for selecting UCSC-GRC chromosome name corresponding files (default: %(default)s)")
 
+    insert_classify.add_argument("--debug", default = False, action = 'store_true', help = "keep intermediate files")
 
     insert_classify.set_defaults(func = insert_classify_main)
     ##########
