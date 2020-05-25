@@ -160,7 +160,7 @@ def parse_alignment_info(input_bam, deletion_output_file, insertion_output_file,
     bamfile.close()
 
 
-def extract_bedpe_junction(input_file, output_file, split_alignment_check_margin = 50, minimum_ambiguity = 20):
+def extract_bedpe_junction(input_file, output_file, split_alignment_check_margin1 = 50, split_alignment_check_margin2 = 50, minimum_ambiguity = 20):
 
    
     def print_bedpe_junction(query2target, hout):
@@ -179,7 +179,8 @@ def extract_bedpe_junction(input_file, output_file, split_alignment_check_margin
             # if there is a significant overlap         
             if (qpos1[2] - qpos2[1]) / (qpos2[2] - qpos1[2]) >= 0.2: continue
             
-            if abs(qpos2[1] - qpos1[2]) <= split_alignment_check_margin:
+            # if abs(qpos2[1] - qpos1[2]) <= split_alignment_check_margin:
+            if qpos2[1] - qpos1[2] <= split_alignment_check_margin1 and qpos1[2] - qpos2[1] <= split_alignment_check_margin2:
                 bp_flag = True
                 tchr1, tstart1, tend1, tmapQ1, tnumM1, tnumI1, tnumD1, tis_supp1, tis_2nd1 = query2target[qpos1]
                 tchr2, tstart2, tend2, tmapQ2, tnumM2, tnumI2, tnumD2, tis_supp2, tis_2nd2 = query2target[qpos2]
@@ -220,7 +221,8 @@ def extract_bedpe_junction(input_file, output_file, split_alignment_check_margin
     with open(input_file, 'r') as hin:
         for line in hin:
             F = line.rstrip('\n').split('\t')
-            if F[11] == "True": continue
+            # skip secondary alignment
+            # if F[13] == "True": continue
 
             if F[0] != temp_read_name:
                 if temp_read_name != '' and len(query2target) > 1: print_bedpe_junction(query2target, hout)

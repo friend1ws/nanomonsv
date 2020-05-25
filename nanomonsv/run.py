@@ -46,8 +46,8 @@ def parse_main(args):
     hout.close()
 
     extract_bedpe_junction(args.output_prefix + ".tmp.rearrangement_info.name_sorted.txt", 
-                           args.output_prefix + ".tmp.rearrangement.bedpe",
-                           args.split_alignment_check_margin, args.minimum_breakpoint_ambiguity)
+                           args.output_prefix + ".tmp.rearrangement.bedpe") # ,
+                           # args.split_alignment_check_margin, args.minimum_breakpoint_ambiguity)
 
     hout = open(args.output_prefix + ".tmp.rearrangement.sorted.bedpe", 'w')
     subprocess.check_call(["sort", "-k1,1", "-k2,2n", "-k3,3n", "-k4,4", "-k5,5n", "-k6,6n", 
@@ -201,12 +201,12 @@ def insert_classify_main(args):
     
     ##########
     # alignment to reference genome
-    with open(args.output_file + ".tmp.minimap2.sam", 'w') as hout:
+    with open(args.output_file + ".tmp.bwa.sam", 'w') as hout:
         print(' '.join(["bwa", "mem", "-h", "200", args.reference_fasta, args.output_file + ".tmp.fasta"]))
         subprocess.check_call(["bwa", "mem", "-h", "200", args.reference_fasta, args.output_file + ".tmp.fasta"], stdout = hout)
 
-    summarize_bwa_alignment(args.output_file + ".tmp.minimap2.sam", args.output_file + ".tmp.seq_id.txt", args.output_file + ".tmp.alignment.txt")
-    
+    summarize_bwa_alignment2(args.output_file + ".tmp.bwa.sam", args.output_file + ".tmp.seq_id.txt", args.output_file + ".tmp.alignment.txt")
+
     organize_info(args.output_file + ".tmp.rmsk.txt", args.output_file + ".tmp.alignment.txt", 
                  args.output_file + ".tmp.tsd.polyAT.txt", args.output_file + ".tmp.seq_id.txt", 
                  args.output_file + ".tmp.org.txt", args.genome_id)
@@ -214,16 +214,19 @@ def insert_classify_main(args):
     annotate_sv_file(args.sv_list_file, args.output_file + ".tmp.org.txt", args.output_file + ".tmp.ppseudo.txt",
                      args.output_file + ".tmp.seq_id.txt", args.output_file)
 
+    if not args.debug:
+        os.remove(args.output_file + ".tmp.fasta")
+        os.remove(args.output_file + ".tmp.seq_id.txt")
+        os.remove(args.output_file + ".tmp.bwa.sam")
+        os.remove(args.output_file + ".tmp.exon.bed.gz")
+        os.remove(args.output_file + ".tmp.exon.bed.gz.tbi")
+        os.remove(args.output_file + ".tmp.minimap2.filt.bed")
+        os.remove(args.output_file + ".tmp.minimap2.filt.exon.bed")
+        os.remove(args.output_file + ".tmp.ppseudo.txt")
+        os.remove(args.output_file + ".tmp.rmsk.txt")
+        os.remove(args.output_file + ".tmp.tsd.polyAT.txt")
+        os.remove(args.output_file + ".tmp.minimap2.sam")
+        os.remove(args.output_file + ".tmp.alignment.txt")
+        os.remove(args.output_file + ".tmp.org.txt")
 
-    os.remove(args.output_file + ".tmp.fasta")
-    os.remove(args.output_file + ".tmp.seq_id.txt")
-    os.remove(args.output_file + ".tmp.exon.bed.gz")
-    os.remove(args.output_file + ".tmp.exon.bed.gz.tbi")
-    os.remove(args.output_file + ".tmp.minimap2.filt.bed")
-    os.remove(args.output_file + ".tmp.minimap2.filt.exon.bed")
-    os.remove(args.output_file + ".tmp.ppseudo.txt")
-    os.remove(args.output_file + ".tmp.rmsk.txt")
-    os.remove(args.output_file + ".tmp.tsd.polyAT.txt")
-    os.remove(args.output_file + ".tmp.minimap2.sam")
-    os.remove(args.output_file + ".tmp.alignment.txt")
-    os.remove(args.output_file + ".tmp.org.txt")
+
