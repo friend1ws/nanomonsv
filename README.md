@@ -7,7 +7,6 @@
 
 nanomonsv is a software for detecting somatic structural variass from paired (tumor and matched control) cancer genome sequence data. 
 
-
 ## Dependency
 
 ### Binary programs
@@ -16,10 +15,27 @@ nanomonsv is a software for detecting somatic structural variass from paired (tu
 ### Python
 Pytnon (>= 3.6), pysam, numpy, scipy, statistics, swalign
 
-### Preparation
+## Preparation
 
 ### Install softwares and add them to the PATH
 
 nanomonsv uses, tabix, bgzip (which ar part of HTSlib projects) and mafft inside the program,
 assuming those are installed and the pathes are already added to the running environment.
-Also, 
+Also, for the preparation of SSW Library, 
+create the libssw.so and add the path to the LD_LIBRARY_PATH environment variable.
+
+### Input file
+
+nanomonsv the input file aligned by `minimap2`. 
+
+
+## Commands
+
+### parse
+
+This step parse all the supporting reads of putative somatic SVs.
+
+```
+nanomonsv parse
+```
+
