@@ -37,8 +37,18 @@ This step parse all the supporting reads of putative somatic SVs.
 
 ```
 nanomonsv parse [-h] [--debug]
-                       [--split_alignment_check_margin SPLIT_ALIGNMENT_CHECK_MARGIN]
-                       [--minimum_breakpoint_ambiguity MINIMUM_BREAKPOINT_AMBIGUITY]
-                       bam_file output_prefix
+                [--split_alignment_check_margin SPLIT_ALIGNMENT_CHECK_MARGIN]
+                [--minimum_breakpoint_ambiguity MINIMUM_BREAKPOINT_AMBIGUITY]
+                bam_file output_prefix
 ```
+- **bam_file**: Path to input indexed bam file
+- **output_prefix**: Output file prefix
+
+See the help (nanomonsv parse -h) for other options.
+
+After successful completion, you will find supporting reads stratified by deletions, insertions, and rearrangements
+({output_prefix}.deletion.sorted.bed.gz, {output_prefix}.insertion.sorted.bed.gz, and {output_prefix}.rearrangement.sorted.bedpe.gz)
+and their indexes (.tbi files). 
+
+
 
