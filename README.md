@@ -36,6 +36,9 @@ nanomonsv the input file aligned by `minimap2`.
 This step parse all the supporting reads of putative somatic SVs.
 
 ```
-nanomonsv parse
+nanomonsv parse [-h] [--debug]
+                       [--split_alignment_check_margin SPLIT_ALIGNMENT_CHECK_MARGIN]
+                       [--minimum_breakpoint_ambiguity MINIMUM_BREAKPOINT_AMBIGUITY]
+                       bam_file output_prefix
 ```
 
