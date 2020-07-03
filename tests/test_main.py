@@ -78,7 +78,6 @@ class TestMain(unittest.TestCase):
    
         shutil.rmtree(tmp_dir)
 
-    """
     def test_validate(self):
         
         cur_dir = os.path.dirname(os.path.abspath(__file__))
@@ -98,7 +97,6 @@ class TestMain(unittest.TestCase):
 
         self.assertTrue(filecmp.cmp(output_file, sv_list, shallow=False))
         shutil.rmtree(tmp_dir)
-    """
 
 if __name__ == "__main__":
    unittest.main()

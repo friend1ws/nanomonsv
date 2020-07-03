@@ -135,10 +135,9 @@ def get_main(args):
         subprocess.check_call(["rm", "-rf", args.tumor_prefix + ".validated.tumor_sread.txt"])
 
 
-"""
 def validate_main(args):
 
-    long_read_validate_main(args.sv_list,
+    long_read_validate_main(args.sv_list_file,
                             args.tumor_bam,
                             args.output + ".validated.txt",
                             args.output + ".validated.tumor_sread.txt",
@@ -158,7 +157,7 @@ def validate_main(args):
     if not args.debug:
         subprocess.check_call(["rm", "-rf", args.output + ".validated.txt"])
         subprocess.check_call(["rm", "-rf", args.output + ".validated.tumor_sread.txt"])
-"""
+
 
 def insert_classify_main(args):
 

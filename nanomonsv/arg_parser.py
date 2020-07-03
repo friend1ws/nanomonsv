@@ -91,7 +91,6 @@ def create_parser():
     get.set_defaults(func = get_main)
     ##########
 
-    """
     ##########
     # validate 
     validate = subparsers.add_parser("validate",
@@ -119,7 +118,6 @@ def create_parser():
 
     validate.set_defaults(func = validate_main)
     ##########
-    """
 
     ##########
     # insert_classify
