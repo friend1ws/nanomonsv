@@ -2,8 +2,8 @@
 
 import sys, re, pkg_resources
 import pysam
-import swalign
 
+from .swalign import *
 from .my_seq import get_seq, reverse_complement
 
 def make_fasta_file(input_file, output_file, seq_id_file):
@@ -267,8 +267,8 @@ def check_tsd_polyAT(input_file, seq_list, reference, output_file):
 
     match = 1
     mismatch = -8
-    scoring = swalign.NucleotideScoringMatrix(match, mismatch)
-    sw = swalign.LocalAlignment(scoring, gap_penalty=-8, gap_extension_penalty=-8)
+    scoring = NucleotideScoringMatrix(match, mismatch)
+    sw = LocalAlignment(scoring, gap_penalty=-8, gap_extension_penalty=-8)
 
     sid2skey = {}
     with open(seq_list, 'r') as hin:
