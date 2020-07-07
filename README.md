@@ -5,7 +5,7 @@
 
 ## Introduction
 
-nanomonsv is a software for detecting somatic structural variass from paired (tumor and matched control) cancer genome sequence data. 
+nanomonsv is a software for detecting somatic structural variations from paired (tumor and matched control) cancer genome sequence data. 
 
 ## Dependency
 
@@ -17,10 +17,10 @@ Pytnon (tested with 3.5, 3.6, 3.7), pysam, numpy, scipy, statistics
 
 ## Preparation
 
-### Install softwares and add them to the PATH
+### Install software and add them to the PATH
 
 nanomonsv uses, tabix, bgzip (which ar part of HTSlib projects) and mafft inside the program,
-assuming those are installed and the pathes are already added to the running environment.
+assuming those are installed, and the paths are already added to the running environment.
 Also, for the preparation of SSW Library, 
 create the libssw.so and add the path to the LD_LIBRARY_PATH environment variable.
 
@@ -29,7 +29,7 @@ create the libssw.so and add the path to the LD_LIBRARY_PATH environment variabl
 nanomonsv the input file aligned by `minimap2`. 
 
 
-## Quick start
+## Quickstart
 
 1. Install all the prerequisite software and install nanomonsv.
 ```
@@ -61,7 +61,7 @@ You will see the result file named as `test_tumor.nanomonsv.result.txt`.
 
 ### parse
 
-This step parse all the supporting reads of putative somatic SVs.
+This step parses all the supporting reads of putative somatic SVs.
 
 ```
 nanomonsv parse [-h] [--debug]
@@ -81,7 +81,7 @@ and their indexes (.tbi files).
 
 ### get
 
-This step get the SV result from the parsed supporting reads data obtained above.
+This step gets the SV result from the parsed supporting reads data obtained above.
 
 ```
 nanomonsv get [-h] [--control_prefix CONTROL_PREFIX]
@@ -100,9 +100,9 @@ nanomonsv get [-h] [--control_prefix CONTROL_PREFIX]
  - **tumor_bam**: Path to input indexed BAM file
  - **reference.fa**: Path to reference genome used for the alignment
  
-This software can generate the list of SVs without specifying the matched control.
-But we have not tested the performance of the approach just using tumor sample, and recommend to use the matched control data.
-- **control_prefix**: Prefix to the matched control data set set in the parse step
+This software can generate a list of SVs without specifying the matched control.
+But we have not tested the performance of the approach just using tumor sample, and recommend using the matched control data.
+- **control_prefix**: Prefix to the matched control data set in the parse step
 - **control_bam**: Path to the matched control BAM file
 
 After successful execution, you will be able to find the result file names as {tumor_prefix}.nanomonsv.result.txt
@@ -124,7 +124,7 @@ See the help (`nanomonsv get -h`) for other options.
 
 ### insert_classify
 
-This command classify the long insertions into several mobile element insertions (still in alpha version).
+This command classifies the long insertions into several mobile element insertions (still in alpha version).
 
 ```
 nanomonsv insert_classify [-h] [--grc] [--genome_id {hg19,hg38,mm10}]
@@ -138,9 +138,9 @@ nanomonsv insert_classify [-h] [--grc] [--genome_id {hg19,hg38,mm10}]
 
 ### validate
 
-This command perform validation of the candidate SVs by alignment of tumor and matched control BAM files,
-and is part of the procedures of `get` command. 
-This may be helpful for evaluation of SV tools of short-read platform
+This command, which is part of the procedures of `get` command, 
+performs validation of the candidate SVs by alignment of tumor and matched control BAM files.
+This may be helpful for the evaluation of SV tools of the short-read platform
 when pairs of short-read and long-read sequencing data are available.
 This is still in alpha version.
 
