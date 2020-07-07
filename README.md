@@ -40,7 +40,7 @@ pip3 install . --user
 
 2. Prepare the reference genome for the test data (here, we show the path to Genomic Data Commons reference genome).
 ```
-wget https://api.gdc.cancer.gov/data/254f697d-310d-4d7d-a27b-27fbf767a834 -o GRCh38.d1.vd1.fa.tar.gz
+wget https://api.gdc.cancer.gov/data/254f697d-310d-4d7d-a27b-27fbf767a834 -O GRCh38.d1.vd1.fa.tar.gz
 tar zxvf GRCh38.d1.vd1.fa.tar.gz
 ```
 
