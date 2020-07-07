@@ -13,7 +13,7 @@ nanomonsv is a software for detecting somatic structural variass from paired (tu
 [htslib](http://www.htslib.org/), [mafft](https://mafft.cbrc.jp/alignment/software/), [SSW Library](https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library)
 
 ### Python
-Pytnon (>= 3.6), pysam, numpy, scipy, statistics, swalign
+Pytnon (tested with 3.5, 3.6, 3.7), pysam, numpy, scipy, statistics, swalign
 
 ## Preparation
 
@@ -28,6 +28,34 @@ create the libssw.so and add the path to the LD_LIBRARY_PATH environment variabl
 
 nanomonsv the input file aligned by `minimap2`. 
 
+
+## Quick start
+
+1. Install all the prerequisite software and install nanomonsv.
+```
+git clone https://github.com/friend1ws/nanomonsv.git
+cd nanomonsv
+pip3 install . --user
+```
+
+2. Prepare the reference genome for the test data (here, we show the path to Genomic Data Commons reference genome).
+```
+wget https://api.gdc.cancer.gov/data/254f697d-310d-4d7d-a27b-27fbf767a834 -o GRCh38.d1.vd1.fa.tar.gz
+tar zxvf GRCh38.d1.vd1.fa.tar.gz
+```
+
+3. Parse the putative structural variation supporting reads of the test data.
+```
+nanomonsv parse tests/resource/bam/test_tumor.bam output/test_tumor
+nanomonsv parse tests/resource/bam/test_ctrl.bam output/test_ctrl
+```
+
+4. Get the final result.
+```
+nanomonsv get output/test_tumor tests/resource/bam/test_tumor.bam GRCh38.d1.vd1.fa --control_prefix output/test_ctrl --control_bam tests/resource/bam/test_ctrl.bam
+```
+
+You will see the result file named as `test_tumor.nanomonsv.result.txt`.
 
 ## Commands
 
