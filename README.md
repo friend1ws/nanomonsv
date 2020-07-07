@@ -13,7 +13,7 @@ nanomonsv is a software for detecting somatic structural variass from paired (tu
 [htslib](http://www.htslib.org/), [mafft](https://mafft.cbrc.jp/alignment/software/), [SSW Library](https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library)
 
 ### Python
-Pytnon (tested with 3.5, 3.6, 3.7), pysam, numpy, scipy, statistics, swalign
+Pytnon (tested with 3.5, 3.6, 3.7), pysam, numpy, scipy, statistics
 
 ## Preparation
 
