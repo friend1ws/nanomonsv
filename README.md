@@ -80,6 +80,19 @@ But we have not tested the performance of the approach just using tumor sample, 
 After successful execution, you will be able to find the result file names as {tumor_prefix}.nanomonsv.result.txt
 See the help (`nanomonsv get -h`) for other options. 
 
+#### result
+
+* **Chr_1**: Chromosome for the 1st breakpoint
+* **Pos_1**: Coordinate for the 1st breakpoint
+* **Dir_1**: Direction of the 1st breakpoint
+* **Chr_2**: Chromosome for the 2nd breakpoint
+* **Pos_2**: Coordinate for the 2nd breakpoint
+* **Dir_2**: Direction of the 2nd breakpoint
+* **Inserted_Seq**: Inserted nucleotides within the breakpoints
+* **Checked_Read_Num_Tumor**: Total number of reads in the tumor used for the validation alignment step
+* **Supporting_Read_Num_Tumor**: Total number of variant reads in the tumor determined in the validation alignment step
+* **Checked_Read_Num_Control**: Total number of reads in the normal used for the validation alignment step
+* **Supporting_Read_Num_Control**: Total number of variant reads in the matched control determined in the validation alignment step
 
 ### insert_classify
 
