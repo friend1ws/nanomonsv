@@ -9,6 +9,11 @@ from .insert_classify import *
 
 def parse_main(args):
 
+    # make directory for the output prefix
+    output_dir = os.path.dirname(args.output_prefix)
+    if output_dir != '' and not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
     parse_alignment_info(args.bam_file, args.output_prefix + ".tmp.deletion_info.txt", 
                                         args.output_prefix + ".tmp.insertion_info.txt", 
                                         args.output_prefix + ".tmp.rearrangement_info.txt")
