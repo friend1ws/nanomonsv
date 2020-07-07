@@ -69,7 +69,7 @@ nanomonsv parse [-h] [--debug]
                 [--minimum_breakpoint_ambiguity MINIMUM_BREAKPOINT_AMBIGUITY]
                 bam_file output_prefix
 ```
-- **bam_file**: Path to input indexed bam file
+- **bam_file**: Path to input indexed BAM file
 - **output_prefix**: Output file prefix
 
 See the help (`nanomonsv parse -h`) for other options.
@@ -97,13 +97,13 @@ nanomonsv get [-h] [--control_prefix CONTROL_PREFIX]
               tumor_prefix tumor_bam reference.fa
  ```
  - **tumor_prefix**: Prefix to the tumor data set in the parse step
- - **tumor_bam**: Path to input indexed bam file
+ - **tumor_bam**: Path to input indexed BAM file
  - **reference.fa**: Path to reference genome used for the alignment
  
 This software can generate the list of SVs without specifying the matched control.
 But we have not tested the performance of the approach just using tumor sample, and recommend to use the matched control data.
 - **control_prefix**: Prefix to the matched control data set set in the parse step
-- **control_bam**: Path to the matched control bam file
+- **control_bam**: Path to the matched control BAM file
 
 After successful execution, you will be able to find the result file names as {tumor_prefix}.nanomonsv.result.txt
 See the help (`nanomonsv get -h`) for other options. 
@@ -124,7 +124,7 @@ See the help (`nanomonsv get -h`) for other options.
 
 ### insert_classify
 
-This step classify the long insertions into several mobile element insertions (still in alpha version).
+This command classify the long insertions into several mobile element insertions (still in alpha version).
 
 ```
 nanomonsv insert_classify [-h] [--grc] [--genome_id {hg19,hg38,mm10}]
@@ -136,3 +136,20 @@ nanomonsv insert_classify [-h] [--grc] [--genome_id {hg19,hg38,mm10}]
 - **reference.fa**: Path to the reference genome
 
 
+### validate
+
+This command perform validation of the candidate SVs by alignment of tumor and matched control BAM files,
+and is part of the procedures of `get` command. 
+This may be helpful for evaluation of SV tools of short-read platform
+when pairs of short-read and long-read sequencing data are available.
+This is still in alpha version.
+
+```
+nanomonsv validate [-h] [--control_bam CONTROL_BAM]
+                   [--var_read_min_mapq VAR_READ_MIN_MAPQ] [--debug]
+                   sv_list_file tumor_bam output reference.fa
+```
+- **sv_list_file**: SV candidate list file (similar format with the result file by `get` command. 
+But only from **Chr_1** to **Inserted_Seq** columns are necessary.
+- **output_file**: Path to the output file
+- **reference.fa**: Path to the reference genome                          
