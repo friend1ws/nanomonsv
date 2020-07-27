@@ -66,9 +66,9 @@ class TestMain(unittest.TestCase):
         nanomonsv.run.get_main(args)
 
         with open(tumor_prefix_dst + ".nanomonsv.result.txt", 'r') as hin: record_num = len(hin.readlines())
-        with open(tumor_prefix_dst + ".nanomonsv.result.txt", 'r') as hin:
-            for line in hin:
-                print(line)
+        # with open(tumor_prefix_dst + ".nanomonsv.result.txt", 'r') as hin:
+        #     for line in hin:
+        #         print(line)
 
         self.assertTrue(record_num == 7)
 

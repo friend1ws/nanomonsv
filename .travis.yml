@@ -20,10 +20,10 @@ before_script:
   - cd ../..
 
   - pip install requests
+  - pip install numpy==1.16.6
   - pip install scipy==1.2.3
   - pip install statistics==1.0.3.5
   - pip install pysam==0.16.0.1
-  - pip install numpy==1.16.6
 
 script:
   - pip install .
