@@ -3,22 +3,17 @@
 import unittest
 import sys, os, gzip, tempfile, shutil, filecmp, tarfile
 import nanomonsv 
-from .check_download import check_download
+from .check_download import check_download_s3
 
 class TestMain(unittest.TestCase):
 
     def setUp(self):
 
-        def extract_tar_gz(input_tar_gz_file, out_path):
-            tar = tarfile.open(input_tar_gz_file)
-            tar.extractall(out_path)
-            tar.close()
-
         # prepare reference genome
         cur_dir = os.path.dirname(os.path.abspath(__file__))
-        check_download("https://storage.googleapis.com/friend1ws_package_data/common/GRCh37.fa", \
-                       cur_dir + "/resource/reference_genome/GRCh37.fa")
-
+        check_download_s3("1000genomes", "technical/reference/GRCh38_reference_genome/GRCh38_full_analysis_set_plus_decoy_hla.fa", \
+                          cur_dir + "/resource/reference_genome/GRCh38_full_analysis_set_plus_decoy_hla.fa")
+         
         self.parser = nanomonsv.arg_parser.create_parser()
 
 
@@ -37,13 +32,13 @@ class TestMain(unittest.TestCase):
         nanomonsv.run.parse_main(args)
 
         with gzip.open(tmp_dir + "/test_tumor.rearrangement.sorted.bedpe.gz", 'rt') as hin: record_num = len(hin.readlines())
-        self.assertTrue(record_num == 58)
+        self.assertTrue(record_num == 24)
 
         with gzip.open(tmp_dir + "/test_tumor.deletion.sorted.bed.gz", 'rt') as hin: record_num = len(hin.readlines())
-        self.assertTrue(record_num == 359)
+        self.assertTrue(record_num == 74)
 
         with gzip.open(tmp_dir + "/test_tumor.insertion.sorted.bed.gz", 'rt') as hin: record_num = len(hin.readlines())
-        self.assertTrue(record_num == 44)
+        self.assertTrue(record_num == 169)
 
         shutil.rmtree(tmp_dir)
 
@@ -55,7 +50,7 @@ class TestMain(unittest.TestCase):
 
         tumor_bam = cur_dir + "/resource/bam/test_tumor.bam"
         ctrl_bam = cur_dir + "/resource/bam/test_ctrl.bam"
-        ref_genome = cur_dir + "/resource/reference_genome/GRCh37.fa"
+        ref_genome = cur_dir + "/resource/reference_genome/GRCh38_full_analysis_set_plus_decoy_hla.fa"
         ctrl_prefix = cur_dir + "/data/test_ctrl/test_ctrl"
         
         shutil.copytree(cur_dir + "/data/test_tumor", tmp_dir + "/test_tumor") 
@@ -71,12 +66,12 @@ class TestMain(unittest.TestCase):
         nanomonsv.run.get_main(args)
 
         with open(tumor_prefix_dst + ".nanomonsv.result.txt", 'r') as hin: record_num = len(hin.readlines())
-        self.assertTrue(record_num == 5)
+        self.assertTrue(record_num == 7)
 
         with open(tumor_prefix_dst + ".nanomonsv.supporting_read.txt", 'r') as hin: record_num = len(hin.readlines()) 
-        self.assertTrue(record_num == 47) 
+        self.assertTrue(record_num == 48) 
    
-        shutil.rmtree(tmp_dir)
+        # shutil.rmtree(tmp_dir)
 
     def test_validate(self):
         
@@ -87,7 +82,7 @@ class TestMain(unittest.TestCase):
         tumor_bam = cur_dir + "/resource/bam/test_tumor.bam"
         output_file = tmp_dir + "/test_tumor.validate.txt"
         ctrl_bam = cur_dir + "/resource/bam/test_ctrl.bam"
-        ref_genome = cur_dir + "/resource/reference_genome/GRCh37.fa"
+        ref_genome = cur_dir + "/resource/reference_genome/GRCh38_full_analysis_set_plus_decoy_hla.fa"
 
         nanomonsv_validate_args = ["validate", sv_list, tumor_bam, output_file, ref_genome, "--control_bam", ctrl_bam]
         print("nanomonsv " + ' '.join(nanomonsv_validate_args))
