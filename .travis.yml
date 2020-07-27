@@ -24,6 +24,7 @@ before_script:
   - pip install statistics==1.0.3.5
   - pip install pysam==0.15.2
   - pip install numpy==1.15.1
+  - pip install boto3==1.14.28
 
 script:
   - pip install .
