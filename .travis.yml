@@ -3,6 +3,7 @@ python:
   - "3.5"
   - "3.6"
   - "3.7"
+  - "3.8"
 before_script:
 
   - wget https://github.com/samtools/htslib/releases/download/1.10/htslib-1.10.tar.bz2
@@ -22,7 +23,7 @@ before_script:
   - pip install requests
   - pip install scipy==1.1.0
   - pip install statistics==1.0.3.5
-  - pip install pysam==0.15.2
+  - pip install pysam==0.16.0.1
   - pip install numpy==1.15.1
 
 script:
