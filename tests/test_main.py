@@ -3,7 +3,7 @@
 import unittest
 import sys, os, gzip, tempfile, shutil, filecmp, tarfile
 import nanomonsv 
-from .check_download import check_download_s3
+from .check_download import check_download
 
 class TestMain(unittest.TestCase):
 
@@ -11,7 +11,7 @@ class TestMain(unittest.TestCase):
 
         # prepare reference genome
         cur_dir = os.path.dirname(os.path.abspath(__file__))
-        check_download_s3("1000genomes", "technical/reference/GRCh38_reference_genome/GRCh38_full_analysis_set_plus_decoy_hla.fa", \
+        check_download("https://1000genomes.s3.us-east-1.amazonaws.com/technical/reference/GRCh38_reference_genome/GRCh38_full_analysis_set_plus_decoy_hla.fa",
                           cur_dir + "/resource/reference_genome/GRCh38_full_analysis_set_plus_decoy_hla.fa")
          
         self.parser = nanomonsv.arg_parser.create_parser()
