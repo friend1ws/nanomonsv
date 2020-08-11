@@ -18,7 +18,7 @@ def parse_main(args):
     is_tool("bgzip")
 
     # check input file existences
-    is_exists(args.bam_file)
+    is_exists_bam(args.bam_file)
 
     # BAM format check
     bam_format_check(args.bam_file)
@@ -99,9 +99,9 @@ def get_main(args):
     libssw_check()
 
     # check existences
-    is_exists(args.tumor_bam)
+    is_exists_bam(args.tumor_bam)
     is_exists(args.reference_fasta)
-    if args.control_bam is not None: is_exists(args.control_bam)
+    if args.control_bam is not None: is_exists_bam(args.control_bam)
    
     # check parsed files existences
     is_exists_parsed_files(args.tumor_prefix)

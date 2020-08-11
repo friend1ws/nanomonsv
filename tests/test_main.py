@@ -66,16 +66,40 @@ class TestMain(unittest.TestCase):
         nanomonsv.run.get_main(args)
 
         with open(tumor_prefix_dst + ".nanomonsv.result.txt", 'r') as hin: record_num = len(hin.readlines())
-        # with open(tumor_prefix_dst + ".nanomonsv.result.txt", 'r') as hin:
-        #     for line in hin:
-        #         print(line)
-
         self.assertTrue(record_num == 7)
 
         with open(tumor_prefix_dst + ".nanomonsv.supporting_read.txt", 'r') as hin: record_num = len(hin.readlines()) 
         self.assertTrue(record_num == 48) 
    
-        # shutil.rmtree(tmp_dir)
+        shutil.rmtree(tmp_dir)
+
+
+    def test_get_without_ctrl(self):
+        
+        cur_dir = os.path.dirname(os.path.abspath(__file__))
+        tmp_dir = tempfile.mkdtemp()
+
+        tumor_bam = cur_dir + "/resource/bam/test_tumor.bam"
+        ref_genome = cur_dir + "/resource/reference_genome/GRCh38_full_analysis_set_plus_decoy_hla.fa"
+        
+        shutil.copytree(cur_dir + "/data/test_tumor", tmp_dir + "/test_tumor") 
+        tumor_prefix_dst = tmp_dir + "/test_tumor/test_tumor"
+        tumor_prefix_src = cur_dir + "/data/test_tumor/test_tumor"
+
+        nanomonsv_get_args = ["get", tumor_prefix_dst, tumor_bam, ref_genome]
+        print("nanomonsv " + ' '.join(nanomonsv_get_args))
+
+        args = self.parser.parse_args(nanomonsv_get_args)
+        nanomonsv.run.get_main(args)
+
+        with open(tumor_prefix_dst + ".nanomonsv.result.txt", 'r') as hin: record_num = len(hin.readlines())
+        # self.assertTrue(record_num == 7)
+
+        with open(tumor_prefix_dst + ".nanomonsv.supporting_read.txt", 'r') as hin: record_num = len(hin.readlines()) 
+        # self.assertTrue(record_num == 48) 
+   
+        shutil.rmtree(tmp_dir)
+
 
     def test_validate(self):
         

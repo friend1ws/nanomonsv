@@ -7,10 +7,37 @@ import pysam
 from .logger import get_logger
 logger = get_logger(__name__)
 
+def is_exists_bam(input_file):
+
+    if input_file.startswith("s3://"):
+        is_exists_s3(input_file)
+    else:
+        is_exists(input_file)
+
+
 def is_exists(input_file):
     
     if not os.path.exists(input_file):
         logger.error("Input not exists: %s" % input_file)
+        sys.exit(1)
+
+
+def is_exists_s3(bam_object):
+
+    from urllib.parse import urlparse
+    import boto3
+
+    obj_p = urlparse(bam_object)
+
+    tbucket = obj_p.netloc
+    tkey = obj_p.path
+    if tkey.startswith("/"): tkey = tkey[1:]
+
+    client = boto3.client("s3")
+    try:
+        response = client.head_object(Bucket = tbucket, Key = tkey)
+    except:
+        logger.error("Input not exists: %s: " % bam_object)
         sys.exit(1)
 
 
