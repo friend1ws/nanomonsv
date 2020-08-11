@@ -10,19 +10,22 @@ nanomonsv is a software for detecting somatic structural variations from paired 
 ## Dependency
 
 ### Binary programs
-[htslib](http://www.htslib.org/), [mafft](https://mafft.cbrc.jp/alignment/software/), [SSW Library](https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library)
+[htslib](http://www.htslib.org/), [mafft](https://mafft.cbrc.jp/alignment/software/), [SSW Library](https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library) ([bwa](https://github.com/lh3/bwa), [minimap2](https://github.com/lh3/minimap2), [bedtools](https://bedtools.readthedocs.io/en/latest/), [RepeatMasker](http://www.repeatmasker.org/))
 
 ### Python
-Pytnon (tested with 3.5, 3.6, 3.7), pysam, numpy, scipy, statistics
+Pytnon (tested with 3.5, 3.6, 3.7), pysam, numpy
 
 ## Preparation
 
 ### Install software and add them to the PATH
 
-nanomonsv uses, tabix, bgzip (which ar part of HTSlib projects) and mafft inside the program,
+nanomonsv uses, `tabix`, `bgzip` (which ar part of HTSlib projects) and `mafft` inside the program,
 assuming those are installed, and the paths are already added to the running environment.
 Also, for the preparation of SSW Library, 
 create the libssw.so and add the path to the LD_LIBRARY_PATH environment variable.
+Please refer the **How to use the Python wrapper ssw_lib.py** section in the [SSW Library](https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library) repository page.
+
+Also, for `nanomonsv insert_classify` command, `bwa`, `minimap2`, `bedtools` and `RepeatMasker` are required to be installed and these pathese are added to the running environment.
 
 ### Input file
 
