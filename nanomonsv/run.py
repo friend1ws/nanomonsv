@@ -6,14 +6,26 @@ from .filt import *
 from .identify import *
 from .long_read_validate import *
 from .insert_classify import *
+from .utils import *
+
+from .logger import get_logger
+logger = get_logger(__name__)
 
 def parse_main(args):
+
+    # check if the executables exist
+    is_tool("tabix")
+    is_tool("bgzip")
+
+    # BAM format check
+    bam_format_check(args.bam_file)
 
     # make directory for the output prefix
     output_dir = os.path.dirname(args.output_prefix)
     if output_dir != '' and not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
+    ####################
     parse_alignment_info(args.bam_file, args.output_prefix + ".tmp.deletion_info.txt", 
                                         args.output_prefix + ".tmp.insertion_info.txt", 
                                         args.output_prefix + ".tmp.rearrangement_info.txt")
@@ -78,6 +90,9 @@ def parse_main(args):
 
 
 def get_main(args):
+
+    # check if the executables exist
+    is_tool("mafft")
 
     cluster_rearrangement(args.tumor_prefix + ".rearrangement.sorted.bedpe.gz", args.tumor_prefix + ".rearrangement.sorted.clustered.bedpe",
                      args.cluster_margin_size)
