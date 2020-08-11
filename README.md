@@ -36,8 +36,9 @@ nanomonsv the input file aligned by `minimap2`.
 
 1. Install all the prerequisite software and install nanomonsv.
 ```
-git clone https://github.com/friend1ws/nanomonsv.git
-cd nanomonsv
+wget https://github.com/friend1ws/nanomonsv/archive/v0.1.1.tar.gz
+tar xvf v0.1.1.tar.gz
+cd nanomonsv-0.1.1
 pip3 install . --user
 ```
 
