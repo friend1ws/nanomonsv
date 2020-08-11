@@ -112,6 +112,14 @@ def get_main(args):
     fasta_format_check(args.reference_fasta)
     if args.control_bam is not None: bam_format_check(args.control_bam)
 
+    control_rearrangement_bedpe = None
+    control_deletion_bed = None
+    control_insertion_bed = None
+    if args.control_prefix is not None: 
+        control_rearrangement_bedpe = args.control_prefix + ".rearrangement.sorted.bedpe.gz"
+        control_deletion_bed = args.control_prefix + ".deletion.sorted.bed.gz"
+        control_insertion_bed = args.control_prefix + ".insertion.sorted.bed.gz"
+    
     ####################
     cluster_rearrangement(args.tumor_prefix + ".rearrangement.sorted.bedpe.gz", args.tumor_prefix + ".rearrangement.sorted.clustered.bedpe",
                      args.cluster_margin_size)
@@ -120,7 +128,7 @@ def get_main(args):
                              args.min_tumor_variant_read_num, args.median_mapQ_thres, args.max_overhang_size_thres)
 
     filt_clustered_rearrangement2(args.tumor_prefix + ".rearrangement.sorted.clustered.filt1.bedpe", args.tumor_prefix + ".rearrangement.sorted.clustered.filt2.bedpe", 
-                             args.control_prefix + ".rearrangement.sorted.bedpe.gz")
+                                  control_rearrangement_bedpe)
 
 
     cluster_insertion_deletion(args.tumor_prefix + ".deletion.sorted.bed.gz", args.tumor_prefix + ".deletion.sorted.clustered.bedpe")
@@ -129,7 +137,7 @@ def get_main(args):
                                        args.min_tumor_variant_read_num, args.median_mapQ_thres, args.max_overhang_size_thres)
 
     filt_clustered_insertion_deletion2(args.tumor_prefix + ".deletion.sorted.clustered.filt1.bedpe", args.tumor_prefix + ".deletion.sorted.clustered.filt2.bedpe",
-                                       args.control_prefix + ".deletion.sorted.bed.gz")
+                                       control_deletion_bed)
 
     cluster_insertion_deletion(args.tumor_prefix + ".insertion.sorted.bed.gz", args.tumor_prefix + ".insertion.sorted.clustered.bedpe")
 
@@ -137,7 +145,7 @@ def get_main(args):
                                        args.min_tumor_variant_read_num, args.median_mapQ_thres, args.max_overhang_size_thres)
 
     filt_clustered_insertion_deletion2(args.tumor_prefix + ".insertion.sorted.clustered.filt1.bedpe", args.tumor_prefix + ".insertion.sorted.clustered.filt2.bedpe",
-                                       args.control_prefix + ".insertion.sorted.bed.gz")
+                                       control_insertion_bed)
 
     identify(args.tumor_prefix + ".rearrangement.sorted.clustered.filt2.bedpe", 
              args.tumor_prefix + ".insertion.sorted.clustered.filt2.bedpe",

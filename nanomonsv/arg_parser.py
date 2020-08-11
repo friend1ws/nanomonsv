@@ -50,10 +50,10 @@ def create_parser():
     get.add_argument("reference_fasta", metavar = "reference.fa", default = None, type = str,
                      help = "the path to the reference genome sequence")
 
-    get.add_argument("--control_prefix", type = str, required = True,
+    get.add_argument("--control_prefix", type = str, # required = True,
                      help = "Prefix of matched control data processed in parse step")
 
-    get.add_argument("--control_bam", type = str, required = True,
+    get.add_argument("--control_bam", type = str, # required = True,
                      help = "Path to control BAM file")
 
     get.add_argument("--min_tumor_variant_read_num", default = 3, type = int,
