@@ -45,7 +45,7 @@ pip3 install . --user
 2. Prepare the reference genome for the test data (here, we show the path to Genomic Data Commons reference genome).
 ```
 wget https://api.gdc.cancer.gov/data/254f697d-310d-4d7d-a27b-27fbf767a834 -O GRCh38.d1.vd1.fa.tar.gz
-tar zxvf GRCh38.d1.vd1.fa.tar.gz
+tar xvf GRCh38.d1.vd1.fa.tar.gz
 ```
 
 3. Parse the putative structural variation supporting reads of the test data.
@@ -105,7 +105,7 @@ nanomonsv get [-h] [--control_prefix CONTROL_PREFIX]
  - **reference.fa**: Path to reference genome used for the alignment
  
 This software can generate a list of SVs without specifying the matched control.
-But we have not tested the performance of the approach just using tumor sample, and recommend using the matched control data.
+But we have not tested the performance of the approach just using tumor sample, and strongly recommend using the matched control data.
 - **control_prefix**: Prefix to the matched control data set in the parse step
 - **control_bam**: Path to the matched control BAM file
 
