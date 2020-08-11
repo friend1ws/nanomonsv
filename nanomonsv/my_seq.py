@@ -3,21 +3,15 @@
 import pysam
 import sys, math, re
 
+from .logger import get_logger
+logger = get_logger(__name__)
+
 def get_seq(reference, chr, start, end):
 
     seq = pysam.FastaFile(reference).fetch(chr, start - 1, end)
-    """
-    seq = ""    
-    for item in pysam.faidx(reference, chr + ":" + str(start) + "-" + str(end)):
-        if item[0] == ">": continue
-        seq = seq + item.rstrip('\n').upper()
-    seq = seq.replace('>', '')
-    seq = seq.replace(chr + ":" + str(start) + "-" + str(end), '')
-    """
 
     if re.search(r'[^ACGTUWSMKRYBDHVNacgtuwsmkrybdhvn]', seq) is not None:
-        print("The return value in get_seq function includes non-nucleotide characters:", file = sys.stderr)
-        print(seq, file = sys.stderr)
+        logger.error("The return value in get_seq function includes non-nucleotide characters: " % seq)
         sys.exit(1)
 
     return seq
