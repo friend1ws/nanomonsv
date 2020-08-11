@@ -14,6 +14,29 @@ def is_exists(input_file):
         sys.exit(1)
 
 
+def is_exists_parsed_files(input_prefix):
+
+    missing_files = []
+    if not os.path.exists(input_prefix + ".deletion.sorted.bed.gz"):
+        missing_files.append(input_prefix + ".deletion.sorted.bed.gz")
+    if not os.path.exists(input_prefix + ".deletion.sorted.bed.gz.tbi"):
+        missing_files.append(input_prefix + ".deletion.sorted.bed.gz.tbi")
+    if not os.path.exists(input_prefix + ".insertion.sorted.bed.gz"):
+        missing_files.append(input_prefix + ".insertion.sorted.bed.gz")
+    if not os.path.exists(input_prefix + ".insertion.sorted.bed.gz.tbi"):
+        missing_files.append(input_prefix + ".insertion.sorted.bed.gz.tbi")
+    if not os.path.exists(input_prefix + ".rearrangement.sorted.bedpe.gz"):
+        missing_files.append(input_prefix + ".rearrangement.sorted.bedpe.gz")
+    if not os.path.exists(input_prefix + ".rearrangement.sorted.bedpe.gz.tbi"):
+        missing_files.append(input_prefix + ".rearrangement.sorted.bedpe.gz.tbi")
+
+    if len(missing_files) > 0:
+        logger.error("One or more files via the nanomonsv parse stage do not exist. " + \
+                     "Please check the prefix path. Also confirm whether nanomonsv parse ended properly. " +  \
+                     "Missing files: " + ' '.join(missing_files))
+        sys.exit(1)
+
+
 def bam_format_check(bam_file):
 
     try:

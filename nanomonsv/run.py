@@ -102,7 +102,11 @@ def get_main(args):
     is_exists(args.tumor_bam)
     is_exists(args.reference_fasta)
     if args.control_bam is not None: is_exists(args.control_bam)
-    
+   
+    # check parsed files existences
+    is_exists_parsed_files(args.tumor_prefix)
+    if args.control_prefix is not None: is_exists_parsed_files(args.control_prefix)
+ 
     # BAM format check
     bam_format_check(args.tumor_bam)
     fasta_format_check(args.reference_fasta)
