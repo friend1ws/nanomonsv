@@ -12,10 +12,18 @@ def bam_format_check(bam_file):
     try:
         bam_t = pysam.AlignmentFile(bam_file)
     except:
-        logger.error("BAM format error!")
+        logger.error("BAM format error: %s" % bam_file)
         sys.exit(1)
 
-        
+def fasta_format_check(fasta_file):
+
+    try:
+        fasta_t = pysam.FastaFile(fasta_file)
+    except:
+        logger.error("FASTA format error: %s" % fasta_file)
+        sys.exit(1)
+       
+ 
 def is_tool(executable):
 
     from shutil import which

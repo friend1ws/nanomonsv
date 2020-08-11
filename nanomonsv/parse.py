@@ -116,12 +116,12 @@ def parse_alignment_info(input_bam, deletion_output_file, insertion_output_file,
                     reference_pos_cur = reference_pos_cur + cigar[1]
 
         if query_strand == '+' and query_end != query_pos_cur:
-            import pdb; pdb.set_trace()
-            print("query end inconsistent!!")
+            # import pdb; pdb.set_trace()
+            logger.error("query end inconsistent!!")
             sys.exit(1)
         if query_strand == '-' and query_start != query_pos_cur + 1:
-            import pdb; pdb.set_trace()
-            print("query end inconsistent!!")
+            # import pdb; pdb.set_trace()
+            logger.error("query end inconsistent!!")
             sys.exit(1)
         """
         if query_strand == '+':
