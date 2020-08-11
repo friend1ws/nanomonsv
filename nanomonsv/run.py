@@ -96,6 +96,7 @@ def get_main(args):
 
     # check if the executables exist
     is_tool("mafft")
+    libssw_check()
 
     # check existences
     is_exists(args.tumor_bam)
@@ -170,7 +171,11 @@ def get_main(args):
 
 
 def validate_main(args):
+    
+    # executable check
+    libssw_check()
 
+    ####################
     long_read_validate_main(args.sv_list_file,
                             args.tumor_bam,
                             args.output + ".validated.txt",

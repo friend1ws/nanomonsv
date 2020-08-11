@@ -40,3 +40,17 @@ def is_tool(executable):
 
     return True
 
+
+def libssw_check():
+
+    # check whether libssw.so is in LD_LIBRARY_PATH
+    sLibPath = ""
+    for ld_path in os.environ["LD_LIBRARY_PATH"].split(':'):
+        # print ld_path
+        if os.path.exists(ld_path + "/libssw.so"):
+            sLibPath = ld_path # + "/libssw.so"
+            break
+    if sLibPath == "":
+        logger.error("Cannot find libssw.so in LD_LIBRARY_PATH")
+        sys.exit(1)
+
