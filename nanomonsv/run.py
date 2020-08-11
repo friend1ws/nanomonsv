@@ -198,6 +198,12 @@ def insert_classify_main(args):
     import tempfile
     import annot_utils.exon
 
+    # check if the executables exist
+    is_tool("minimap2")
+    is_tool("bedtools")
+    is_tool("bwa")
+    is_tool("RepeatMasker")
+
     make_fasta_file(args.sv_list_file, args.output_file + ".tmp.fasta", args.output_file + ".tmp.seq_id.txt")
     
     ##########
