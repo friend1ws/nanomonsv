@@ -17,6 +17,9 @@ def parse_main(args):
     is_tool("tabix")
     is_tool("bgzip")
 
+    # check input file existences
+    is_exists(args.bam_file)
+
     # BAM format check
     bam_format_check(args.bam_file)
 
@@ -94,6 +97,17 @@ def get_main(args):
     # check if the executables exist
     is_tool("mafft")
 
+    # check existences
+    is_exists(args.tumor_bam)
+    is_exists(args.reference_fasta)
+    if args.control_bam is not None: is_exists(args.control_bam)
+    
+    # BAM format check
+    bam_format_check(args.tumor_bam)
+    fasta_format_check(args.reference_fasta)
+    if args.control_bam is not None: bam_format_check(args.control_bam)
+
+    ####################
     cluster_rearrangement(args.tumor_prefix + ".rearrangement.sorted.bedpe.gz", args.tumor_prefix + ".rearrangement.sorted.clustered.bedpe",
                      args.cluster_margin_size)
 

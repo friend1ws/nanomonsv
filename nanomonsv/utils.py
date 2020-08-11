@@ -1,11 +1,18 @@
 #! /usr/bin/env python
 
-import sys
+import sys, os
 from subprocess import Popen, PIPE
 import pysam
 
 from .logger import get_logger
 logger = get_logger(__name__)
+
+def is_exists(input_file):
+    
+    if not os.path.exists(input_file):
+        logger.error("Input not exists: %s" % input_file)
+        sys.exit(1)
+
 
 def bam_format_check(bam_file):
 
