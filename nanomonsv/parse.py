@@ -3,6 +3,9 @@
 import sys, subprocess, itertools
 import pysam
 
+from .logger import get_logger
+logger = get_logger(__name__)
+
 def parse_alignment_info(input_bam, deletion_output_file, insertion_output_file, rearrangement_output_file,  min_ins_size = 20, min_del_size = 30):
 
     hout_d = open(deletion_output_file, 'w')
@@ -13,7 +16,7 @@ def parse_alignment_info(input_bam, deletion_output_file, insertion_output_file,
     
     for read in bamfile.fetch():
 
-        # if read.query_name == "edafca5e-e42e-4bc0-872b-c2720b69cac6":
+        # if read.query_name == "967b6fea-1ddc-4ca3-8baa-46e668552ccb":
         #     import pdb; pdb.set_trace() 
 
         # print(read)
@@ -37,9 +40,11 @@ def parse_alignment_info(input_bam, deletion_output_file, insertion_output_file,
 
         cigartuples = read.cigartuples
         left_hard_clipping_size, right_hard_clipping_size = 0, 0
+        left_soft_clipping_size, right_soft_clipping_size = 0, 0
         if cigartuples[0][0] == 5: left_hard_clipping_size = cigartuples[0][1]
         if cigartuples[-1][0] == 5: right_hard_clipping_size = cigartuples[-1][1]
-
+        if cigartuples[0][0] == 4: left_soft_clipping_size = cigartuples[0][1]
+        if cigartuples[-1][0] == 4: right_soft_clipping_size = cigartuples[-1][1]
 
         if not is_supplementary:
             if query_strand == '+':
@@ -50,11 +55,11 @@ def parse_alignment_info(input_bam, deletion_output_file, insertion_output_file,
                 query_end = query_length - read.query_alignment_start
         else:
             if query_strand == '+':
-                query_start = left_hard_clipping_size + 1
-                query_end = query_length - right_hard_clipping_size
+                query_start = left_hard_clipping_size + left_soft_clipping_size + 1
+                query_end = query_length - right_hard_clipping_size - right_soft_clipping_size
             else:
-                query_start = right_hard_clipping_size + 1
-                query_end = query_length - left_hard_clipping_size
+                query_start = right_hard_clipping_size + right_soft_clipping_size + 1
+                query_end = query_length - left_hard_clipping_size - left_soft_clipping_size 
 
 
         query_pos_cur = query_start - 1 if query_strand == '+' else query_end
@@ -117,11 +122,11 @@ def parse_alignment_info(input_bam, deletion_output_file, insertion_output_file,
 
         if query_strand == '+' and query_end != query_pos_cur:
             # import pdb; pdb.set_trace()
-            logger.error("query end inconsistent!!")
+            logger.error("query end inconsistent!! %s: %d != %d" % (query_name, query_end, query_pos_cur))
             sys.exit(1)
         if query_strand == '-' and query_start != query_pos_cur + 1:
             # import pdb; pdb.set_trace()
-            logger.error("query end inconsistent!!")
+            logger.error("query end inconsistent!! %s: %d != %d" % (query_name, query_end, query_pos_cur))
             sys.exit(1)
         """
         if query_strand == '+':
