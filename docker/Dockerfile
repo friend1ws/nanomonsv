@@ -31,8 +31,6 @@ RUN pip3 install --upgrade setuptools
 
 RUN pip3 install pysam==0.15.2
 RUN pip3 install numpy==1.15.1
-RUN pip3 install scipy==1.1.0
-RUN pip3 install statistics==1.0.3.5
 
 RUN wget https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library/archive/v1.1.tar.gz && \
     tar zxvf v1.1.tar.gz && \
