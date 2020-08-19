@@ -39,8 +39,8 @@ RUN wget https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library/arch
 
 ENV LD_LIBRARY_PATH /Complete-Striped-Smith-Waterman-Library-1.1/src:$LD_LIBRARY_PATH
 
-
-RUN git clone https://github.com/friend1ws/nanomonsv.git && \
-    cd nanomonsv && \
-    pip3 install . 
+RUN wget https://github.com/friend1ws/nanomonsv/archive/v0.1.2.tar.gz && \
+    tar zxvf v0.1.2.tar.gz && \
+    cd nanomonsv-0.1.2 && \
+    pip3 install .
 
