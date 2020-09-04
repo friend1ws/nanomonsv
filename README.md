@@ -139,6 +139,23 @@ nanomonsv insert_classify [-h] [--grc] [--genome_id {hg19,hg38,mm10}]
 - **output_file**: Path to the output file for this command
 - **reference.fa**: Path to the reference genome
 
+#### result
+
+* **Insert_Type**: Type of insertion (Solo_L1, Partnered_L1, Orphan_L1, Alu, SVA, PSD)
+* **Is_Inversion**: Type of inverted form for Solo LINE1 insertion (Simple, Inverted, Other)
+* **L1_Raito**: The match rate with LINE1 sequences for the inserted sequences
+* **Alu_Ratio**: The match rate with Alu sequences for the inserted sequences
+* **SV_Ratio**: The match rate with SVA sequences for the inserted sequences
+* **RMSK_Info**: Summary information of RepeatMasker
+* **Alignment_Info**: Alignment information to the human genome
+* **Inserted_Pos**: Inserted position (appears only when the inserted sequence is aligned near the inserted positions and implicated to be the tandem duplication or nested LINE1 transduction).
+* **Is_PolyA_T**: Extracted poly-A or poly-T sequences
+* **Target_Site_Duplication**: Nucleotides of target site duplications
+* **L1_Source_Info**: Inferred source site of LINE1 transduction
+* **PSD_Gene**: Processed pseudogene name
+* **PSD_Overlap_Ratio**: The match rate with the pseudogene
+* **PDS_Exon_Num**: The number of pseudogene exons matched with the inserted sequence
+
 
 ### validate
 
