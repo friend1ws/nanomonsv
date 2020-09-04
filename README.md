@@ -138,6 +138,7 @@ nanomonsv insert_classify [-h] [--grc] [--genome_id {hg19,hg38,mm10}]
 - **sv_list_file**: SV list file obtained in the get step
 - **output_file**: Path to the output file for this command
 - **reference.fa**: Path to the reference genome
+- **genome_id**: The type of reference genome. Choose from hg19 and hg38 (default is hg38). This is used for selecting LINE1 database.
 
 #### result
 
