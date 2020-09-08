@@ -39,7 +39,7 @@ nanomonsv the input file aligned by `minimap2`.
 wget https://github.com/friend1ws/nanomonsv/archive/v0.1.2.tar.gz
 tar xvf v0.1.2.tar.gz
 cd nanomonsv-0.1.2
-pip3 install . --user
+python3 setup.py build install . --user
 ```
 
 2. Prepare the reference genome for the test data (here, we show the path to Genomic Data Commons reference genome).
