@@ -244,6 +244,7 @@ def summarize_rmsk(input_file, output_file):
         for line in hin:
             F = line.rstrip('\n').split()
             if len(F) <= 1 or F[0] in ["SW", "score"]: continue
+            if F[0] == "There": continue
 
             if temp_key != F[4]:
                 if temp_key != '':
@@ -256,7 +257,7 @@ def summarize_rmsk(input_file, output_file):
             
 
             temp_rmsk_info.append(F)
-     
+
         if temp_key != '':
             repeat_class, L1_ratio, Alu_ratio, SVA_ratio, repeat_info = proc_rmsk_info(temp_key, temp_rmsk_info)
             print(temp_key + '\t' + repeat_class + '\t' + L1_ratio + '\t' + Alu_ratio + '\t' + SVA_ratio + '\t' + ';'.join(repeat_info), file = hout)
