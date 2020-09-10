@@ -21,6 +21,7 @@ before_script:
   - pip install requests
   - pip install numpy==1.16.6
   - pip install pysam==0.16.0.1
+  - pip install parasail==1.2
 
 script:
   - pip install .
