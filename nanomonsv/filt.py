@@ -110,7 +110,7 @@ def filt_clustered_rearrangement2(input_file, output_file, control_junction_bedp
             if control_junction_bedpe is not None:
                 tabix_error_flag = False
                 try:
-                    records = control_junction_db.fetch(F[0], int(tstart1) - 200, int(tend1) + 200)
+                    records = control_junction_db.fetch(F[0], max(0, int(tstart1) - 200), int(tend1) + 200)
                 except:
                     tabix_error_flag = True
 
@@ -274,7 +274,7 @@ def filt_clustered_insertion_deletion2(input_file, output_file, control_junction
             if control_junction_bedpe is not None:
                 tabix_error_flag = False
                 try:
-                    records = control_junction_db.fetch(F[0], int(tstart1) - 50, int(tend2) + 50)
+                    records = control_junction_db.fetch(F[0], max(0, int(tstart1) - 50), int(tend2) + 50)
                 except:
                     tabix_error_flag = True
 
