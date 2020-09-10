@@ -83,6 +83,9 @@ def create_parser():
     get.add_argument("--var_read_min_mapq", default = 0, type = int,
                      help = "Threshould for mapping quality in validate step")
 
+    get.add_argument("--use_ssw_lib", default = False, action = 'store_true',
+                     help = "Use SSW Library. This is for backward comaptibility, and may be removed in the future")
+
     # get.add_argument("--control_read_num_thres", default = 0, type = int,
     #                  help = "Filter if the number of supporting reads for the control sample is larger than this value")
 
@@ -113,6 +116,9 @@ def create_parser():
 
     validate.add_argument("--var_read_min_mapq", default = 40, type = int,
                           help = "Threshould for mapping quality in validate step")
+
+    validate.add_argument("--use_ssw_lib", default = False, action = 'store_true',
+                          help = "Use SSW Library. This is for backward comaptibility, and may be removed in the future")
 
     validate.add_argument("--debug", default = False, action = 'store_true', help = "keep intermediate files")
 

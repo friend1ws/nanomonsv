@@ -96,7 +96,7 @@ def get_main(args):
 
     # check if the executables exist
     is_tool("mafft")
-    libssw_check()
+    if args.use_ssw_lib: libssw_check()
 
     # check existences
     is_exists_bam(args.tumor_bam)
@@ -157,7 +157,7 @@ def get_main(args):
                   args.tumor_prefix + ".refined_bp.validated.txt",
                   args.tumor_prefix + ".validated.tumor_sread.txt",
                   args.reference_fasta, 
-                  args.control_bam, args.var_read_min_mapq, args.debug)
+                  args.control_bam, args.var_read_min_mapq, args.use_ssw_lib, args.debug)
 
     is_control = True if args.control_bam is not None else False
 
@@ -185,7 +185,7 @@ def get_main(args):
 def validate_main(args):
     
     # executable check
-    libssw_check()
+    if args.use_ssw_lib: libssw_check()
 
     ####################
     long_read_validate_main(args.sv_list_file,
@@ -195,7 +195,7 @@ def validate_main(args):
                             args.reference_fasta,
                             args.control_bam, 
                             args.var_read_min_mapq,
-                            args.debug)
+                            args.use_ssw_lib, args.debug)
 
     is_control = True if args.control_bam is not None else False
 

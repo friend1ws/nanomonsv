@@ -2,13 +2,22 @@
 
 import os, tempfile, subprocess, shutil
 import pysam
+# import parasail
 
 from .pyssw import *
 from .my_seq import reverse_complement
 # from onebreak.long_read_validate import ssw_check
 # from onebreak.my_seq import reverse_complement
 
-def ssw_check(target, query):
+def ssw_check(query, target, use_ssw_lib):
+
+    if use_ssw_lib:
+        return(ssw_check_ssw_lib(query, target))
+    else:
+        return(ssw_check_parasail(query, target))
+
+
+def ssw_check_ssw_lib(target, query):
 
     nMatch = 2
     nMismatch = 2
@@ -116,7 +125,39 @@ def ssw_check(target, query):
     return(alignment_info)
 
 
-def long_read_validate_by_alignment(sv_file, output_file, bam_file, reference, debug, variant_sread_min_mapq = 0, validate_sequence_length = 200, score_ratio_thres = 1.4, start_pos_thres = 0.2, end_pos_thres = 0.8, var_ref_margin_thres = 10):
+def ssw_check_parasail(query, target):
+
+    import parasail
+    # import pdb; pdb.set_trace()
+    user_matrix = parasail.matrix_create("ACGT", 2, -2)
+
+    alignment_info = {}
+    for sQId, sQSeq, sQQual in read(query):
+    
+        sQSeq_r = reverse_complement(sQSeq)
+
+        for sTId, sTSeq, STQual in read(target):
+
+            res = parasail.ssw(sQSeq, sTSeq, 3, 1, user_matrix)
+            res_r = parasail.ssw(sQSeq_r, sTSeq, 3, 1, user_matrix)
+
+            if res.score1 > res_r.score1:
+                score = res.score1
+                qstart, qend = res.read_begin1 + 1., res.read_end1 + 1
+                tstart, tend = res.ref_begin1 + 1, res.ref_end1 + 1
+                strand = '+'
+            else:
+                score = res_r.score1
+                qstart, qend = len(sQSeq) - res_r.read_end1, len(sQSeq) - res_r.read_begin1
+                tstart, tend = res_r.ref_begin1 + 1, res_r.ref_end1 + 1
+                strand = '-'
+
+            alignment_info[sTId] = [score, int(qstart), int(qend), int(tstart), int(tend), strand]
+
+    return(alignment_info)
+
+
+def long_read_validate_by_alignment(sv_file, output_file, bam_file, reference, use_ssw_lib, debug, variant_sread_min_mapq = 0, validate_sequence_length = 200, score_ratio_thres = 1.4, start_pos_thres = 0.2, end_pos_thres = 0.8, var_ref_margin_thres = 10):
     
     def is_short_del_dup(key):
         keys = key.split(',')
@@ -269,11 +310,11 @@ def long_read_validate_by_alignment(sv_file, output_file, bam_file, reference, d
             if temp_key != F[0]:
                 if temp_key != "":
                     hout2.close()
-                    alignment_info_var_1 = ssw_check(tmp_dir + '/' + temp_key + ".variant_seq_1.fa", tmp_dir + '/' + temp_key + ".long_read_seq.fa")
-                    alignment_info_var_2 = ssw_check(tmp_dir + '/' + temp_key + ".variant_seq_2.fa", tmp_dir + '/' + temp_key + ".long_read_seq.fa")
+                    alignment_info_var_1 = ssw_check(tmp_dir + '/' + temp_key + ".variant_seq_1.fa", tmp_dir + '/' + temp_key + ".long_read_seq.fa", use_ssw_lib)
+                    alignment_info_var_2 = ssw_check(tmp_dir + '/' + temp_key + ".variant_seq_2.fa", tmp_dir + '/' + temp_key + ".long_read_seq.fa", use_ssw_lib)
                     if is_short_del_dup(temp_key):
-                        alignment_info_ref_1 = ssw_check(tmp_dir + '/' + temp_key + ".reference_local_seq_1.fa", tmp_dir + '/' + temp_key + ".long_read_seq.fa")
-                        alignment_info_ref_2 = ssw_check(tmp_dir + '/' + temp_key + ".reference_local_seq_2.fa", tmp_dir + '/' + temp_key + ".long_read_seq.fa")
+                        alignment_info_ref_1 = ssw_check(tmp_dir + '/' + temp_key + ".reference_local_seq_1.fa", tmp_dir + '/' + temp_key + ".long_read_seq.fa", use_ssw_lib)
+                        alignment_info_ref_2 = ssw_check(tmp_dir + '/' + temp_key + ".reference_local_seq_2.fa", tmp_dir + '/' + temp_key + ".long_read_seq.fa", use_ssw_lib)
 
                     all_rnames = list(set(list(alignment_info_var_1.keys()) + list(alignment_info_var_2.keys())))
 
@@ -334,11 +375,11 @@ def long_read_validate_by_alignment(sv_file, output_file, bam_file, reference, d
         if temp_key != "":
             hout2.close()
 
-            alignment_info_var_1 = ssw_check(tmp_dir + '/' + temp_key + ".variant_seq_1.fa", tmp_dir + '/' + temp_key + ".long_read_seq.fa")
-            alignment_info_var_2 = ssw_check(tmp_dir + '/' + temp_key + ".variant_seq_2.fa", tmp_dir + '/' + temp_key + ".long_read_seq.fa")
+            alignment_info_var_1 = ssw_check(tmp_dir + '/' + temp_key + ".variant_seq_1.fa", tmp_dir + '/' + temp_key + ".long_read_seq.fa", use_ssw_lib)
+            alignment_info_var_2 = ssw_check(tmp_dir + '/' + temp_key + ".variant_seq_2.fa", tmp_dir + '/' + temp_key + ".long_read_seq.fa", use_ssw_lib)
             if is_short_del_dup(temp_key):
-                alignment_info_ref_1 = ssw_check(tmp_dir + '/' + temp_key + ".reference_local_seq_1.fa", tmp_dir + '/' + temp_key + ".long_read_seq.fa")
-                alignment_info_ref_2 = ssw_check(tmp_dir + '/' + temp_key + ".reference_local_seq_2.fa", tmp_dir + '/' + temp_key + ".long_read_seq.fa")
+                alignment_info_ref_1 = ssw_check(tmp_dir + '/' + temp_key + ".reference_local_seq_1.fa", tmp_dir + '/' + temp_key + ".long_read_seq.fa", use_ssw_lib)
+                alignment_info_ref_2 = ssw_check(tmp_dir + '/' + temp_key + ".reference_local_seq_2.fa", tmp_dir + '/' + temp_key + ".long_read_seq.fa", use_ssw_lib)
 
             # all_rnames = list(set(alignment_info_var_1))
             all_rnames = list(set(list(alignment_info_var_1.keys()) + list(alignment_info_var_2.keys())))
@@ -383,12 +424,20 @@ def long_read_validate_by_alignment(sv_file, output_file, bam_file, reference, d
 
 
 
-def long_read_validate_main(result_file, tumor_bam, output, sread_file, reference, control_bam, var_read_min_mapq, debug):
+def long_read_validate_main(result_file, tumor_bam, output, sread_file, reference, control_bam, var_read_min_mapq, use_ssw_lib, debug):
 
-    key2sread_count_tumor, key2sread_count_all_tumor, key2sread_info_tumor = long_read_validate_by_alignment(result_file, output, tumor_bam, reference, debug, variant_sread_min_mapq = var_read_min_mapq, score_ratio_thres = 1.2, start_pos_thres = 0.1, end_pos_thres = 0.9, var_ref_margin_thres = 20)
+    """
+    import pdb; pdb.set_trace()
+    if use_ssw_lib == True:
+        pass
+    else:
+        import parasail
+    """
+
+    key2sread_count_tumor, key2sread_count_all_tumor, key2sread_info_tumor = long_read_validate_by_alignment(result_file, output, tumor_bam, reference, use_ssw_lib, debug, variant_sread_min_mapq = var_read_min_mapq, score_ratio_thres = 1.2, start_pos_thres = 0.1, end_pos_thres = 0.9, var_ref_margin_thres = 20)
 
     if control_bam is not None:
-        key2sread_count_control, key2sread_count_all_control, key2sread_info_control = long_read_validate_by_alignment(result_file, output, control_bam, reference, debug, variant_sread_min_mapq = var_read_min_mapq, score_ratio_thres = 1.2, start_pos_thres = 0.1, end_pos_thres = 0.9, var_ref_margin_thres = 20)
+        key2sread_count_control, key2sread_count_all_control, key2sread_info_control = long_read_validate_by_alignment(result_file, output, control_bam, reference, use_ssw_lib, debug, variant_sread_min_mapq = var_read_min_mapq, score_ratio_thres = 1.2, start_pos_thres = 0.1, end_pos_thres = 0.9, var_ref_margin_thres = 20)
 
     hout = open(output, 'w')
     with open(result_file, 'r') as hin:
