@@ -9,34 +9,47 @@ nanomonsv is a software for detecting somatic structural variations from paired 
 
 ## Dependency
 
-### Binary programs
-[htslib](http://www.htslib.org/), [mafft](https://mafft.cbrc.jp/alignment/software/) 
-([SSW Library](https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library, [bwa](https://github.com/lh3/bwa), [minimap2](https://github.com/lh3/minimap2), [bedtools](https://bedtools.readthedocs.io/en/latest/), [RepeatMasker](http://www.repeatmasker.org/))
+### For basic use (`parse`, `get` command)
 
-* From version 0.2.0, we will make the main engine of Smith-Waterman algorithm to parasail and make the dependency on SSW Library optional.
+### Binary programs
+
+[htslib](http://www.htslib.org/), [mafft](https://mafft.cbrc.jp/alignment/software/) 
 
 ### Python
 Pytnon (tested with 3.5, 3.6, 3.7), pysam, numpy, parasail
 
+##### Optional
+[SSW Library](https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library)
+
+* Since version 0.2.0, we will make the main engine of Smith-Waterman algorithm to parasail and make the dependency on SSW Library optional.
+
+
+### For advanced use (`insert_classify` command)
+[bwa](https://github.com/lh3/bwa), [minimap2](https://github.com/lh3/minimap2), [bedtools](https://bedtools.readthedocs.io/en/latest/), [RepeatMasker](http://www.repeatmasker.org/))
+
 ## Preparation
 
-### Install software and add them to the PATH
+### For basic use (`parse`, `get` command)
+
+#### Install software and add them to the PATH
 
 nanomonsv uses, `tabix`, `bgzip` (which ar part of HTSlib projects) and `mafft` inside the program,
 assuming those are installed, and the paths are already added to the running environment.
 
-#### For use of SSW Library
+##### For use of SSW Library
 
 Since version 0.2.0, nanomonsv can be executed without SSW Library. 
 When users want to use SSW Library, create the libssw.so and add the path to the LD_LIBRARY_PATH environment variable.
 Please refer the **How to use the Python wrapper ssw_lib.py** section in the [SSW Library](https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library) repository page.
 
-#### For `nanomonsv insert_classify` command
+
+### For advanced use (`insert_classify` command)
 `bwa`, `minimap2`, `bedtools` and `RepeatMasker` are required to be installed and these pathese are added to the running environment.
+
 
 ### Input file
 
-nanomonsv the input file aligned by `minimap2`. 
+nanomonsv accept the input file aligned by `minimap2`. 
 
 
 ## Quickstart
@@ -118,6 +131,9 @@ But we have not tested the performance of the approach just using tumor sample, 
 
 After successful execution, you will be able to find the result file names as {tumor_prefix}.nanomonsv.result.txt
 See the help (`nanomonsv get -h`) for other options. 
+
+When you want to change the engine of Smith-Waterman algorithm to SSW Library, specify `[--use_ssw_lib` option,
+though we do not generally recomend thi.
 
 #### result
 
