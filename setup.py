@@ -41,7 +41,7 @@ setup(
     packages = find_packages(exclude = ['tests', 'LINE_db']),
     package_data={'nanomonsv': ['data/*']},
 
-    install_requires = ["numpy", "parasail", "pysam"],
+    # install_requires = ["numpy", "parasail", "pysam"],
     entry_points = {'console_scripts': ['nanomonsv = nanomonsv:main']}
 
 )
