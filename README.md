@@ -18,10 +18,9 @@ nanomonsv is a software for detecting somatic structural variations from paired 
 ### Python
 Pytnon (tested with 3.5, 3.6, 3.7), pysam, numpy, parasail
 
-##### Optional
-[SSW Library](https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library)
-
-* Since version 0.2.0, we will make the main engine of Smith-Waterman algorithm to parasail and make the dependency on SSW Library optional.
+> #### Optional
+> [SSW Library](https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library)
+> - Since version 0.2.0, we will make the main engine of Smith-Waterman algorithm to parasail and make the dependency on SSW Library optional.
 
 
 ### For advanced use (`insert_classify` command)
@@ -36,11 +35,9 @@ Pytnon (tested with 3.5, 3.6, 3.7), pysam, numpy, parasail
 nanomonsv uses, `tabix`, `bgzip` (which ar part of HTSlib projects) and `mafft` inside the program,
 assuming those are installed, and the paths are already added to the running environment.
 
-##### For use of SSW Library
+> ##### For use of SSW Library
 
-Since version 0.2.0, nanomonsv can be executed without SSW Library. 
-When users want to use SSW Library, create the libssw.so and add the path to the LD_LIBRARY_PATH environment variable.
-Please refer the **How to use the Python wrapper ssw_lib.py** section in the [SSW Library](https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library) repository page.
+> Since version 0.2.0, nanomonsv can be executed without SSW Library. When users want to use SSW Library, create the libssw.so and add the path to the LD_LIBRARY_PATH environment variable. Please refer the **How to use the Python wrapper ssw_lib.py** section in the [SSW Library](https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library) repository page.
 
 
 ### For advanced use (`insert_classify` command)
