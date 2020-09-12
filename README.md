@@ -49,7 +49,7 @@ Please refer the **How to use the Python wrapper ssw_lib.py** section in the [SS
 
 ### Input file
 
-nanomonsv accept the input file aligned by `minimap2`. 
+nanomonsv accept the BAM file aligned by `minimap2`. 
 
 
 ## Quickstart
