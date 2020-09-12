@@ -2,7 +2,7 @@
 
 import os, tempfile, subprocess, shutil
 import pysam
-# import parasail
+import parasail
 
 from .pyssw import *
 from .my_seq import reverse_complement
@@ -77,7 +77,6 @@ def ssw_check_ssw_lib(target, query):
         qProfile = ssw.ssw_init(qNum, ct.c_int32(len(sQSeq)), mat, len(lEle), 2)
 
         # for reverse complement
-        # import pdb; pdb.set_trace()
         sQRcSeq = ''.join([dRc[x] for x in sQSeq[::-1]])
         qRcNum = to_int(sQRcSeq, lEle, dEle2Int)
         qRcProfile = ssw.ssw_init(qRcNum, ct.c_int32(len(sQSeq)), mat, len(lEle), 2)
@@ -113,7 +112,6 @@ def ssw_check_ssw_lib(target, query):
                 strand = '-'
                 sCigar, sQ, sA, sR = buildPath(sQRcSeq, sRSeq, resRc[4], resRc[2], resRc[8])
 
-            # import pdb; pdb.set_trace()
             # if int(resPrint[0]) > score_ratio_thres * len(sRSeq) and int(resPrint[2]) + 1 < start_pos_thres * len(sRSeq) and int(resPrint[3]) + 1 > end_pos_thres * len(sRSeq):
             # supporting_reads.append([sQId, resPrint[0], resPrint[2] + 1, resPrint[3] + 1])
             # alignment_info[sQId] = [resPrint[0], resPrint[2] + 1, resPrint[3] + 1, resPrint[4] + 1, resPrint[5] + 1, strand]
@@ -127,8 +125,6 @@ def ssw_check_ssw_lib(target, query):
 
 def ssw_check_parasail(query, target):
 
-    import parasail
-    # import pdb; pdb.set_trace()
     user_matrix = parasail.matrix_create("ACGT", 2, -2)
 
     alignment_info = {}
@@ -288,8 +284,6 @@ def long_read_validate_by_alignment(sv_file, output_file, bam_file, reference, u
             key2contig[key] = [variant_seq_1, variant_seq_2, reference_local_seq_1,reference_local_seq_2]
 
        
-    # import pdb; pdb.set_trace()
-
     tmp_dir = tempfile.mkdtemp()
     # tmp_dir = "tmp"
     # os.makedirs(tmp_dir)
@@ -425,14 +419,6 @@ def long_read_validate_by_alignment(sv_file, output_file, bam_file, reference, u
 
 
 def long_read_validate_main(result_file, tumor_bam, output, sread_file, reference, control_bam, var_read_min_mapq, use_ssw_lib, debug):
-
-    """
-    import pdb; pdb.set_trace()
-    if use_ssw_lib == True:
-        pass
-    else:
-        import parasail
-    """
 
     key2sread_count_tumor, key2sread_count_all_tumor, key2sread_info_tumor = long_read_validate_by_alignment(result_file, output, tumor_bam, reference, use_ssw_lib, debug, variant_sread_min_mapq = var_read_min_mapq, score_ratio_thres = 1.2, start_pos_thres = 0.1, end_pos_thres = 0.9, var_ref_margin_thres = 20)
 
