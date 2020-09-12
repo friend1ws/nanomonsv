@@ -36,7 +36,6 @@ nanomonsv uses, `tabix`, `bgzip` (which ar part of HTSlib projects) and `mafft` 
 assuming those are installed, and the paths are already added to the running environment.
 
 > ##### For use of SSW Library
-
 > Since version 0.2.0, nanomonsv can be executed without SSW Library. When users want to use SSW Library, create the libssw.so and add the path to the LD_LIBRARY_PATH environment variable. Please refer the **How to use the Python wrapper ssw_lib.py** section in the [SSW Library](https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library) repository page.
 
 
