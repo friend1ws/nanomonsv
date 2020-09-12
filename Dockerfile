@@ -33,17 +33,12 @@ RUN pip3 install pysam==0.15.2
 RUN pip3 install numpy==1.15.1
 RUN pip3 install parasail==1.2
 
-# RUN wget https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library/archive/v1.1.tar.gz && \
-#     tar zxvf v1.1.tar.gz && \
-#     cd Complete-Striped-Smith-Waterman-Library-1.1/src && \
-#     gcc -Wall -O3 -pipe -fPIC -shared -rdynamic -o libssw.so ssw.c ssw.h
+RUN wget https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library/archive/v1.1.tar.gz && \
+    tar zxvf v1.1.tar.gz && \
+    cd Complete-Striped-Smith-Waterman-Library-1.1/src && \
+    gcc -Wall -O3 -pipe -fPIC -shared -rdynamic -o libssw.so ssw.c ssw.h
 
-# ENV LD_LIBRARY_PATH /Complete-Striped-Smith-Waterman-Library-1.1/src:$LD_LIBRARY_PATH
-
-# RUN wget https://github.com/friend1ws/nanomonsv/archive/v0.1.2.tar.gz && \
-#     tar zxvf v0.1.2.tar.gz && \
-#     cd nanomonsv-0.1.2 && \
-#     pip3 install .
+ENV LD_LIBRARY_PATH /Complete-Striped-Smith-Waterman-Library-1.1/src:$LD_LIBRARY_PATH
 
 RUN git clone https://github.com/friend1ws/nanomonsv.git && \
     cd nanomonsv && \
