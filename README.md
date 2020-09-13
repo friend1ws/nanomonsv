@@ -130,7 +130,7 @@ But we have not tested the performance of the approach just using tumor sample, 
 After successful execution, you will be able to find the result file names as {tumor_prefix}.nanomonsv.result.txt
 See the help (`nanomonsv get -h`) for other options. 
 
-When you want to change the engine of Smith-Waterman algorithm to SSW Library, specify `[--use_ssw_lib` option,
+When you want to change the engine of Smith-Waterman algorithm to SSW Library, specify `--use_ssw_lib` option,
 though we do not generally recomend thi.
 
 #### result
