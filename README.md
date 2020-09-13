@@ -54,10 +54,7 @@ nanomonsv accept the BAM file aligned by `minimap2`.
 
 1. Install all the prerequisite software and install nanomonsv.
 ```
-wget https://github.com/friend1ws/nanomonsv/archive/v0.1.2.tar.gz
-tar xvf v0.1.2.tar.gz
-cd nanomonsv-0.1.2
-python3 setup.py build install . --user
+pip install nanomonsv (--user)
 ```
 
 2. Prepare the reference genome for the test data (here, we show the path to Genomic Data Commons reference genome).
