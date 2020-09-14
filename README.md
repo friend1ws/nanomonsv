@@ -20,9 +20,7 @@ Precise characterization of somatic structural variations and mobile element ins
 ### Python
 Pytnon (tested with 3.5, 3.6, 3.7), pysam, numpy, parasail
 
-> #### Optional
-> [SSW Library](https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library)
-> - Since version 0.2.0, we will make the main engine of Smith-Waterman algorithm to parasail and make the dependency on SSW Library optional.
+> [SSW Library](https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library) (This became optional since version 0.2.0. We have changed the main engine of Smith-Waterman algorithm to parasail.)
 
 
 ### For advanced use (`insert_classify` command)
