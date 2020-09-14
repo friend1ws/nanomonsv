@@ -24,7 +24,7 @@ Pytnon (tested with 3.5, 3.6, 3.7), pysam, numpy, parasail
 
 
 ### For advanced use (`insert_classify` command)
-[bwa](https://github.com/lh3/bwa), [minimap2](https://github.com/lh3/minimap2), [bedtools](https://bedtools.readthedocs.io/en/latest/), [RepeatMasker](http://www.repeatmasker.org/))
+[bwa](https://github.com/lh3/bwa), [minimap2](https://github.com/lh3/minimap2), [bedtools](https://bedtools.readthedocs.io/en/latest/), [RepeatMasker](http://www.repeatmasker.org/)
 
 ## Preparation
 
