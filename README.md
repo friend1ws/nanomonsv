@@ -20,13 +20,11 @@ Precise characterization of somatic structural variations and mobile element ins
 ### Python
 Pytnon (tested with 3.5, 3.6, 3.7), pysam, numpy, parasail
 
-> #### Optional
-> [SSW Library](https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library)
-> - Since version 0.2.0, we will make the main engine of Smith-Waterman algorithm to parasail and make the dependency on SSW Library optional.
+> [SSW Library](https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library) (This became optional since version 0.2.0. We have changed the main engine of Smith-Waterman algorithm to parasail.)
 
 
 ### For advanced use (`insert_classify` command)
-[bwa](https://github.com/lh3/bwa), [minimap2](https://github.com/lh3/minimap2), [bedtools](https://bedtools.readthedocs.io/en/latest/), [RepeatMasker](http://www.repeatmasker.org/))
+[bwa](https://github.com/lh3/bwa), [minimap2](https://github.com/lh3/minimap2), [bedtools](https://bedtools.readthedocs.io/en/latest/), [RepeatMasker](http://www.repeatmasker.org/)
 
 ## Preparation
 
@@ -54,10 +52,7 @@ nanomonsv accept the BAM file aligned by `minimap2`.
 
 1. Install all the prerequisite software and install nanomonsv.
 ```
-wget https://github.com/friend1ws/nanomonsv/archive/v0.1.2.tar.gz
-tar xvf v0.1.2.tar.gz
-cd nanomonsv-0.1.2
-python3 setup.py build install . --user
+pip install nanomonsv (--user)
 ```
 
 2. Prepare the reference genome for the test data (here, we show the path to Genomic Data Commons reference genome).
@@ -115,7 +110,8 @@ nanomonsv get [-h] [--control_prefix CONTROL_PREFIX]
               [--cluster_margin_size CLUSTER_MARGIN_SIZE]
               [--median_mapQ_thres MEDIAN_MAPQ_THRES]
               [--max_overhang_size_thres MAX_OVERHANG_SIZE_THRES]
-              [--var_read_min_mapq VAR_READ_MIN_MAPQ] [--debug]
+              [--var_read_min_mapq VAR_READ_MIN_MAPQ] [--use_ssw_lib]
+              [--debug]
               tumor_prefix tumor_bam reference.fa
  ```
  - **tumor_prefix**: Prefix to the tumor data set in the parse step

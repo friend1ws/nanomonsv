@@ -222,7 +222,7 @@ def insert_classify_main(args):
     is_tool("RepeatMasker")
 
     make_fasta_file(args.sv_list_file, args.output_file + ".tmp.fasta", args.output_file + ".tmp.seq_id.txt")
-    
+   
     ##########
     # processed pseudo gene
     annot_utils.exon.make_exon_info(args.output_file + ".tmp.exon.bed.gz", "gencode", args.genome_id, args.grc, True)
@@ -255,7 +255,7 @@ def insert_classify_main(args):
 
     shutil.rmtree(tmpdir_rmsk)
     ##########
-    
+
     ##########
     # alignment to reference genome
     with open(args.output_file + ".tmp.bwa.sam", 'w') as hout:

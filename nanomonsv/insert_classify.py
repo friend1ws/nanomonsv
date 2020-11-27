@@ -214,9 +214,12 @@ def proc_rmsk_info(tkey, rmsk_info):
 
 
     repeat_class = "None"
-    L1_ratio = min(1.0, float(L1_len) / (float(total_len) - float(polyAT_len)))
-    Alu_ratio = min(1.0, float(alu_len) / (float(total_len) - float(polyAT_len)))
-    SVA_ratio = min(1.0, float(SVA_len) / (float(total_len) - float(polyAT_len)))
+    L1_ratio, Alu_ratio, SVA_ratio = 0.0, 0.0, 0.0
+    if float(total_len) - float(polyAT_len) > 0:
+        L1_ratio = min(1.0, float(L1_len) / (float(total_len) - float(polyAT_len)))
+        Alu_ratio = min(1.0, float(alu_len) / (float(total_len) - float(polyAT_len)))
+        SVA_ratio = min(1.0, float(SVA_len) / (float(total_len) - float(polyAT_len)))
+
 
     if L1_ratio >= 0.8:
         if L1_count == 1:
@@ -413,8 +416,18 @@ def summarize_bwa_alignment2(input_sam, seq_list, output_file):
 
         cigartuples = read.cigartuples
         left_hard_clipping_size, right_hard_clipping_size = 0, 0
+        total_ins_size, total_del_size = 0, 0
         if cigartuples[0][0] == 5: left_hard_clipping_size = cigartuples[0][1]
         if cigartuples[-1][0] == 5: right_hard_clipping_size = cigartuples[-1][1]
+
+        for tcigar in cigartuples:
+            if tcigar[0] == 1: total_ins_size = total_ins_size + tcigar[1]
+            if tcigar[0] == 2: total_del_size = total_del_size + tcigar[1]
+
+        total_mismatch_size = 0
+        for ttag in read.get_tags():
+            if ttag[0] == "NM": total_mismatch_size = total_mismatch_size + ttag[1]
+
 
         if not read.is_supplementary:
             if query_strand == '+':
@@ -431,8 +444,9 @@ def summarize_bwa_alignment2(input_sam, seq_list, output_file):
                 query_start = right_hard_clipping_size + 1
                 query_end = query_length - left_hard_clipping_size
 
-        align_info = ','.join([str(query_start), str(query_end), query_strand, str(mapping_quality), reference_name, str(reference_start), str(reference_end)])
-
+        # align_info = ','.join([str(query_start), str(query_end), query_strand, str(mapping_quality), reference_name, str(reference_start), str(reference_end)])
+        align_info = "%d,%d,%s,%d,%d,%d,%d,%s,%d,%d" % \
+            (query_start, query_end, query_strand, mapping_quality, total_mismatch_size, total_ins_size, total_del_size, reference_name, reference_start, reference_end)
 
         if read.is_supplementary:
             if query_name not in query2align_supp: query2align_supp[query_name] = []
@@ -453,12 +467,12 @@ def summarize_bwa_alignment2(input_sam, seq_list, output_file):
     hout = open(output_file, 'w')
     for query in sorted(query2align_primary):
         align_primary = query2align_primary[query]
-        _, _, _, _, pchr, pstart, pend, _ = align_primary.split(',')
+        _, _, _, _, _, _, _, pchr, pstart, pend, _ = align_primary.split(',')
         align_ins = query2align_ins[query]
         align_info_final = align_primary
         if query in query2align_supp:
             for elm in query2align_supp[query]:
-                _, _, _, _, schr, sstart, send, _ = elm.split(',')
+                _, _, _, _, _, _, _, schr, sstart, send, _ = elm.split(',')
                 if int(pstart) - 5000 <= int(send) and int(pend) + 5000 >= int(sstart):
                     align_info_final = align_info_final + ';' + elm
         print("%s\t%s\t%s" % (query, align_info_final, align_ins), file = hout)
@@ -522,7 +536,7 @@ def organize_info(rmsk_file, alignment_file, tsd_file, seq_list, output_file, ge
             achr, astart, aend, astrand = None, None, None, None
             aqstart, aqend = None, None
             for alignment_info in alignment_infos.split(';'):
-                tqstart, tqend, tastrand, _, tachr, tastart, taend, _ = alignment_info.split(',')
+                tqstart, tqend, tastrand, _, _, _, _, tachr, tastart, taend, _ = alignment_info.split(',')
                 if achr is None:
                     achr, astart, aend, astrand, aqstart, aqend = tachr, int(tastart), int(taend), tastrand, int(tqstart), int(tqend)
                 else:
