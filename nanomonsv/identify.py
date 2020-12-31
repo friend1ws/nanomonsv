@@ -3,6 +3,7 @@
 import sys, os, subprocess, shutil 
 from collections import Counter
 import pysam
+import parasail
 
 from . import smith_waterman
 
@@ -47,6 +48,64 @@ def get_consensus_from_mafft_result(input_file):
 
     return(consensus)
 
+
+def generate_paf_file(query_fasta, target_fasta, output_file):
+
+    user_matrix = parasail.matrix_create("ACGT", 2, -2)
+
+    with open(target_fasta, 'r') as hin:
+        for line in hin:
+            if line.startswith('>'): 
+                tid = line.rstrip('\n').split(' ')[0].lstrip('>')
+            else:
+                tseq = line.rstrip('\n')
+
+    with open(query_fasta, 'r') as hin, open(output_file, 'w') as hout:
+        for line in hin:
+            if line.startswith('>'):
+                qid = line.rstrip('\n').lstrip('>')
+            else:
+                qseq = line.rstrip('\n')
+                
+                res = parasail.ssw(qseq, tseq, 3, 1, user_matrix)
+                print("%s\t%d\t%d\t%d\t+\t%s\t%d\t%d\t%d\t*\t*\t60" %
+                    (qid, len(qseq), res.read_begin1, res.read_end1,
+                    tid, len(tseq), res.ref_begin1, res.ref_end1), file = hout)
+
+
+def generate_racon_consensus(temp_key, tmp_dir):
+
+    with open(tmp_dir + '/' + temp_key + ".tmp.seg.first.fa", 'w') as hout3: 
+        subprocess.check_call(["head", "-n", "2", tmp_dir + '/' + temp_key + ".supporting_read.fa"], stdout= hout3)
+                     
+    generate_paf_file(tmp_dir + '/' + temp_key + ".supporting_read.fa",
+        tmp_dir + '/' + temp_key + ".tmp.seg.first.fa",
+        tmp_dir + '/' + temp_key + ".parasail.paf")
+                     
+    with open(tmp_dir + '/' + temp_key + ".racon1.fa", 'w') as hout3:
+        subprocess.check_call(["racon", "-u", 
+            tmp_dir + '/' + temp_key + ".supporting_read.fa",
+            tmp_dir + '/' + temp_key + ".parasail.paf",
+            tmp_dir + '/' + temp_key + ".tmp.seg.first.fa"],
+            stdout = hout3, stderr = subprocess.DEVNULL)
+
+    with open(tmp_dir + '/' + temp_key + ".racon1.fa", 'r') as hin3, \
+        open(tmp_dir + "/" + temp_key + ".racon1.mod.fa", 'w') as hout3:
+        tid = hin3.readline()
+        print(">temp_consensus", file = hout3)
+        tseq = hin3.readline().rstrip('\n')
+        print(tseq, file = hout3)
+
+    generate_paf_file(tmp_dir + '/' + temp_key + ".supporting_read.fa",
+        tmp_dir + '/' + temp_key + ".racon1.mod.fa",
+        tmp_dir + '/' + temp_key + ".parasail2.paf")
+
+    with open(tmp_dir + '/' + temp_key + ".racon2.fa", 'w') as hout3:
+        subprocess.check_call(["racon", "-u",
+            tmp_dir + '/' + temp_key + ".supporting_read.fa",
+            tmp_dir + '/' + temp_key + ".parasail2.paf",
+            tmp_dir + '/' + temp_key + ".racon1.mod.fa"],
+            stdout = hout3, stderr = subprocess.DEVNULL)
 
 
 def get_refined_bp(contig, fasta_file_ins, chr1, start1, end1, dir1, chr2, start2, end2, dir2, mode, h_log, rd_margin = 20, i_margin = 500):
@@ -128,9 +187,9 @@ def get_readid2alignment(input_file, mode, alignment_margin):
                     start1, end1, start2, end2 = int(tinfo1[0]), int(tinfo1[2]), int(tinfo2[0]), int(tinfo2[2])
                     if readids[i] not in readid2alignment: readid2alignment[readids[i]] = []
                     if start1 <= start2:
-                        readid2alignment[readids[i]].append((key, max(end1 - alignment_margin, 0), start2 + alignment_margin, '+'))
+                        readid2alignment[readids[i]].append((key, max(end1 - alignment_margin, 1), start2 + alignment_margin, '+'))
                     else:
-                        readid2alignment[readids[i]].append((key, max(end2 - alignment_margin, 0), start1 + alignment_margin, '-'))
+                        readid2alignment[readids[i]].append((key, max(end2 - alignment_margin, 1), start1 + alignment_margin, '-'))
 
             elif mode == "d":
                 size = F[10].split(';')
@@ -139,7 +198,7 @@ def get_readid2alignment(input_file, mode, alignment_margin):
                     tinfo = info[i].split(',')
                     tpos, tlen, tstrand = int(tinfo[1]), int(tinfo[3]), tinfo[4]
                     if readids[i] not in readid2alignment: readid2alignment[readids[i]] = []
-                    readid2alignment[readids[i]].append((key, max(tpos - alignment_margin, 0), min(tpos + alignment_margin, tlen - 1), tstrand))
+                    readid2alignment[readids[i]].append((key, max(tpos - alignment_margin, 1), min(tpos + alignment_margin, tlen - 1), tstrand))
 
             elif mode == "i":
                 size = F[10].split(';')
@@ -149,9 +208,9 @@ def get_readid2alignment(input_file, mode, alignment_margin):
                     tpos, tlen, tstrand = int(tinfo[1]), int(tinfo[3]), tinfo[4]
                     if readids[i] not in readid2alignment: readid2alignment[readids[i]] = []
                     if tstrand == "+":
-                        readid2alignment[readids[i]].append((key, max(tpos - alignment_margin, 0), min(tpos + int(size[i]) + alignment_margin, tlen - 1), tstrand))
+                        readid2alignment[readids[i]].append((key, max(tpos - alignment_margin, 1), min(tpos + int(size[i]) + alignment_margin, tlen - 1), tstrand))
                     else:
-                        readid2alignment[readids[i]].append((key, max(tpos - int(size[i]) - alignment_margin, 0), min(tpos + alignment_margin, tlen - 1), tstrand))
+                        readid2alignment[readids[i]].append((key, max(tpos - int(size[i]) - alignment_margin, 1), min(tpos + alignment_margin, tlen - 1), tstrand))
 
     return(readid2alignment)
 
@@ -172,6 +231,9 @@ def identify(rearrangement_file, insertion_file, deletion_file, output_file, tum
             for talignment in readid2alignment[read.query_name]:
 
                 tkey, tstart, tend, tstrand = talignment
+
+                # if read.query_name == "cdca0470-c734-40e6-b0e8-6bfe60c41439":
+                #     import pdb; pdb.set_trace()
 
                 read_seq = reverse_complement(read.query_sequence) if read.is_reverse else read.query_sequence
                 part_seq = read_seq[(tstart - 1):tend]
@@ -206,14 +268,22 @@ def identify(rearrangement_file, insertion_file, deletion_file, output_file, tum
                 if temp_key != '':
                     hout2.close()
 
+                    """
                     hout3 = open(tmp_dir + '/' + temp_key + ".mafft_result.fa", 'w')
                     subprocess.check_call(["mafft", tmp_dir + '/' + temp_key + ".supporting_read.fa"], stdout = hout3, stderr = subprocess.DEVNULL)
                     hout3.close()
-
+                
                     tconsensus = get_consensus_from_mafft_result(tmp_dir + '/' + temp_key + ".mafft_result.fa")
                     print(temp_key + '\n' + tconsensus, file = hout_log)
                     # print(temp_key + '\n' + tconsensus)
-         
+                    """ 
+                    generate_racon_consensus(temp_key, tmp_dir)
+ 
+                    with open(tmp_dir + "/" + temp_key + ".racon2.fa") as hin2:
+                        header = hin2.readline()
+                        tconsensus = hin2.readline().rstrip('\n')
+                    print(temp_key + '\n' + tconsensus, file = hout_log)
+
                     chr1, start1, end1, dir1, chr2, start2, end2, dir2, mode = temp_key.split(',')
                     start1, end1, start2, end2 = int(start1), int(end1), int(start2), int(end2)       
                     bret = get_refined_bp(tconsensus, fasta_file_ins, chr1, start1, end1, dir1, chr2, start2, end2, dir2, mode, hout_log)
@@ -232,11 +302,20 @@ def identify(rearrangement_file, insertion_file, deletion_file, output_file, tum
         if temp_key != '':
             hout2.close()
 
+            """
             hout3 = open(tmp_dir + '/' + temp_key + ".mafft_result.fa", 'w')
             subprocess.check_call(["mafft", tmp_dir + '/' + temp_key + ".supporting_read.fa"], stdout = hout3, stderr = subprocess.DEVNULL)
             hout3.close()
 
             tconsensus = get_consensus_from_mafft_result(tmp_dir + '/' + temp_key + ".mafft_result.fa")
+            print(temp_key + '\n' + tconsensus, file = hout_log)
+            """
+
+            generate_racon_consensus(temp_key, tmp_dir)
+                 
+            with open(tmp_dir + "/" + temp_key + ".racon2.fa") as hin2:
+                header = hin2.readline()
+                tconsensus = hin2.readline().rstrip('\n')
             print(temp_key + '\n' + tconsensus, file = hout_log)
 
             chr1, start1, end1, dir1, chr2, start2, end2, dir2, mode = temp_key.split(',')     

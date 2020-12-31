@@ -6,11 +6,13 @@ import pysam
 from .logger import get_logger
 logger = get_logger(__name__)
 
-def parse_alignment_info(input_bam, deletion_output_file, insertion_output_file, rearrangement_output_file,  min_ins_size = 20, min_del_size = 30):
+def parse_alignment_info(input_bam, deletion_output_file, insertion_output_file, rearrangement_output_file,
+    breakpoint_output_file, min_ins_size = 20, min_del_size = 30, min_clipping_size_for_bp = 200):
 
     hout_d = open(deletion_output_file, 'w')
     hout_i = open(insertion_output_file, 'w')
     hout_r = open(rearrangement_output_file, 'w') 
+    hout_b = open(breakpoint_output_file, 'w')
 
     bamfile = pysam.AlignmentFile(input_bam, "rb")
     
@@ -159,9 +161,34 @@ def parse_alignment_info(input_bam, deletion_output_file, insertion_output_file,
                          reference_name, str(reference_start), str(reference_end), mapping_quality, \
                          str(num_M), str(num_I), str(num_D), str(is_supplementary), str(is_secondary)]), file = hout_r)
 
+
+        if right_soft_clipping_size + left_hard_clipping_size >= min_clipping_size_for_bp:
+
+            if query_strand == '+':
+                print("%s\t%d\t%d\t-\t%s\t%d\t+\t%d\t%d\t%s\t%s\t%s" % 
+                    (reference_name, reference_start - 1, reference_start, query_name, query_length,
+                     1, query_start - 1, mapping_quality, is_supplementary, is_secondary), file = hout_b)
+            else:
+                print("%s\t%d\t%d\t-\t%s\t%d\t-\t%d\t%d\t%s\t%s\t%s" % 
+                    (reference_name, reference_start - 1, reference_start, query_name, query_length,
+                    query_end + 1, query_length,  mapping_quality, is_supplementary, is_secondary), file = hout_b)
+
+        if right_soft_clipping_size + right_hard_clipping_size >= min_clipping_size_for_bp:
+            
+            if query_strand == '+':
+                print("%s\t%d\t%d\t+\t%s\t%d\t+\t%d\t%d\t%s\t%s\t%s" % 
+                    (reference_name, reference_end - 1, reference_end, query_name, query_length,
+                    query_end + 1, query_length,  mapping_quality, is_supplementary, is_secondary), file = hout_b)
+            else:
+                print("%s\t%d\t%d\t+\t%s\t%d\t-\t%d\t%d\t%s\t%s\t%s" %
+                    (reference_name, reference_end - 1, reference_end, query_name, query_length,
+                    1, query_start - 1, mapping_quality, is_supplementary, is_secondary), file = hout_b)
+
+
     hout_d.close()
     hout_i.close()
     hout_r.close()
+    hout_b.close()
     bamfile.close()
 
 

@@ -31,7 +31,8 @@ def parse_main(args):
     ####################
     parse_alignment_info(args.bam_file, args.output_prefix + ".tmp.deletion_info.txt", 
                                         args.output_prefix + ".tmp.insertion_info.txt", 
-                                        args.output_prefix + ".tmp.rearrangement_info.txt")
+                                        args.output_prefix + ".tmp.rearrangement_info.txt",
+                                        args.output_prefix + ".tmp.bp_info.txt")
 
     ####################
     # deletion processing
@@ -81,6 +82,19 @@ def parse_main(args):
     subprocess.check_call(["tabix", "-p", "bed", args.output_prefix + ".rearrangement.sorted.bedpe.gz"])
     ####################
 
+    ####################
+    # breakpoint processing
+    hout = open(args.output_prefix + ".tmp.bp_info.sorted.bed", 'w')
+    subprocess.check_call(["sort", "-k1,1", "-k2,2n", "-k3,3n", args.output_prefix + ".tmp.bp_info.txt"], stdout = hout)
+    hout.close()
+
+    hout = open(args.output_prefix + ".tmp.bp_info.sorted.bed.gz", 'w')
+    subprocess.check_call(["bgzip", "-f", "-c", args.output_prefix + ".tmp.bp_info.sorted.bed"], stdout = hout)
+    hout.close()
+
+    subprocess.check_call(["tabix", "-p", "bed", args.output_prefix + ".tmp.bp_info.sorted.bed.gz"])
+    ####################
+
     if not args.debug:
         subprocess.check_call(["rm", "-rf", args.output_prefix + ".tmp.deletion_info.txt"])
         subprocess.check_call(["rm", "-rf", args.output_prefix + ".tmp.deletion.sorted.bed"])
@@ -90,6 +104,8 @@ def parse_main(args):
         subprocess.check_call(["rm", "-rf", args.output_prefix + ".tmp.rearrangement_info.name_sorted.txt"])
         subprocess.check_call(["rm", "-rf", args.output_prefix + ".tmp.rearrangement.bedpe"])
         subprocess.check_call(["rm", "-rf", args.output_prefix + ".tmp.rearrangement.sorted.bedpe"])
+        subprocess.check_call(["rm", "-rf", args.output_prefix + ".tmp.bp_info.txt"])
+        subprocess.check_call(["rm", "-rf", args.output_prefix + ".tmp.bp_info.sorted.bed"])
 
 
 def get_main(args):
