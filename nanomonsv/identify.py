@@ -215,7 +215,7 @@ def get_readid2alignment(input_file, mode, alignment_margin):
     return(readid2alignment)
 
  
-def identify(rearrangement_file, insertion_file, deletion_file, output_file, tumor_bam, reference_fasta, debug, alignment_margin = 300):
+def identify(rearrangement_file, insertion_file, deletion_file, output_file, tumor_bam, reference_fasta, use_racon, debug, alignment_margin = 300):
 
     bamfile = pysam.AlignmentFile(tumor_bam, "rb")
 
@@ -260,6 +260,7 @@ def identify(rearrangement_file, insertion_file, deletion_file, output_file, tum
     hout_log = open(tmp_dir + "/consensus_alignment.log", 'w')
 
     hout = open(output_file, 'w') 
+    readid2exists = {}
     with open(output_file + ".tmp.supporting_read.sorted", 'r') as hin:
         for line in hin:
             F = line.rstrip('\n').split('\t')
@@ -268,21 +269,21 @@ def identify(rearrangement_file, insertion_file, deletion_file, output_file, tum
                 if temp_key != '':
                     hout2.close()
 
-                    """
-                    hout3 = open(tmp_dir + '/' + temp_key + ".mafft_result.fa", 'w')
-                    subprocess.check_call(["mafft", tmp_dir + '/' + temp_key + ".supporting_read.fa"], stdout = hout3, stderr = subprocess.DEVNULL)
-                    hout3.close()
+                    if not use_racon:
+                        hout3 = open(tmp_dir + '/' + temp_key + ".mafft_result.fa", 'w')
+                        subprocess.check_call(["mafft", tmp_dir + '/' + temp_key + ".supporting_read.fa"], stdout = hout3, stderr = subprocess.DEVNULL)
+                        hout3.close()
                 
-                    tconsensus = get_consensus_from_mafft_result(tmp_dir + '/' + temp_key + ".mafft_result.fa")
-                    print(temp_key + '\n' + tconsensus, file = hout_log)
-                    # print(temp_key + '\n' + tconsensus)
-                    """ 
-                    generate_racon_consensus(temp_key, tmp_dir)
+                        tconsensus = get_consensus_from_mafft_result(tmp_dir + '/' + temp_key + ".mafft_result.fa")
+                        print(temp_key + '\n' + tconsensus, file = hout_log)
+
+                    else:
+                        generate_racon_consensus(temp_key, tmp_dir)
  
-                    with open(tmp_dir + "/" + temp_key + ".racon2.fa") as hin2:
-                        header = hin2.readline()
-                        tconsensus = hin2.readline().rstrip('\n')
-                    print(temp_key + '\n' + tconsensus, file = hout_log)
+                        with open(tmp_dir + "/" + temp_key + ".racon2.fa") as hin2:
+                            header = hin2.readline()
+                            tconsensus = hin2.readline().rstrip('\n')
+                        print(temp_key + '\n' + tconsensus, file = hout_log)
 
                     chr1, start1, end1, dir1, chr2, start2, end2, dir2, mode = temp_key.split(',')
                     start1, end1, start2, end2 = int(start1), int(end1), int(start2), int(end2)       
@@ -295,28 +296,30 @@ def identify(rearrangement_file, insertion_file, deletion_file, output_file, tum
 
                 temp_key = F[0]          
                 hout2 = open(tmp_dir + '/' + temp_key + ".supporting_read.fa", 'w')
+                readid2exists = {}
 
-            print('>' + F[1] + '\n' + F[2], file = hout2)
+            if F[1] not in readid2exists:
+                print('>' + F[1] + '\n' + F[2], file = hout2)
+                readid2exists[F[1]] = 1
 
         # last treatment
         if temp_key != '':
             hout2.close()
 
-            """
-            hout3 = open(tmp_dir + '/' + temp_key + ".mafft_result.fa", 'w')
-            subprocess.check_call(["mafft", tmp_dir + '/' + temp_key + ".supporting_read.fa"], stdout = hout3, stderr = subprocess.DEVNULL)
-            hout3.close()
+            if not use_racon:
+                hout3 = open(tmp_dir + '/' + temp_key + ".mafft_result.fa", 'w')
+                subprocess.check_call(["mafft", tmp_dir + '/' + temp_key + ".supporting_read.fa"], stdout = hout3, stderr = subprocess.DEVNULL)
+                hout3.close()
 
-            tconsensus = get_consensus_from_mafft_result(tmp_dir + '/' + temp_key + ".mafft_result.fa")
-            print(temp_key + '\n' + tconsensus, file = hout_log)
-            """
-
-            generate_racon_consensus(temp_key, tmp_dir)
+                tconsensus = get_consensus_from_mafft_result(tmp_dir + '/' + temp_key + ".mafft_result.fa")
+                print(temp_key + '\n' + tconsensus, file = hout_log)
+            else:
+                generate_racon_consensus(temp_key, tmp_dir)
                  
-            with open(tmp_dir + "/" + temp_key + ".racon2.fa") as hin2:
-                header = hin2.readline()
-                tconsensus = hin2.readline().rstrip('\n')
-            print(temp_key + '\n' + tconsensus, file = hout_log)
+                with open(tmp_dir + "/" + temp_key + ".racon2.fa") as hin2:
+                    header = hin2.readline()
+                    tconsensus = hin2.readline().rstrip('\n')
+                print(temp_key + '\n' + tconsensus, file = hout_log)
 
             chr1, start1, end1, dir1, chr2, start2, end2, dir2, mode = temp_key.split(',')     
             start1, end1, start2, end2 = int(start1), int(end1), int(start2), int(end2)

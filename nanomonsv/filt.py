@@ -30,6 +30,8 @@ def cluster_rearrangement(input_file, output_file, cluster_margin_size = 100):
                 bchr1, bstart1, bend1, bdir1, bchr2, bstart2, bend2, bdir2 = key 
                 breadids, binfo1, binfo2 = merged_bedpe[key]
 
+                if F[6] in breadids: continue
+
                 if F[0] == bchr1 and F[3] == bchr2 and F[8] == bdir1 and F[9] == bdir2 and \
                   int(F[2]) >= bstart1 and int(F[1]) <= bend1 and int(F[5]) >= bstart2 and int(F[4]) <= bend2:
                         

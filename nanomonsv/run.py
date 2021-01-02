@@ -84,15 +84,15 @@ def parse_main(args):
 
     ####################
     # breakpoint processing
-    hout = open(args.output_prefix + ".tmp.bp_info.sorted.bed", 'w')
+    hout = open(args.output_prefix + ".bp_info.sorted.bed", 'w')
     subprocess.check_call(["sort", "-k1,1", "-k2,2n", "-k3,3n", args.output_prefix + ".tmp.bp_info.txt"], stdout = hout)
     hout.close()
 
-    hout = open(args.output_prefix + ".tmp.bp_info.sorted.bed.gz", 'w')
-    subprocess.check_call(["bgzip", "-f", "-c", args.output_prefix + ".tmp.bp_info.sorted.bed"], stdout = hout)
+    hout = open(args.output_prefix + ".bp_info.sorted.bed.gz", 'w')
+    subprocess.check_call(["bgzip", "-f", "-c", args.output_prefix + ".bp_info.sorted.bed"], stdout = hout)
     hout.close()
 
-    subprocess.check_call(["tabix", "-p", "bed", args.output_prefix + ".tmp.bp_info.sorted.bed.gz"])
+    subprocess.check_call(["tabix", "-p", "bed", args.output_prefix + ".bp_info.sorted.bed.gz"])
     ####################
 
     if not args.debug:
@@ -105,7 +105,7 @@ def parse_main(args):
         subprocess.check_call(["rm", "-rf", args.output_prefix + ".tmp.rearrangement.bedpe"])
         subprocess.check_call(["rm", "-rf", args.output_prefix + ".tmp.rearrangement.sorted.bedpe"])
         subprocess.check_call(["rm", "-rf", args.output_prefix + ".tmp.bp_info.txt"])
-        subprocess.check_call(["rm", "-rf", args.output_prefix + ".tmp.bp_info.sorted.bed"])
+        subprocess.check_call(["rm", "-rf", args.output_prefix + ".bp_info.sorted.bed"])
 
 
 def get_main(args):
@@ -166,7 +166,7 @@ def get_main(args):
     identify(args.tumor_prefix + ".rearrangement.sorted.clustered.filt2.bedpe", 
              args.tumor_prefix + ".insertion.sorted.clustered.filt2.bedpe",
              args.tumor_prefix + ".deletion.sorted.clustered.filt2.bedpe",
-             args.tumor_prefix + ".refined_bp.txt", args.tumor_bam, args.reference_fasta, args.debug)
+             args.tumor_prefix + ".refined_bp.txt", args.tumor_bam, args.reference_fasta, args.use_racon, args.debug)
 
     long_read_validate_main(args.tumor_prefix + ".refined_bp.txt",
                   args.tumor_bam,

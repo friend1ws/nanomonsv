@@ -86,6 +86,9 @@ def create_parser():
     get.add_argument("--use_ssw_lib", default = False, action = 'store_true',
                      help = "Use SSW Library. This is for backward comaptibility, and may be removed in the future")
 
+    get.add_argument("--use_racon", default = False, action = 'store_true',
+                     help = "Use racon for error correction of clustered putative supporting reads")
+
     # get.add_argument("--control_read_num_thres", default = 0, type = int,
     #                  help = "Filter if the number of supporting reads for the control sample is larger than this value")
 
