@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y \
     wget \
     bzip2 \
     make \
+    cmake \
     gcc \
     zlib1g-dev \
     libbz2-dev \
@@ -26,6 +27,11 @@ RUN wget https://github.com/samtools/htslib/releases/download/1.10/htslib-1.10.t
 RUN wget http://ftp.debian.org/debian/pool/main/m/mafft/mafft_7.407-2_amd64.deb && \
     dpkg -i mafft_7.407-2_amd64.deb
     
+RUN wget https://github.com/isovic/racon/releases/download/1.4.3/racon-v1.4.3.tar.gz && \
+    tar zxvf racon-v1.4.3.tar.gz && \
+    cd racon-v1.4.3 && mkdir build && cd build && \
+    cmake -DCMAKE_BUILD_TYPE=Release .. && \
+    make && make install
 
 RUN pip3 install --upgrade setuptools
 

@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#i! /usr/bin/env python
 
 import sys, gzip, statistics
 import pysam
@@ -138,21 +138,23 @@ def filt_clustered_rearrangement2(input_file, output_file, control_junction_bedp
 
 
 
-def cluster_insertion_deletion(input_file, output_file, deletion_cluster_margin_size = 10, check_margin_size = 50, size_margin_ratio = 0.2, maximum_unique_pairs = 100):
+def cluster_insertion_deletion(input_file, output_file, deletion_cluster_margin_size = 10, check_margin_size = 50, size_margin_ratio = 0.2, maximum_unique_pairs = 100, maximum_local_variant_num = 1000):
 
     dcms = deletion_cluster_margin_size
     hout = open(output_file, 'w')
     
     merged_bedpe = {}
     skip_pos = 0
+    tmp_pos = 0
     tmp_chr = None
+    local_variant_num = 0
 
     with gzip.open(input_file, 'rt') as hin:
         for line in hin:
             F = line.rstrip('\n').split('\t')
             if F[0] == "hs37d5": continue
 
-            if F[0] != tmp_chr: tmp_chr, skip_pos = F[0], 0
+            if F[0] != tmp_chr: tmp_chr, tmp_pos, skip_pos = F[0], 0,  0
             if int(F[1]) < skip_pos: continue
             if int(F[4]) < 90: continue
  
@@ -168,9 +170,8 @@ def cluster_insertion_deletion(input_file, output_file, deletion_cluster_margin_
                        breadids, '0', bdir1, bdir2, bsize, binfo]), file = hout)
                     del merged_bedpe[key]
 
-                    # print('\t'.join([bchr, str(bstart), str(bend), breadids, bsize, '+', binfo]), file = hout)
-                    # del merged_bedpe[key]
-
+                    tmp_pos = int(F[1])
+                    local_variant_num = 0
 
             match_flag = False
             for key in sorted(merged_bedpe):
@@ -213,13 +214,26 @@ def cluster_insertion_deletion(input_file, output_file, deletion_cluster_margin_
                 # new_key = (F[0], F[1], F[2])
                 merged_bedpe[new_key] = (F[3], F[4], F[6])
 
+            local_variant_num = local_variant_num + 1
+
+            if local_variant_num >= maximum_local_variant_num:
+                print("Exceeded maximum number of local variants at %s:%s" % (F[0], F[1]), file = sys.stderr)
+                print("Skip %s:%s" % (F[0], str(int(F[1]) + 10 * check_margin_size)), file = sys.stderr)
+                merged_bedpe = {}
+                local_variant_num = 0
+                skip_pos = int(F[1]) + 10 * check_margin_size
+
+            # print((F[0], F[1], local_variant_num, len(merged_bedpe)))
             if len(merged_bedpe) > maximum_unique_pairs:
 
                 print("Exceeded maximum number of unique junction pairs at %s:%s" % (F[0], F[1]), file = sys.stderr)
-                print(sys.stderr, "Skip %s:%s" % (F[0], str(int(F[1]) + check_margin_size)), file = sys.stderr)
+                print("Skip %s:%s" % (F[0], str(int(F[1]) + 10 * check_margin_size)), file = sys.stderr)
                 merged_bedpe = {}
-                skip_pos = int(F[1]) + check_margin_size
+                local_variant_num = 0
+                skip_pos = int(F[1]) + 10 * check_margin_size
 
+            
+            
 
         for key in sorted(merged_bedpe):
             # bchr, bstart, bene = key
@@ -236,15 +250,40 @@ def cluster_insertion_deletion(input_file, output_file, deletion_cluster_margin_
 
 
 
-def filt_clustered_insertion_deletion1(input_file, output_file, read_num_thres = 3, median_mapQ_thres = 40, max_overhang_size_thres = 300):
+def filt_clustered_insertion_deletion1(input_file, output_file, bp_bed, read_num_thres = 3, median_mapQ_thres = 40, max_overhang_size_thres = 300):
 
     hout = open(output_file, 'w')
+    if bp_bed is not None: bp_bed_db = pysam.TabixFile(bp_bed)
+
     with open(input_file, 'r') as hin:
         for line in hin:
             F = line.rstrip('\n').split('\t')
+            tchr, tstart1, tend1, tstart2, tend2 = F[0], int(F[1]), int(F[2]), int(F[4]), int(F[5])
             read_ids = list(set(F[6].split(';')))
+
+            # add breakpoint info
+            if bp_bed is not None:
+                tabix_error_flag = False
+                try:
+                    records = bp_bed_db.fetch(tchr, max(0, tstart1), tend2)
+                except:
+                    tabix_error_flag = True
+
+                if not tabix_error_flag:
+                    for record_line in records:
+                        record = record_line.split('\t')
+                        if (tchr == record[0] and tstart1 <= int(record[2]) and int(record[2]) <= tend1 and record[5] == '+') or \
+                            (tchr == record[0] and tstart2 <= int(record[2]) and int(record[2]) <= tend2 and record[5] == '-'):
+   
+                            if record[3] in F[6]: continue
+                            F[6] = F[6] + ';' + record[3]
+                            F[10] = F[10] + ';' + record[5]
+                            F[11] = F[11] + ';' + record[6]
+
+            read_ids = list(set(F[6].split(';')))    
             if len(read_ids) < read_num_thres: continue
 
+            # F[6] = ';'.join(read_ids)
             info = F[11].split(';')
 
             median_mapQ = statistics.median([int(x.split(',')[5]) for x in info])
@@ -270,7 +309,7 @@ def filt_clustered_insertion_deletion2(input_file, output_file, control_junction
         for line in hin:
             F = line.rstrip('\n').split('\t')
             tchr1, tstart1, tend1, tchr2, tstart2, tend2 = F[0], F[1], F[2], F[3], F[4], F[5]
-            median_size = statistics.median([int(x) for x in F[10].split(';')])
+            median_size = statistics.median([int(x) for x in F[10].split(';') if x not in ['-', '+']])
 
             control_flag = False
             if control_junction_bedpe is not None:

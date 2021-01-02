@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-import sys, os, subprocess, shutil 
+import sys, os, subprocess, shutil, statistics 
 from collections import Counter
 import pysam
 import parasail
@@ -73,10 +73,20 @@ def generate_paf_file(query_fasta, target_fasta, output_file):
                     tid, len(tseq), res.ref_begin1, res.ref_end1), file = hout)
 
 
-def generate_racon_consensus(temp_key, tmp_dir):
+def generate_racon_consensus(temp_key, tmp_dir, readid2alignment):
 
-    with open(tmp_dir + '/' + temp_key + ".tmp.seg.first.fa", 'w') as hout3: 
-        subprocess.check_call(["head", "-n", "2", tmp_dir + '/' + temp_key + ".supporting_read.fa"], stdout= hout3)
+    with open(tmp_dir + '/' + temp_key + ".supporting_read.fa", 'r') as hin3, open(tmp_dir + '/' + temp_key + ".tmp.seg.first.fa", 'w') as hout3: 
+        for line in hin3:
+            if line.startswith('>'):
+                tid = line.rstrip('\n').lstrip('>')
+                for talignment in readid2alignment[tid]:
+                    tkey, tstart, tend, tstrand, tsize = talignment
+                    if temp_key == tkey and tsize not in ['-', '+']: # not breakpoint read
+                        tseq = hin3.readline().rstrip('\n')
+                        print(f'>{tid}\n{tseq}', file = hout3)
+                        break
+
+        #   subprocess.check_call(["head", "-n", "2", tmp_dir + '/' + temp_key + ".supporting_read.fa"], stdout= hout3)
                      
     generate_paf_file(tmp_dir + '/' + temp_key + ".supporting_read.fa",
         tmp_dir + '/' + temp_key + ".tmp.seg.first.fa",
@@ -187,9 +197,9 @@ def get_readid2alignment(input_file, mode, alignment_margin):
                     start1, end1, start2, end2 = int(tinfo1[0]), int(tinfo1[2]), int(tinfo2[0]), int(tinfo2[2])
                     if readids[i] not in readid2alignment: readid2alignment[readids[i]] = []
                     if start1 <= start2:
-                        readid2alignment[readids[i]].append((key, max(end1 - alignment_margin, 1), start2 + alignment_margin, '+'))
+                        readid2alignment[readids[i]].append((key, max(end1 - alignment_margin, 1), start2 + alignment_margin, '+', '*'))
                     else:
-                        readid2alignment[readids[i]].append((key, max(end2 - alignment_margin, 1), start1 + alignment_margin, '-'))
+                        readid2alignment[readids[i]].append((key, max(end2 - alignment_margin, 1), start1 + alignment_margin, '-', '*'))
 
             elif mode == "d":
                 size = F[10].split(';')
@@ -198,19 +208,26 @@ def get_readid2alignment(input_file, mode, alignment_margin):
                     tinfo = info[i].split(',')
                     tpos, tlen, tstrand = int(tinfo[1]), int(tinfo[3]), tinfo[4]
                     if readids[i] not in readid2alignment: readid2alignment[readids[i]] = []
-                    readid2alignment[readids[i]].append((key, max(tpos - alignment_margin, 1), min(tpos + alignment_margin, tlen - 1), tstrand))
+                    readid2alignment[readids[i]].append((key, max(tpos - alignment_margin, 1), min(tpos + alignment_margin, tlen - 1), tstrand, size[i]))
 
             elif mode == "i":
                 size = F[10].split(';')
                 info = F[11].split(';')
+                median_size = round(statistics.median([int(x) for x in size if x not in ['-', '+']]))
                 for i in range(len(readids)):
                     tinfo = info[i].split(',')
                     tpos, tlen, tstrand = int(tinfo[1]), int(tinfo[3]), tinfo[4]
                     if readids[i] not in readid2alignment: readid2alignment[readids[i]] = []
-                    if tstrand == "+":
-                        readid2alignment[readids[i]].append((key, max(tpos - alignment_margin, 1), min(tpos + int(size[i]) + alignment_margin, tlen - 1), tstrand))
-                    else:
-                        readid2alignment[readids[i]].append((key, max(tpos - int(size[i]) - alignment_margin, 1), min(tpos + alignment_margin, tlen - 1), tstrand))
+                    if size[i] in ['-', '+']: # breakpoint
+                        if (tstrand == '+' and size[i] == '+') or (tstrand == '-' and size[i] == '-'):
+                            readid2alignment[readids[i]].append((key, max(tpos - alignment_margin, 1), min(tpos + median_size + alignment_margin, tlen - 1), tstrand, size[i]))
+                        else:
+                            readid2alignment[readids[i]].append((key, max(tpos - median_size - alignment_margin, 1), min(tpos + alignment_margin, tlen - 1), tstrand, size[i]))
+                    else: # Insertion identified by CIGAR
+                        if tstrand == '+':
+                            readid2alignment[readids[i]].append((key, max(tpos - alignment_margin, 1), min(tpos + int(size[i]) + alignment_margin, tlen - 1), tstrand, size[i]))
+                        else:
+                            readid2alignment[readids[i]].append((key, max(tpos - int(size[i]) - alignment_margin, 1), min(tpos + alignment_margin, tlen - 1), tstrand, size[i]))
 
     return(readid2alignment)
 
@@ -228,11 +245,11 @@ def identify(rearrangement_file, insertion_file, deletion_file, output_file, tum
 
         if read.query_name in readid2alignment and not read.is_secondary and not read.is_supplementary:
 
-            for talignment in readid2alignment[read.query_name]:
+            for talignment in readid2alignment[read.query_name] :
 
-                tkey, tstart, tend, tstrand = talignment
+                tkey, tstart, tend, tstrand, tsize = talignment
 
-                # if read.query_name == "cdca0470-c734-40e6-b0e8-6bfe60c41439":
+                # if read.query_name == "312aac87-12d8-4f93-a1ee-bd85875da244":
                 #     import pdb; pdb.set_trace()
 
                 read_seq = reverse_complement(read.query_sequence) if read.is_reverse else read.query_sequence
@@ -278,7 +295,7 @@ def identify(rearrangement_file, insertion_file, deletion_file, output_file, tum
                         print(temp_key + '\n' + tconsensus, file = hout_log)
 
                     else:
-                        generate_racon_consensus(temp_key, tmp_dir)
+                        generate_racon_consensus(temp_key, tmp_dir, readid2alignment)
  
                         with open(tmp_dir + "/" + temp_key + ".racon2.fa") as hin2:
                             header = hin2.readline()
@@ -314,7 +331,7 @@ def identify(rearrangement_file, insertion_file, deletion_file, output_file, tum
                 tconsensus = get_consensus_from_mafft_result(tmp_dir + '/' + temp_key + ".mafft_result.fa")
                 print(temp_key + '\n' + tconsensus, file = hout_log)
             else:
-                generate_racon_consensus(temp_key, tmp_dir)
+                generate_racon_consensus(temp_key, tmp_dir, readid2alignment)
                  
                 with open(tmp_dir + "/" + temp_key + ".racon2.fa") as hin2:
                     header = hin2.readline()

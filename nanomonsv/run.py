@@ -150,7 +150,7 @@ def get_main(args):
     cluster_insertion_deletion(args.tumor_prefix + ".deletion.sorted.bed.gz", args.tumor_prefix + ".deletion.sorted.clustered.bedpe")
 
     filt_clustered_insertion_deletion1(args.tumor_prefix + ".deletion.sorted.clustered.bedpe", args.tumor_prefix + ".deletion.sorted.clustered.filt1.bedpe",
-                                       args.min_tumor_variant_read_num, args.median_mapQ_thres, args.max_overhang_size_thres)
+                                       None, args.min_tumor_variant_read_num, args.median_mapQ_thres, args.max_overhang_size_thres)
 
     filt_clustered_insertion_deletion2(args.tumor_prefix + ".deletion.sorted.clustered.filt1.bedpe", args.tumor_prefix + ".deletion.sorted.clustered.filt2.bedpe",
                                        control_deletion_bed)
@@ -158,6 +158,8 @@ def get_main(args):
     cluster_insertion_deletion(args.tumor_prefix + ".insertion.sorted.bed.gz", args.tumor_prefix + ".insertion.sorted.clustered.bedpe")
 
     filt_clustered_insertion_deletion1(args.tumor_prefix + ".insertion.sorted.clustered.bedpe", args.tumor_prefix + ".insertion.sorted.clustered.filt1.bedpe",
+                                       args.tumor_prefix + ".bp_info.sorted.bed.gz",
+                                       # None,
                                        args.min_tumor_variant_read_num, args.median_mapQ_thres, args.max_overhang_size_thres)
 
     filt_clustered_insertion_deletion2(args.tumor_prefix + ".insertion.sorted.clustered.filt1.bedpe", args.tumor_prefix + ".insertion.sorted.clustered.filt2.bedpe",
