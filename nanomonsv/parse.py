@@ -9,6 +9,8 @@ logger = get_logger(__name__)
 def parse_alignment_info(input_bam, deletion_output_file, insertion_output_file, rearrangement_output_file,
     breakpoint_output_file, min_ins_size = 20, min_del_size = 30, min_clipping_size_for_bp = 200):
 
+    """Parse BAM file to obtain putative SV supporting reads and their associated info."""
+
     hout_d = open(deletion_output_file, 'w')
     hout_i = open(insertion_output_file, 'w')
     hout_r = open(rearrangement_output_file, 'w') 
@@ -18,10 +20,6 @@ def parse_alignment_info(input_bam, deletion_output_file, insertion_output_file,
     
     for read in bamfile.fetch():
 
-        # if read.query_name == "967b6fea-1ddc-4ca3-8baa-46e668552ccb":
-        #     import pdb; pdb.set_trace() 
-
-        # print(read)
         # if read.is_secondary: continue
 
         query_name = read.query_name
@@ -68,22 +66,20 @@ def parse_alignment_info(input_bam, deletion_output_file, insertion_output_file,
         query_pos_check = query_pos_cur
         reference_pos_cur = reference_start - 1
         reference_pos_check = reference_start - 1
-        # num_M, num_I, num_D = 0, 0, 0
 
         for cigar in cigartuples:
             if cigar[0] == 0:
                 query_pos_cur = query_pos_cur + cigar[1] if query_strand == '+' else query_pos_cur - cigar[1]
                 reference_pos_cur = reference_pos_cur + cigar[1] 
-                # num_M = num_M + cigar[1]
             elif cigar[0] == 1:
-                # num_I = num_I + cigar[1]
 
                 if cigar[1] >= min_ins_size:
 
-                    tinfo = ','.join([str(query_start), str(query_pos_cur), str(query_end), str(query_length), query_strand, mapping_quality,
-                                      str(num_M), str(num_I - cigar[1]), str(num_D), str(is_supplementary), str(is_secondary)])
+                    tinfo = f'{query_start},{query_pos_cur},{query_end},{query_length},{query_strand},' + \
+                        f'{mapping_quality},{num_M},{num_I - cigar[1]},{num_D},{is_supplementary},{is_secondary}'
 
-                    print('\t'.join([reference_name, str(reference_pos_cur), str(reference_pos_cur + 1), query_name, str(cigar[1]), '+', tinfo]), file = hout_i)
+                    print(f'{reference_name}\t{reference_pos_cur}\t{reference_pos_cur + 1}\t{query_name}\t{cigar[1]}\t+\t{tinfo}',
+                        file = hout_i)
 
                 query_pos_cur = query_pos_cur + cigar[1] if query_strand == '+' else query_pos_cur - cigar[1]
 
@@ -103,33 +99,23 @@ def parse_alignment_info(input_bam, deletion_output_file, insertion_output_file,
                         reference_end2 = reference_pos_cur
                     """
 
-                    tinfo = ','.join([str(query_start), str(query_pos_cur), str(query_end), str(query_length), query_strand, mapping_quality,
-                                      str(num_M), str(num_I), str(num_D - cigar[1]), str(is_supplementary), str(is_secondary)])
+                    tinfo = f'{query_start},{query_pos_cur},{query_end},{query_length},{query_strand},' + \
+                        f'{mapping_quality},{num_M},{num_I},{num_D - cigar[1]},{is_supplementary},{is_secondary}'
 
-                    print('\t'.join([reference_name, str(reference_pos_cur), str(reference_pos_cur + cigar[1]), query_name, str(cigar[1]), '+', tinfo]), file = hout_d)
+                    print(f'{reference_name}\t{reference_pos_cur}\t{reference_pos_cur + cigar[1]}\t{query_name}\t{cigar[1]}\t+\t{tinfo}',
+                        file = hout_d)
 
-                    """
-                    print('\t'.join([query_name, str(query_start2), str(query_end2), str(query_length), query_strand, \
-                          reference_name, str(reference_start2), str(reference_end2), mapping_quality, \
-                          str(num_M), str(num_I), str(num_D), str(is_supplementary), str(is_secondary)]), file = hout)
-                    """
-
-                    # query_pos_check = query_pos_cur
                     reference_pos_cur = reference_pos_cur + cigar[1]
-                    # reference_pos_check = reference_pos_cur
-                    # num_M, num_I, num_D = 0, 0, 0
                 else:
-                    # num_D = num_D + cigar[1]
                     reference_pos_cur = reference_pos_cur + cigar[1]
 
         if query_strand == '+' and query_end != query_pos_cur:
-            # import pdb; pdb.set_trace()
             logger.error("query end inconsistent!! %s: %d != %d" % (query_name, query_end, query_pos_cur))
             sys.exit(1)
         if query_strand == '-' and query_start != query_pos_cur + 1:
-            # import pdb; pdb.set_trace()
             logger.error("query end inconsistent!! %s: %d != %d" % (query_name, query_end, query_pos_cur))
             sys.exit(1)
+
         """
         if query_strand == '+':
             query_start2 = query_pos_check + 1
@@ -157,32 +143,38 @@ def parse_alignment_info(input_bam, deletion_output_file, insertion_output_file,
             sys.exit(1)
         """
 
-        print('\t'.join([query_name, str(query_start), str(query_end), str(query_length), query_strand, \
-                         reference_name, str(reference_start), str(reference_end), mapping_quality, \
-                         str(num_M), str(num_I), str(num_D), str(is_supplementary), str(is_secondary)]), file = hout_r)
+        print(f'{query_name}\t{query_start}\t{query_end}\t{query_length}\t{query_strand}\t{reference_name}\t' + \
+            f'{reference_start}\t{reference_end}\t{mapping_quality}\t{num_M}\t{num_I}\t{num_D}\t' + \
+            f'{is_supplementary}\t{is_secondary}', file = hout_r)
+
+        # print('\t'.join([query_name, str(query_start), str(query_end), str(query_length), query_strand, \
+        #                  reference_name, str(reference_start), str(reference_end), mapping_quality, \
+        #                  str(num_M), str(num_I), str(num_D), str(is_supplementary), str(is_secondary)]), file = hout_r)
 
 
-        if right_soft_clipping_size + left_hard_clipping_size >= min_clipping_size_for_bp:
+        if left_soft_clipping_size + left_hard_clipping_size >= min_clipping_size_for_bp:
 
             if query_strand == '+':
-                print("%s\t%d\t%d\t-\t%s\t%d\t+\t%d\t%d\t%s\t%s\t%s" % 
-                    (reference_name, reference_start - 1, reference_start, query_name, query_length,
-                     1, query_start - 1, mapping_quality, is_supplementary, is_secondary), file = hout_b)
+                tinfo = f'{query_start},{query_start},{query_end},{query_length},{query_strand},' + \
+                    f'{mapping_quality},{num_M},{num_I},{num_D},{is_supplementary},{is_secondary}'
             else:
-                print("%s\t%d\t%d\t-\t%s\t%d\t-\t%d\t%d\t%s\t%s\t%s" % 
-                    (reference_name, reference_start - 1, reference_start, query_name, query_length,
-                    query_end + 1, query_length,  mapping_quality, is_supplementary, is_secondary), file = hout_b)
+                tinfo = f'{query_start},{query_end},{query_end},{query_length},{query_strand},' + \
+                    f'{mapping_quality},{num_M},{num_I},{num_D},{is_supplementary},{is_secondary}'
+ 
+            print(f'{reference_name}\t{reference_start - 1}\t{reference_start}\t{query_name}\t*\t-\t{tinfo}',
+                file = hout_b)
 
         if right_soft_clipping_size + right_hard_clipping_size >= min_clipping_size_for_bp:
             
             if query_strand == '+':
-                print("%s\t%d\t%d\t+\t%s\t%d\t+\t%d\t%d\t%s\t%s\t%s" % 
-                    (reference_name, reference_end - 1, reference_end, query_name, query_length,
-                    query_end + 1, query_length,  mapping_quality, is_supplementary, is_secondary), file = hout_b)
+                tinfo = f'{query_start},{query_end},{query_end},{query_length},{query_strand},' + \
+                    f'{mapping_quality},{num_M},{num_I},{num_D},{is_supplementary},{is_secondary}'
             else:
-                print("%s\t%d\t%d\t+\t%s\t%d\t-\t%d\t%d\t%s\t%s\t%s" %
-                    (reference_name, reference_end - 1, reference_end, query_name, query_length,
-                    1, query_start - 1, mapping_quality, is_supplementary, is_secondary), file = hout_b)
+                tinfo = f'{query_start},{query_start},{query_end},{query_length},{query_strand},' + \
+                    f'{mapping_quality},{num_M},{num_I},{num_D},{is_supplementary},{is_secondary}'
+
+            print(f'{reference_name}\t{reference_end - 1}\t{reference_end}\t{query_name}\t*\t+\t{tinfo}',
+                file = hout_b)
 
 
     hout_d.close()
@@ -241,9 +233,9 @@ def extract_bedpe_junction(input_file, output_file, split_alignment_check_margin
                 if bchr1 > bchr2 or (bchr1 == bchr2 and bstart1 > bstart2):
                     bchr1, bstart1, bend1, bstrand1, binfo1, bchr2, bstart2, bend2, bstrand2, binfo2 = \
                         bchr2, bstart2, bend2, bstrand2, binfo2, bchr1, bstart1, bend1, bstrand1, binfo1
-                
-                print('\t'.join([bchr1, str(bstart1), str(bend1), bchr2, str(bstart2), str(bend2), bread_name, "0",
-                                 bstrand1, bstrand2, binfo1, binfo2]), file = hout)
+               
+                print(f'{bchr1}\t{bstart1}\t{bend1}\t{bchr2}\t{bstart2}\t{bend2}\t{bread_name}\t0\t{bstrand1}\t{bstrand2}\t{binfo1}\t{binfo2}',
+                    file = hout)
 
  
     hout = open(output_file, 'w')
