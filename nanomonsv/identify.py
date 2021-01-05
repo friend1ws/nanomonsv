@@ -68,9 +68,12 @@ def generate_paf_file(query_fasta, target_fasta, output_file):
                 qseq = line.rstrip('\n')
                 
                 res = parasail.ssw(qseq, tseq, 3, 1, user_matrix)
-                print("%s\t%d\t%d\t%d\t+\t%s\t%d\t%d\t%d\t*\t*\t60" %
-                    (qid, len(qseq), res.read_begin1, res.read_end1,
-                    tid, len(tseq), res.ref_begin1, res.ref_end1), file = hout)
+                if res is not None:
+                    print("%s\t%d\t%d\t%d\t+\t%s\t%d\t%d\t%d\t*\t*\t60" %
+                        (qid, len(qseq), res.read_begin1, res.read_end1,
+                        tid, len(tseq), res.ref_begin1, res.ref_end1), file = hout)
+                else:
+                    print(f'Error occured in the alignment of {qid} and {tid} via parasail')
 
 
 def generate_racon_consensus(temp_key, tmp_dir, readid2alignment):
@@ -179,9 +182,9 @@ def get_refined_bp(contig, fasta_file_ins, chr1, start1, end1, dir1, chr2, start
         return(bp_pos1, bp_pos2, inseq)
 
         
-def get_readid2alignment(input_file, mode, alignment_margin):
+def set_readid2alignment(readid2alignment, input_file, mode, alignment_margin):
 
-    readid2alignment = {}
+    # readid2alignment = {}
     with open(input_file, 'r') as hin:
         for line in hin:
             F = line.rstrip('\n').split('\t')
@@ -236,9 +239,13 @@ def identify(rearrangement_file, insertion_file, deletion_file, output_file, tum
 
     bamfile = pysam.AlignmentFile(tumor_bam, "rb")
 
-    readid2alignment = get_readid2alignment(rearrangement_file, 'r', alignment_margin)
-    readid2alignment.update(get_readid2alignment(insertion_file, 'i', alignment_margin))
-    readid2alignment.update(get_readid2alignment(deletion_file, 'd', alignment_margin))
+    readid2alignment = {}
+    # readid2alignment = get_readid2alignment(rearrangement_file, 'r', alignment_margin)
+    # readid2alignment.update(get_readid2alignment(insertion_file, 'i', alignment_margin))
+    # readid2alignment.update(get_readid2alignment(deletion_file, 'd', alignment_margin))
+    set_readid2alignment(readid2alignment, rearrangement_file, 'r', alignment_margin)
+    set_readid2alignment(readid2alignment, insertion_file, 'i', alignment_margin)
+    set_readid2alignment(readid2alignment, deletion_file, 'd', alignment_margin)
 
     hout = open(output_file + ".tmp.supporting_read.unsorted", 'w')
     for read in bamfile.fetch():
