@@ -9,9 +9,10 @@ from .insert_classify import *
 from .utils import *
 
 from .logger import get_logger
-logger = get_logger(__name__)
 
 def parse_main(args):
+
+    logger = get_logger(__name__)
 
     # check if the executables exist
     is_tool("tabix")
@@ -112,6 +113,7 @@ def get_main(args):
 
     # check if the executables exist
     is_tool("mafft")
+    if args.use_racon: is_tool("racon")
     if args.use_ssw_lib: libssw_check()
 
     # check existences
@@ -135,7 +137,7 @@ def get_main(args):
         control_rearrangement_bedpe = args.control_prefix + ".rearrangement.sorted.bedpe.gz"
         control_deletion_bed = args.control_prefix + ".deletion.sorted.bed.gz"
         control_insertion_bed = args.control_prefix + ".insertion.sorted.bed.gz"
-    
+  
     ####################
     cluster_rearrangement(args.tumor_prefix + ".rearrangement.sorted.bedpe.gz", args.tumor_prefix + ".rearrangement.sorted.clustered.bedpe",
                      args.cluster_margin_size)
