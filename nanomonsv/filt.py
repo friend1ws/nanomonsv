@@ -2,6 +2,7 @@
 
 import sys, gzip, statistics
 import pysam
+from .logger import get_logger
 
 def cluster_rearrangement(input_file, output_file, cluster_margin_size = 100):
 
@@ -140,6 +141,8 @@ def filt_clustered_rearrangement2(input_file, output_file, control_junction_bedp
 
 def cluster_insertion_deletion(input_file, output_file, deletion_cluster_margin_size = 10, check_margin_size = 50, size_margin_ratio = 0.2, maximum_unique_pairs = 100, maximum_local_variant_num = 1000):
 
+    logger = get_logger(__name__)
+
     dcms = deletion_cluster_margin_size
     hout = open(output_file, 'w')
     
@@ -148,6 +151,8 @@ def cluster_insertion_deletion(input_file, output_file, deletion_cluster_margin_
     tmp_pos = 0
     tmp_chr = None
     local_variant_num = 0
+
+    skipped_pos_list = []
 
     with gzip.open(input_file, 'rt') as hin:
         for line in hin:
@@ -217,20 +222,16 @@ def cluster_insertion_deletion(input_file, output_file, deletion_cluster_margin_
             local_variant_num = local_variant_num + 1
 
             if local_variant_num >= maximum_local_variant_num:
-                print("Exceeded maximum number of local variants at %s:%s" % (F[0], F[1]), file = sys.stderr)
-                print("Skip %s:%s" % (F[0], str(int(F[1]) + 10 * check_margin_size)), file = sys.stderr)
+                skipped_pos_list.append(F[0] + ':' + F[1])
                 merged_bedpe = {}
                 local_variant_num = 0
-                skip_pos = int(F[1]) + 10 * check_margin_size
+                skip_pos = int(F[1]) + 100 * check_margin_size
 
-            # print((F[0], F[1], local_variant_num, len(merged_bedpe)))
             if len(merged_bedpe) > maximum_unique_pairs:
-
-                print("Exceeded maximum number of unique junction pairs at %s:%s" % (F[0], F[1]), file = sys.stderr)
-                print("Skip %s:%s" % (F[0], str(int(F[1]) + 10 * check_margin_size)), file = sys.stderr)
+                skipped_pos_list.append(F[0] + ':' + F[1])
                 merged_bedpe = {}
                 local_variant_num = 0
-                skip_pos = int(F[1]) + 10 * check_margin_size
+                skip_pos = int(F[1]) + 100 * check_margin_size
 
             
             
@@ -245,6 +246,9 @@ def cluster_insertion_deletion(input_file, output_file, deletion_cluster_margin_
 
             # if F[0] != bchr or int(F[1]) > int(bend) + check_margin_size:  
             #     print('\t'.join([bchr, str(bstart), str(bend), breadids, bsize, '+', binfo]), file = hout)
+
+    skipped_pls_list_line = ' '.join(skipped_pos_list)
+    logger.info(f"Because of too many local variants, clustering procedures were skipped around: {skipped_pls_list_line}")
 
     hout.close()
 
