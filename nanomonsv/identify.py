@@ -6,6 +6,9 @@ import pysam
 import parasail
 
 from . import smith_waterman
+from .logger import get_logger
+
+logger = get_logger(__name__)
 
 def reverse_complement(seq):
     complement = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A',
@@ -73,7 +76,7 @@ def generate_paf_file(query_fasta, target_fasta, output_file):
                         (qid, len(qseq), res.read_begin1, res.read_end1,
                         tid, len(tseq), res.ref_begin1, res.ref_end1), file = hout)
                 else:
-                    print(f'Error occured in the alignment of {qid} and {tid} via parasail')
+                    logger.warning(f'Error occured in the alignment of {qid} and {tid} via parasail')
 
 
 def generate_racon_consensus(temp_key, tmp_dir, readid2alignment):
@@ -168,8 +171,10 @@ def get_refined_bp(contig, fasta_file_ins, chr1, start1, end1, dir1, chr2, start
         if sret is None: return(None)
         score, region_align, contig_start_align, contig_end_align, region_seq, contig_seq = sret
 
-        bp_pos1 = start1 - 100 + region_align[1]
-        bp_pos2 = start1 - 100 + region_align[2]
+        # bp_pos1 = start1 - 100 + region_align[1]
+        # bp_pos2 = start1 - 100 + region_align[2]
+        bp_pos1 = max(0, start1 - 100) + region_align[1]
+        bp_pos2 = max(0, start1 - 100) + region_align[2]
 
         inseq_start = contig_start_align[1]
         inseq_end = len(contig) - (len(contig_end) - contig_end_align[0] + 1)
@@ -272,7 +277,7 @@ def identify(rearrangement_file, insertion_file, deletion_file, output_file, tum
     subprocess.check_call(["sort", "-k1,1", output_file + ".tmp.supporting_read.unsorted"], stdout = hout)
     hout.close()
     subprocess.check_call(["rm", "-rf", output_file + ".tmp.supporting_read.unsorted"])
-    
+
     fasta_file_ins = pysam.FastaFile(reference_fasta)
 
     tmp_dir = output_file + ".tmp_alignment_dir"
