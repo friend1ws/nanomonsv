@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 Simple python wrapper for SSW library
 Please put the path of libssw.so into LD_LIBRARY_PATH or pass it explicitly as a parameter
