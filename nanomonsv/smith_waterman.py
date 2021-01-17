@@ -44,7 +44,6 @@ def sw_jump(contig, region1_seq, region2_seq, match_score = 1, mismatch_penalty 
                 H2_origin_j[i, j]  = H1_argmax[H2_origin_i[i, j]]
 
 
-    # import pdb; pdb.set_trace()    
     i_cur, j2_cur = np.unravel_index(H2.argmax(), H2.shape)
     # a_string, b_string = a[i_end - 1], b[j_end - 1]
     contig_match, region1_seq_match, region2_seq_match = '', '', ''

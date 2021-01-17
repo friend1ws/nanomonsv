@@ -1,7 +1,11 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
-import sys, gzip, statistics
+import sys, gzip, statistics, logging
 import pysam
+
+from .logger import get_logger
+
+logger = get_logger(__name__)
 
 class Sv_cluster(object):
 
@@ -34,6 +38,9 @@ class Sv_clusterer(object):
         if control_junction_bedpe is not None:
             self.control_tb = pysam.TabixFile(control_junction_bedpe)
 
+        self.bp_tb = None
+        if bp_bed is not None:
+            self.bp_tb = pysam.TabixFile(bp_bed)
         self.sv_cluster_list = []
         self.svtype = svtype
         self.control_junction_bedpe = control_junction_bedpe
@@ -50,11 +57,21 @@ class Sv_clusterer(object):
 
         self.next_pos_after_skip = 0
         self.temp_chr = None
+        self.skipped_pos_list = []
 
+    def __del__(self):
+        if len(self.skipped_pos_list) > 0:
+            skipped_pls_list_line = ' '.join(self.skipped_pos_list)
+            logger.debug(f"Because of too many local variants, clustering procedures were skipped around: {skipped_pls_list_line}")
 
+        self.hout.close()
+        if self.control_tb is not None: self.control_tb.close()
+        if self.bp_tb is not None: self.bp_tb.close()
+
+ 
     def check_mergeability(self, tchr1, tstart1, tend1, tdir1, tchr2, tstart2, tend2, tdir2, 
         treadid, tsize, tinfo1, tinfo2):
-    
+   
         for cluster in self.sv_cluster_list:
 
             if treadid in cluster.readids: continue
@@ -72,7 +89,7 @@ class Sv_clusterer(object):
                 if tchr1 == cluster.chr1 and tstart1 <= cluster.end1 and tend1 >= cluster.start1 and \
                     tstart2 <= cluster.end2 and tend2 >= cluster.start1 and \
                     tsize > (1.0 - self.size_margin_ratio) * float(min(cluster.size)) and \
-                    tsize < (1.0 + self.size_margin_ratio) * float(min(cluster.size)):
+                    tsize < (1.0 + self.size_margin_ratio) * float(max(cluster.size)):
                     is_mergeable = True
                    
             if not is_mergeable: continue
@@ -125,8 +142,8 @@ class Sv_clusterer(object):
             tabix_error_flag = False
             try:
                 records = self.control_tb.fetch(cl.chr1, max(0, cl.start1 - 200), cl.end1 + 200)
-            except:
-                # logger.warning(f"Tabix fetch error at {cl.chr1}:{max(0, cl.start1 - 200)}-{cl.end1 + 200}")
+            except Exception as e:
+                logger.debug(f'{e}')
                 tabix_error_flag = True
 
             if not tabix_error_flag:
@@ -149,7 +166,68 @@ class Sv_clusterer(object):
 
         return(is_filter)
 
-        
+    
+    def filter_indel_cluster(self, cl):
+
+        is_filter = False
+        # add breakpoint info
+        if self.bp_tb is not None:
+            tabix_error_flag1 = False
+            try:
+                records = self.bp_tb.fetch(cl.chr1, max(0, cl.start1), cl.end2)
+            except Exception as e:
+                logger.debug(f'{e}')
+                tabix_error_flag1 = True
+
+            if not tabix_error_flag1:
+                for record_line in records:
+                    rec = record_line.split('\t')
+                    if cl.chr1 == rec[0] and cl.start1 <= int(rec[2]) and int(rec[2]) <= cl.end1 and rec[5] == '+' or \
+                        cl.chr1 == rec[0] and cl.start2 <= int(rec[2]) and int(rec[2]) <= cl.end2 and rec[5] == '-':
+    
+                        if rec[3] in cl.readids: continue
+                        cl.readids.append(rec[3])
+                        cl.size.append(rec[5])
+                        cl.info1.append(rec[6])
+
+        if len(cl.readids) < self.read_num_thres: is_filter = True
+
+        median_mapQ1 = statistics.median([int(x.split(',')[5]) for x in cl.info1])
+        if median_mapQ1 < self.median_mapQ_thres: is_filter = True
+
+        # supporting read number of non secondary alignments
+        non_secondary_readnum = len([x.split(',')[10] for x in cl.info1 if x.split(',')[10] == "False"])
+        if non_secondary_readnum < self.read_num_thres: is_filter = True
+
+        if is_filter == True: return(True)
+
+
+        median_size = statistics.median([int(x) for x in cl.size if x not in ['-', '+']]) 
+
+        if self.control_tb is not None:
+
+            control_flag = False
+            tabix_error_flag2 = False
+            try:
+                records = self.control_tb.fetch(cl.chr1, max(0, cl.start1 - 50), cl.end2 + 50)
+            except Exception as e: 
+                logger.debug(f'{e}')
+                tabix_error_flag2 = True
+
+            if not tabix_error_flag2:
+                for record_line in records:
+                    rec = record_line.split('\t')
+
+                    if cl.chr1 == rec[0] and cl.start1 - self.control_check_margin <= int(rec[2]) and \
+                        cl.end2 + self.control_check_margin >= int(rec[1]) and \
+                        int(rec[4]) >= median_size * 0.5:
+                        control_flag = True
+
+            if control_flag == True: is_filter = True
+
+        return(is_filter)
+
+
     def flush_sv_cluster_list(self, current_chr, current_pos):
 
         remove_cluster = []
@@ -169,6 +247,17 @@ class Sv_clusterer(object):
                         f'{print_line_readids}\t0\t{cl.dir1}\t{cl.dir2}\t{print_line_info1}\t{print_line_info2}',
                         file = self.hout)
 
+                elif self.svtype in ["insertion", "deletion"]:
+
+                    if self.filter_indel_cluster(cl): continue
+                    print_line_readids = ';'.join(cl.readids)
+                    print_line_size = ';'.join([str(x) for x in cl.size])
+                    print_line_info1 = ';'.join(cl.info1)
+
+                    print(f'{cl.chr1}\t{cl.start1}\t{cl.end1}\t{cl.chr2}\t{cl.start2}\t{cl.end2}\t' +
+                        f'{print_line_readids}\t0\t{cl.dir1}\t{cl.dir2}\t{print_line_size}\t{print_line_info1}',
+                        file = self.hout)
+                        
         for cl in remove_cluster:
             self.sv_cluster_list.remove(cl)
 
@@ -176,17 +265,18 @@ class Sv_clusterer(object):
     def check_exceeding_local_variant_num(self, current_chr, current_pos):
 
         if len(self.sv_cluster_list) > self.maximum_local_variant_num:
-            print(f'Exceeded maximum number of local variants at {current_chr}:{current_pos}', file = sys.stderr)
-            print(f'Skip {current_chr}:{current_pos + self.skip_margin}', file = sys.stderr)
+            self.skipped_pos_list.append(current_chr + ':' + str(current_pos))
             self.sv_cluster_list = []
             self.next_pos_after_skip = current_pos + self.skip_margin
 
 
 def cluster_supporting_reads(input_file, output_file, svtype, control_junction_bedpe = None, bp_bed = None, 
     cluster_margin_size = 100, indel_cluster_margin_size = 10, size_margin_ratio = 0.2, min_indel_size = 90,
-    maximum_local_variant_num = 1000, skip_margin = 5000, 
-    read_num_thres = 3, median_mapQ_thres = 40, max_overhang_size_thres = 300,
-    control_read_num_thres = 0, control_check_margin = 50):
+    maximum_local_variant_num = 100, skip_margin = 5000, 
+    read_num_thres = 3, median_mapQ_thres = 20, max_overhang_size_thres = 100,
+    control_read_num_thres = 0, control_check_margin = 50, debug = False):
+
+    if debug: logger.setLevel(logging.DEBUG)
 
     sv_clusterer = Sv_clusterer(svtype, output_file, control_junction_bedpe = control_junction_bedpe, bp_bed = bp_bed,
         cluster_margin_size = cluster_margin_size, size_margin_ratio = size_margin_ratio,
@@ -199,9 +289,9 @@ def cluster_supporting_reads(input_file, output_file, svtype, control_junction_b
         for line in hin:
             if sv_clusterer.svtype in ["insertion", "deletion"]: # insertion or deletion
 
-                tchr1, tstart, tend, treadid, tsize, tdir, tinfo1 = ne.rstrip('\n').split('\t')
+                tchr1, tstart, tend, treadid, tsize, tdir, tinfo1 = line.rstrip('\n').split('\t')
                 tstart1 = int(tstart) - indel_cluster_margin_size
-                tend1 = int(start) + indel_cluster_margin_size
+                tend1 = int(tstart) + indel_cluster_margin_size
                 tstart2 = int(tend) - indel_cluster_margin_size
                 tend2 = int(tend) + indel_cluster_margin_size
                 tchr2, tdir1, tdir2 = tchr1, '+', '-'
@@ -209,7 +299,6 @@ def cluster_supporting_reads(input_file, output_file, svtype, control_junction_b
 
                 # this should be parametrized    
                 if tsize < min_indel_size: continue
-                if tend1 < next_pos_after_skip: continue
                 
             elif sv_clusterer.svtype == "rearrangement": # rearrangement
                 tchr1, tstart1, tend1, tchr2, tstart2, tend2, treadid, _, tdir1, tdir2, tinfo1, tinfo2 = \
@@ -225,6 +314,7 @@ def cluster_supporting_reads(input_file, output_file, svtype, control_junction_b
             if sv_clusterer.temp_chr != tchr1:   
                 sv_clusterer.next_pos_after_skip = 0
                 sv_clusterer.temp_chr = tchr1
+            if tend1 < sv_clusterer.next_pos_after_skip: continue
 
             # flush out existing cluster SVs wholse supporting reads have parsed alreadly 
             #   (considering the chromosome and coordinates).
@@ -243,7 +333,6 @@ def cluster_supporting_reads(input_file, output_file, svtype, control_junction_b
             # then we ignore those SV clusteres and skip these regions.
             sv_clusterer.check_exceeding_local_variant_num(tchr1, tend1)
 
-
         sv_clusterer.flush_sv_cluster_list("EOF", 0)
 
 
@@ -254,6 +343,7 @@ if __name__ == "__main__":
     output_file = sys.argv[2]
     svtype = sys.argv[3]
     control = sys.argv[4]
+    bp = sys.argv[5]
 
-    cluster_supporting_reads(input_file, output_file, svtype, control_junction_bedpe = control)
+    cluster_supporting_reads(input_file, output_file, svtype, control_junction_bedpe = control, bp_bed = bp, cluster_margin_size = 50)
              

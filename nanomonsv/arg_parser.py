@@ -71,9 +71,6 @@ def create_parser():
     get.add_argument("--cluster_margin_size", default = 100, type = int,
                      help = "Two breakpoints are margined if they are within this threshould value")
 
-    # get.add_argument("--read_num_thres", default = 3, type = int,
-    #                  help = "Minimum required supporting read number for structural variation candidates")
-
     get.add_argument("--median_mapQ_thres", default = 20, type = int,
                      help = "Threshould for median mapping quality")
 
