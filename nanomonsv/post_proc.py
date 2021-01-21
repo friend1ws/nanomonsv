@@ -40,9 +40,9 @@ class Duplicate_remover(object):
                 abs(tpos1 - sv.pos1) < self.bp_dist_margin and abs(tpos2 - sv.pos2) < self.bp_dist_margin:
 
                 replace_flag = False
-                if total_read_tumor > sv.total_read_tumor:
+                if var_read_tumor > sv.var_read_tumor:
                     replace_flag = True
-                elif total_read_tumor == sv.total_read_tumor:
+                elif var_read_tumor == sv.var_read_tumor:
                     if len(tinseq) < len(sv.inseq):
                         replace_flag = True
                     elif len(tinseq) == len(sv.inseq):
