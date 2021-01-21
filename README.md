@@ -15,7 +15,7 @@ Precise characterization of somatic structural variations and mobile element ins
 
 ### Binary programs
 
-[htslib](http://www.htslib.org/), [mafft](https://mafft.cbrc.jp/alignment/software/) 
+[htslib](http://www.htslib.org/), [mafft](https://mafft.cbrc.jp/alignment/software/), [racon](https://github.com/isovic/racon)(optional from ver. 0.3.0, use --use_racon option)
 
 ### Python
 Pytnon (tested with 3.5, 3.6, 3.7), pysam, numpy, parasail
@@ -38,6 +38,8 @@ assuming those are installed, and the paths are already added to the running env
 > ##### For use of SSW Library
 > Since version 0.2.0, nanomonsv can be executed without SSW Library. When users want to use SSW Library, create the libssw.so and add the path to the LD_LIBRARY_PATH environment variable. Please refer the **How to use the Python wrapper ssw_lib.py** section in the [SSW Library](https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library) repository page.
 
+> ##### For use of racon
+> Since version 0.3.0, we support racon for the step where generating consensus sequence and get single-base resolution breakpoints. racon may become the default instead of mafft in the future.
 
 ### For advanced use (`insert_classify` command)
 `bwa`, `minimap2`, `bedtools` and `RepeatMasker` are required to be installed and these pathese are added to the running environment.
@@ -110,7 +112,7 @@ nanomonsv get [-h] [--control_prefix CONTROL_PREFIX]
               [--cluster_margin_size CLUSTER_MARGIN_SIZE]
               [--median_mapQ_thres MEDIAN_MAPQ_THRES]
               [--max_overhang_size_thres MAX_OVERHANG_SIZE_THRES]
-              [--var_read_min_mapq VAR_READ_MIN_MAPQ] [--use_ssw_lib]
+              [--var_read_min_mapq VAR_READ_MIN_MAPQ] [--use_ssw_lib] [--use_racon]
               [--debug]
               tumor_prefix tumor_bam reference.fa
  ```
