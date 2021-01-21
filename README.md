@@ -127,7 +127,10 @@ After successful execution, you will be able to find the result file names as {t
 See the help (`nanomonsv get -h`) for other options. 
 
 When you want to change the engine of Smith-Waterman algorithm to SSW Library, specify `--use_ssw_lib` option,
-though we do not generally recomend thi.
+though we do not generally recomend this.
+
+Also, we have prepared the script (misc/post_fileter.py) for filtering the result.
+Please see the [wiki page](https://github.com/friend1ws/nanomonsv/wiki/filter).
 
 #### result
 
