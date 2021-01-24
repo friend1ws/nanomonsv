@@ -61,8 +61,30 @@ def set_readid2alignment(readid2alignment, input_file, mode, alignment_margin):
 
     return(readid2alignment)
 
- 
-def gather_support_read_seq(rearrangement_file, insertion_file, deletion_file, output_file, tumor_bam, alignment_margin = 300):
+
+def set_readid2alignment_sbnd(readid2alignment_sbnd, input_file, alignment_margin):
+
+    with open(input_file, 'r') as hin:
+        for line in hin:
+            tchr, tstart, tend, treadids, _, tstrand, tinfos = line.rstrip('\n').split('\t')
+            tkey = ','.join([tchr, tstart, tend, tstrand])
+           
+            readids = treadids.split(';')
+            infos = tinfos.split(';') 
+            for i in range(len(readids)):
+                ttinfo = infos[i].split(',')
+                qpos, qlen, qstrand = int(ttinfo[1]), int(ttinfo[3]), ttinfo[4]             
+                if readids[i] not in readid2alignment_sbnd: readid2alignment_sbnd[readids[i]] = []
+                if tstrand == qstrand: 
+                    readid2alignment_sbnd[readids[i]].append((tkey, max(1, qpos - alignment_margin), qlen, qstrand, '*'))
+                else:
+                    readid2alignment_sbnd[readids[i]].append((tkey, 1, min(qpos + alignment_margin, qlen), qstrand, '*'))
+
+
+def gather_support_read_seq(rearrangement_file, insertion_file, deletion_file, output_file, tumor_bam, 
+    single_breakend_file = None, output_file_sbind = None, alignment_margin = 300):
+
+    is_sbnd = True if single_breakend_file is not None else False
 
     bamfile = pysam.AlignmentFile(tumor_bam, "rb")
 
@@ -70,28 +92,55 @@ def gather_support_read_seq(rearrangement_file, insertion_file, deletion_file, o
     set_readid2alignment(readid2alignment, rearrangement_file, 'r', alignment_margin)
     set_readid2alignment(readid2alignment, insertion_file, 'i', alignment_margin)
     set_readid2alignment(readid2alignment, deletion_file, 'd', alignment_margin)
-
+    
     hout = open(output_file + ".tmp.unsorted", 'w')
+
+    if is_sbnd:
+        readid2alignment_sbnd = {}
+        set_readid2alignment_sbnd(readid2alignment_sbnd, single_breakend_file, alignment_margin)
+        hout_sbnd = open(output_file + ".sbnd.tmp.unsorted", 'w')
+
     for read in bamfile.fetch():
 
-        if read.query_name in readid2alignment and not read.is_secondary and not read.is_supplementary:
+        if read.is_secondary or read.is_supplementary: continue
 
-            for talignment in readid2alignment[read.query_name] :
+        if read.query_name in readid2alignment:
 
-                tkey, tstart, tend, tstrand, tsize = talignment
+            for talignment in readid2alignment[read.query_name]:
+
+                akey, astart, aend, astrand, asize = talignment
 
                 read_seq = reverse_complement(read.query_sequence) if read.is_reverse else read.query_sequence
-                part_seq = read_seq[(tstart - 1):tend]
-                if tstrand == '-': part_seq = reverse_complement(part_seq)
+                part_seq = read_seq[(astart - 1):aend]
+                if astrand == '-': part_seq = reverse_complement(part_seq)
 
-                print('\t'.join([tkey, read.query_name, tsize, part_seq]), file = hout)
+                print('\t'.join([akey, read.query_name, asize, part_seq]), file = hout)
+
+
+        if is_sbnd and read.query_name in readid2alignment_sbnd: 
+        
+            for talignment in readid2alignment_sbnd[read.query_name]:
+
+                akey, astart, aend, astrand, asize = talignment
+                tchr, tstart, tend, tstrand = akey.split(',')
+
+                read_seq = reverse_complement(read.query_sequence) if read.is_reverse else read.query_sequence
+                part_seq = read_seq[(astart - 1):aend]
+                if astrand != tstrand: part_seq = reverse_complement(part_seq)
+
+                print('\t'.join([akey, read.query_name, asize, part_seq]), file = hout_sbnd)
+
 
     hout.close()
+    if is_sbnd: hout_sbnd.close()
 
-    hout = open(output_file, 'w')
-    subprocess.check_call(["sort", "-k1,1", output_file + ".tmp.unsorted"], stdout = hout)
-    hout.close()
+    with open(output_file, 'w') as hout:
+        subprocess.check_call(["sort", "-k1,1", output_file + ".tmp.unsorted"], stdout = hout)
     os.remove(output_file + ".tmp.unsorted")
 
+    if is_sbnd:
+        with open(output_file_sbind, 'w') as hout:
+            subprocess.check_call(["sort", "-k1,1", output_file + ".sbnd.tmp.unsorted"], stdout = hout)
+        os.remove(output_file + ".sbnd.tmp.unsorted")
 
 

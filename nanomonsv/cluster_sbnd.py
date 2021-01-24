@@ -124,7 +124,7 @@ class Sbnd_clusterer(object):
             self.sbnd_cluster_list.remove(cl)
 
 
-def cluster_supporting_reads_single_breakend(input_file, output_file, control_bed = None, 
+def cluster_supporting_reads_sbnd(input_file, output_file, control_bed = None, 
     cluster_margin_size = 100, sbnd_cluster_margin_size = 20, 
     read_num_thres = 3, median_mapQ_thres = 20, debug = False):
 
