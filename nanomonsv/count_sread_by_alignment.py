@@ -8,7 +8,8 @@ from .pyssw import *
 from .my_seq import reverse_complement
 
 # function for gathering sequence read for realignment validation
-def gather_local_read_for_realignment(sv_file, bam_file, output_file):
+def gather_local_read_for_realignment(sv_file, bam_file, output_file, 
+    sbnd_file = None, output_file_sbnd = None, validate_sequence_length = 200):
 
     bam_ps = pysam.AlignmentFile(bam_file, "rb")
 
@@ -41,151 +42,81 @@ def gather_local_read_for_realignment(sv_file, bam_file, output_file):
                 if read.qname not in key2rname2mapq[key]: key2rname2mapq[key][read.qname] = [None, None]
                 key2rname2mapq[key][read.qname][1] = read.mapping_quality
 
-
     # remove duplicated keys
     for rname in rname2key:
         keys = list(set(rname2key[rname]))
         rname2key[rname] = keys
 
-    with open(output_file + ".tmp.unsorted", 'w') as hout:
-        for read in bam_ps.fetch():
+    # for sbnd candidate
+    if sbnd_file is not None:
+        rname2key_sbnd = {}
+        key2rname2mapq_sbnd = {}
+        with open(sbnd_file, 'r') as hin:
+            for line in hin:
+                if line.startswith("#") or line.startswith("Chr_1"): continue
+                F = line.rstrip('\n').split('\t')
+                tchr, tpos, tdir, tseq = F[0], int(F[1]), F[2], F[3][:validate_sequence_length]
+                key = f"{tchr},{tpos},{tdir},{tseq}"
 
-            flags = format(int(read.flag), "#014b")[:1:-1]
+                if key not in key2rname2mapq_sbnd: key2rname2mapq_sbnd[key] = {}
 
-            # skip supplementary alignment
-            if flags[8] == "1" or flags[11] == "1": continue
+                for read in bam_ps.fetch(tchr, max(tpos - 100, 0), tpos + 100):
+                
+                    if read.qname not in rname2key_sbnd: rname2key_sbnd[read.qname] = []
+                    rname2key_sbnd[read.qname].append(key)
+                    
+                    key2rname2mapq_sbnd[key][read.qname] = read.mapping_quality
 
-            # skip duplicated reads             
-            if flags[10] == "1": continue
+    # remove duplicated keys
+    for rname in rname2key_sbnd:
+        keys = list(set(rname2key_sbnd[rname]))
+        rname2key_sbnd[rname] = keys
 
-            if read.qname in rname2key:
+ 
+    hout = open(output_file + ".tmp.unsorted", 'w')
+    if sbnd_file is not None: hout_sbnd = open(output_file_sbnd + ".tmp.unsorted", 'w')
+    for read in bam_ps.fetch():
 
-                read_seq = read.query_sequence
-                if flags[4] == "1": read_seq = reverse_complement(read_seq)
+        flags = format(int(read.flag), "#014b")[:1:-1]
 
-                for key in rname2key[read.qname]:
-                    mapq1, mapq2 = key2rname2mapq[key][read.qname]
-                    print(f"{key}\t{read.qname}\t{mapq1}\t{mapq2}\t{read_seq}", file = hout)
+        # skip supplementary alignment
+        if flags[8] == "1" or flags[11] == "1": continue
+
+        # skip duplicated reads             
+        if flags[10] == "1": continue
+
+        if read.qname in rname2key:
+
+            read_seq = read.query_sequence
+            if flags[4] == "1": read_seq = reverse_complement(read_seq)
+
+            for key in rname2key[read.qname]:
+                mapq1, mapq2 = key2rname2mapq[key][read.qname]
+                print(f"{key}\t{read.qname}\t{mapq1}\t{mapq2}\t{read_seq}", file = hout)
+
+        if sbnd_file is not None and read.qname in rname2key_sbnd:
+
+            read_seq = read.query_sequence
+            if flags[4] == "1": read_seq = reverse_complement(read_seq)
+
+            for key in rname2key_sbnd[read.qname]:
+                mapq = key2rname2mapq_sbnd[key][read.qname]
+                print(f"{key}\t{read.qname}\t{mapq}\tNone\t{read_seq}", file = hout_sbnd)
+
 
     with open(output_file, 'w') as hout:
         subprocess.call(["sort", "-k1,1", output_file + ".tmp.unsorted"], stdout = hout)
-
     os.remove(output_file + ".tmp.unsorted")
+
+    if sbnd_file is not None:
+        with open(output_file_sbnd, 'w') as hout:
+            subprocess.call(["sort", "-k1,1", output_file_sbnd + ".tmp.unsorted"], stdout = hout)
+        os.remove(output_file_sbnd + ".tmp.unsorted")
+
     bam_ps.close()
 
 
-def ssw_check(query, target, use_ssw_lib):
-
-    if use_ssw_lib:
-        return(ssw_check_ssw_lib(query, target))
-    else:
-        return(ssw_check_parasail(query, target))
-
-
-def ssw_check_ssw_lib(target, query):
-
-    nMatch = 2
-    nMismatch = 2
-    nOpen = 3
-    nExt = 1
-    sLibPath = ""
- 
-    lEle = []
-    dRc = {} 
-    dEle2Int = {}
-    dInt2Ele = {}
-    # init DNA score matrix
-    lEle = ['A', 'C', 'G', 'T', 'N']
-    dRc = {'A':'T', 'C':'G', 'G':'C', 'T':'A', 'N': 'N', 'a':'T', 'c':'G', 'g':'C', 't':'A', 'n': 'N'} 
-    for i,ele in enumerate(lEle):
-        dEle2Int[ele] = i
-        dEle2Int[ele.lower()] = i
-        dInt2Ele[i] = ele
-    nEleNum = len(lEle)
-    lScore = [0 for i in range(nEleNum**2)]
-    for i in range(nEleNum-1):
-        for j in range(nEleNum-1):
-            if lEle[i] == lEle[j]:
-                lScore[i*nEleNum+j] = nMatch
-            else:
-                lScore[i*nEleNum+j] = -nMismatch
-
-    # translate score matrix to ctypes
-    mat = (len(lScore) * ct.c_int8) ()
-    mat[:] = lScore
-
-    # set flag
-    nFlag = 1
-
-    # check whether libssw.so is in LD_LIBRARY_PATH
-    sLibPath = ""
-    for ld_path in os.environ["LD_LIBRARY_PATH"].split(':'):
-        # print ld_path
-        if os.path.exists(ld_path + "/libssw.so"):
-            sLibPath = ld_path # + "/libssw.so"
-            break
-    if sLibPath == "":
-        print("cannot find libssw.so in LD_LIBRARY_PATH", file = sys.stderr)
-        sys.exit(1)
-
-    ssw = ssw_lib.CSsw(sLibPath)
-    # supporting_reads = []
-    alignment_info = {}
-
-    # iterate query sequence
-    for sQId,sQSeq,sQQual in read(query):
-
-        sQSeq = sQSeq.strip('\n')
-
-        # build query profile
-        qNum = to_int(sQSeq, lEle, dEle2Int)
-        qProfile = ssw.ssw_init(qNum, ct.c_int32(len(sQSeq)), mat, len(lEle), 2)
-
-        # for reverse complement
-        sQRcSeq = ''.join([dRc[x] for x in sQSeq[::-1]])
-        qRcNum = to_int(sQRcSeq, lEle, dEle2Int)
-        qRcProfile = ssw.ssw_init(qRcNum, ct.c_int32(len(sQSeq)), mat, len(lEle), 2)
-
-        # set mask len
-        if len(sQSeq) > 30:
-            nMaskLen = int(len(sQSeq) / 2)
-        else:
-            nMaskLen = 15
-
-        # iter target sequence
-        for sRId,sRSeq,_ in read(target):
-
-            rNum = to_int(sRSeq, lEle, dEle2Int)
-
-            # format ofres: (nScore, nScore2, nRefBeg, nRefEnd, nQryBeg, nQryEnd, nRefEnd2, nCigarLen, lCigar)
-            res = align_one(ssw, qProfile, rNum, len(sRSeq), nOpen, nExt, nFlag, nMaskLen)
-
-            # align rc query
-            resRc = align_one(ssw, qRcProfile, rNum, len(sRSeq), nOpen, nExt, nFlag, nMaskLen)
-    
-            # build cigar and trace back path
-            if resRc == None or res[0] > resRc[0]:
-                resPrint = res
-                rstart, rend = resPrint[2] + 1, resPrint[3] + 1
-                qstart, qend = resPrint[4] + 1, resPrint[5] + 1
-                strand = '+'
-                sCigar, sQ, sA, sR = buildPath(sQSeq, sRSeq, res[4], res[2], res[8])
-            else:
-                resPrint = resRc
-                rstart, rend = resPrint[2] + 1, resPrint[3] + 1
-                qstart, qend = len(sQSeq) - resPrint[5], len(sQSeq) - resPrint[4] 
-                strand = '-'
-                sCigar, sQ, sA, sR = buildPath(sQRcSeq, sRSeq, resRc[4], resRc[2], resRc[8])
-
-            alignment_info[sQId] = [resPrint[0], rstart, rend, qstart, qend, strand]
-        ssw.init_destroy(qProfile)
-        ssw.init_destroy(qRcProfile)
-       
-    # return(supporting_reads)
-    return(alignment_info)
-
-
-def ssw_check_parasail(query, target):
+def ssw_check(query, target, use_ssw = False):
 
     user_matrix = parasail.matrix_create("ACGT", 2, -2)
 
@@ -254,7 +185,7 @@ class Alignment_counter(object):
         if not self.debug:
             shutil.rmtree(self.tmp_dir)
 
-    def initialize(self, key):
+    def initialize(self, key, is_sbnd = False):
         self.temp_key = key
         # the insertion sequence is converted to its length. this is to shorten file names.
         tkeys = self.temp_key.split(',')
@@ -262,9 +193,11 @@ class Alignment_counter(object):
         tkeys[-1] = str(len(tkeys[-1]))
         self.temp_key2 = ','.join(tkeys)
         self.readid2mapq = {}
-        self.generate_segment_fasta_files()
         self.temp_long_read_seq_file_h = open(self.tmp_dir + '/' + self.temp_key2 + ".long_read_seq.fa", 'w')
-
+        if is_sbnd:
+            self.generate_segment_fasta_files_sbnd()
+        else:
+            self.generate_segment_fasta_files()
 
     def generate_segment_fasta_files(self):
 
@@ -301,6 +234,25 @@ class Alignment_counter(object):
         self.variant_segment_2 = variant_seq[-min(2 * self.validate_sequence_length, len(variant_seq)):]
 
 
+    def generate_segment_fasta_files_sbnd(self):
+
+        tchr, tpos, tdir, tcontig = self.temp_key.split(',')
+        tpos = int(tpos)
+
+        # referene_local_seq
+        self.reference_segment_1 = self.reference_fasta_h.fetch(tchr, max(tpos - self.validate_sequence_length - 1, 0), tpos + self.validate_sequence_length - 1)
+
+        # variant_seq
+        variant_seq = ''
+        if tdir == '+':
+            tseq = self.reference_fasta_h.fetch(tchr, max(tpos - self.validate_sequence_length - 1, 0), tpos)
+            tseq = tseq + tcontig
+        else:
+            tseq = self.reference_fasta_h.fetch(tchr, tpos - 1, tpos + self.validate_sequence_length - 1)
+            tseq = reverse_complement(tseq)
+        self.variant_segment_1 = tseq + tcontig
+
+
     def add_long_read_seq(self, treadid, tseq, tmapq1, tmapq2):
 
         self.readid2mapq[treadid] = [int(tmapq1) if tmapq1 != "None" else None, int(tmapq2) if tmapq2 != "None" else None]
@@ -308,16 +260,6 @@ class Alignment_counter(object):
 
 
     def count_alignment_and_print(self):
-
-        def is_short_del_dup(key):
-            keys = key.split(',')
-            if keys[6] == "---": keys[6] == ''
-            if keys[0] == keys[3] and keys[2] == '+' and keys[5] == '-' and int(keys[4]) - int(keys[1]) + len(keys[6]) < 100:
-                return(True)
-            elif keys[0] == keys[3] and keys[2] == '-' and keys[5] == '+' and int(keys[4]) - int(keys[1]) + len(keys[6]) < 100:
-                return(True)
-            else:
-                return(False)
 
         # close file hundle for writing long_read_seq.fa if it is open
         if self.temp_long_read_seq_file_h is not None: self.temp_long_read_seq_file_h.close()
@@ -375,11 +317,53 @@ class Alignment_counter(object):
             print(f"{tchr1}\t{tpos1}\t{tdir1}\t{tchr2}\t{tpos2}\t{tdir2}\t{tinseq}\t{rname}\t{sinfo}", file = self.hout_ainfo)
 
 
-def count_sread_by_alignment(sv_file, bam_file, output_count_file, output_alignment_info_file, reference_fasta, 
-    var_read_min_mapq, use_ssw_lib, debug):
+    def count_alignment_and_print_sbnd(self):
 
-    gather_local_read_for_realignment(sv_file, bam_file, output_count_file + ".tmp.local_read_for_realignment")
- 
+        # close file hundle for writing long_read_seq.fa if it is open
+        if self.temp_long_read_seq_file_h is not None: self.temp_long_read_seq_file_h.close()
+
+        with open(self.tmp_dir + '/' + self.temp_key2 + ".variant_seg_1.fa", 'w') as hout:
+            print('>' + self.temp_key2 + '\n' + self.variant_segment_1, file = hout)
+        with open(self.tmp_dir + '/' + self.temp_key2 + ".reference_seg_1.fa", 'w') as hout:
+            print('>' + self.temp_key2 + '\n' + self.reference_segment_1, file = hout)
+
+        alignment_info_var_1 = ssw_check(self.tmp_dir + '/' + self.temp_key2 + ".variant_seg_1.fa",
+            self.tmp_dir + '/' + self.temp_key2 + ".long_read_seq.fa", self.use_ssw_lib)
+
+        alignment_info_ref_1 = ssw_check(self.tmp_dir + '/' + self.temp_key2 + ".reference_seg_1.fa",
+            self.tmp_dir + '/' + self.temp_key2 + ".long_read_seq.fa", self.use_ssw_lib)
+
+        all_rnames = list(set(list(alignment_info_var_1.keys())))
+
+        supporting_reads = [rname for rname in all_rnames if \
+            (alignment_info_var_1[rname][0] > self.score_ratio_thres * len(self.variant_segment_1) and \
+            alignment_info_var_1[rname][1] < self.start_pos_thres * len(self.variant_segment_1) and \
+            alignment_info_var_1[rname][2] > self.end_pos_thres * len(self.variant_segment_1))]
+
+        supporting_reads = [rname for rname in supporting_reads if \
+            (alignment_info_var_1[rname][0] >= alignment_info_ref_1[rname][0] + self.var_ref_margin_thres)]
+
+        # filtering by mapping qualities
+        supporting_reads = [rname for rname in supporting_reads if \
+            self.readid2mapq[rname][0] is not None and self.readid2mapq[rname][0] >= self.var_read_min_mapq]
+
+        tchr, tpos, tdir, tcontig = self.temp_key.split(',')
+        print(f"{tchr}\t{tpos}\t{tdir}\t{tcontig}\t{len(all_rnames)}\t{len(supporting_reads)}", file = self.hout_count)
+
+        sread_info = { rname: alignment_info_var_1[rname] for rname in supporting_reads}
+        for rname in supporting_reads:
+            sinfo = '\t'.join([str(x) for x in alignment_info_var_1[rname] ])
+            print(f"{tchr}\t{tpos}\t{tdir}\t{tcontig}\t{rname}\t{sinfo}", file = self.hout_ainfo)
+
+
+
+def count_sread_by_alignment(sv_file, bam_file, output_count_file, output_alignment_info_file, reference_fasta, 
+    sbnd_file = None, output_count_file_sbnd = None, output_alignment_info_file_sbnd = None,
+    var_read_min_mapq = 0, use_ssw_lib = False, debug = False):
+
+    gather_local_read_for_realignment(sv_file, bam_file, output_count_file + ".tmp.local_read_for_realignment",
+        sbnd_file = sbnd_file, output_file_sbnd = output_count_file_sbnd + ".tmp.local_read_for_realignment")
+
     alignment_counter = Alignment_counter(output_count_file, output_alignment_info_file, reference_fasta,
         var_read_min_mapq, use_ssw_lib, debug)
 
@@ -400,4 +384,25 @@ def count_sread_by_alignment(sv_file, bam_file, output_count_file, output_alignm
     if not debug:
         os.remove(output_count_file + ".tmp.local_read_for_realignment")
 
+    if sbnd_file is None: return
+
+    alignment_counter_sbnd = Alignment_counter(output_count_file_sbnd, output_alignment_info_file_sbnd, reference_fasta,
+        var_read_min_mapq, use_ssw_lib, debug)
+
+    with open(output_count_file_sbnd + ".tmp.local_read_for_realignment", 'r') as hin:
+        for line in hin:
+            tkey, treadid, tmapq1, tmapq2, tseq = line.rstrip('\n').split('\t')
+            tmapq2 = "None"
+            if alignment_counter_sbnd.temp_key != tkey:
+                if alignment_counter_sbnd.temp_key is not None:
+                    alignment_counter_sbnd.count_alignment_and_print_sbnd()
+                alignment_counter_sbnd.initialize(tkey, is_sbnd = True)
+
+            alignment_counter_sbnd.add_long_read_seq(treadid, tseq, tmapq1, tmapq2)
+
+        if alignment_counter_sbnd.temp_key is not None:
+            alignment_counter_sbnd.count_alignment_and_print_sbnd()
+
+    if not debug:
+        os.remove(output_count_file_sbnd + ".tmp.local_read_for_realignment")
 

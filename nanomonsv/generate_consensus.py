@@ -25,6 +25,10 @@ class Consensus_generator(object):
         self.debug = debug
         self.parasail_error = []
 
+        self.start_margin = 120
+        self.min_inclusion_ratio = 0.9
+        self.min_inclusion_count = 3
+
     def __del__(self):
         self.hout.close()
         if len(self.parasail_error) > 0:
@@ -176,6 +180,7 @@ class Consensus_generator(object):
             tconsensus = hin.readline().rstrip('\n')
             print(f"{self.temp_key}\t{tconsensus}", file = self.hout)
 
+
     def print_consensus(self):
 
         if self.temp_support_read_file_h is not None: self.temp_support_read_file_h.close()
@@ -184,8 +189,100 @@ class Consensus_generator(object):
         else:
             self.print_consensus_mafft()
 
- 
-def generate_consensus(input_file, output_file, use_racon, debug):
+
+    def print_consensus_sbnd(self):
+
+        if self.temp_support_read_file_h is not None: self.temp_support_read_file_h.close()
+
+        with open(self.tmp_dir + '/' + self.temp_key + "_ava_minimap2.paf", 'w') as hout:
+            subprocess.check_call(["minimap2", "-x", "ava-ont", 
+                self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa",
+                self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa"],
+                stderr = subprocess.DEVNULL, stdout = hout)
+
+        readid2inclusion_count = {}
+        with open(self.tmp_dir + '/' + self.temp_key + "_ava_minimap2.paf") as hin:
+            for line in hin:
+                row = line.rstrip('\n').split('\t')
+                if int(row[2]) <= self.start_margin and (float(row[3]) - float(row[2])) / float(row[1]) >= self.min_inclusion_ratio:
+                    if row[5] not in readid2inclusion_count: readid2inclusion_count[row[5]] = 0
+                    readid2inclusion_count[row[5]] = readid2inclusion_count[row[5]] + 1
+                if int(row[7]) <= self.start_margin and (float(row[8]) - float(row[7])) / float(row[6]) >= self.min_inclusion_ratio:
+                    if row[0] not in readid2inclusion_count: readid2inclusion_count[row[0]] = 0
+                    readid2inclusion_count[row[0]] = readid2inclusion_count[row[0]] + 1
+
+        if len(readid2inclusion_count) == 0: return
+        readid_max = max(readid2inclusion_count, key = readid2inclusion_count.get)
+        if readid2inclusion_count[readid_max] < self.min_inclusion_count: return
+
+        # first round racon
+        with open(self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa", 'r') as hin, \
+            open(self.tmp_dir + '/' + self.temp_key + "_ref.fa", 'w') as hout:
+            seq_read_count = 0
+            while True:
+                tid = hin.readline().rstrip('\n').lstrip('>')
+                tseq = hin.readline().rstrip('\n')
+                if tid == readid_max:
+                    print(f">{tid}\n{tseq}", file = hout)
+                    break
+                seq_read_count = seq_read_count + 1
+                if tid == '' or seq_read_count > 10000: 
+                    logger.warning(f"Something inconsistent happend when choosing template reads for {self.temp_key}")
+                    return
+
+        with open(self.tmp_dir + '/' + self.temp_key + "_ova_minimap2.paf", 'w') as hout:
+            subprocess.check_call(["minimap2", "-x", "map-ont", self.tmp_dir + '/' + self.temp_key + "_ref.fa",
+                self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa"], 
+                stderr = subprocess.DEVNULL, stdout = hout)
+
+        consensus = ''
+        try:
+            with open(self.tmp_dir + '/' + self.temp_key + "_ref_polished.fa", 'w') as hout:
+                subprocess.check_call(["racon", self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa",
+                    self.tmp_dir + '/' + self.temp_key + "_ova_minimap2.paf",
+                    self.tmp_dir + '/' + self.temp_key + "_ref.fa"], 
+                    stderr = subprocess.DEVNULL, stdout = hout)
+
+            with open(self.tmp_dir + '/' + self.temp_key + "_ref_polished.fa", 'r') as hin:
+                for line in hin:
+                    if line.startswith('>'): continue
+                    consensus = consensus + line.rstrip('\n')
+        except Exception as e:
+            logger.debug(f'{e}')
+            consensus = ''
+
+        if len(consensus) < 1000: return
+                        
+        # second round racon
+        with open(self.tmp_dir + '/' + self.temp_key + "_ref_2nd.fa", 'w') as hout:
+            print(f">{self.temp_key}_1st_polished_seq\n{consensus}", file = hout)
+
+        with open(self.tmp_dir + '/' + self.temp_key + "_ova_minimap2_2nd.paf", 'w') as hout:
+            subprocess.check_call(["minimap2", "-x", "map-ont", self.tmp_dir + '/' + self.temp_key + "_ref_2nd.fa",
+                self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa"],
+                stderr = subprocess.DEVNULL, stdout = hout)
+
+        consensus = ''
+        try:
+            with open(self.tmp_dir + '/' + self.temp_key + "_ref_polished_2nd.fa", 'w') as hout:
+                subprocess.check_call(["racon", self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa",
+                    self.tmp_dir + '/' + self.temp_key + "_ova_minimap2_2nd.paf",
+                    self.tmp_dir + '/' + self.temp_key + "_ref_2nd.fa"],
+                    stderr = subprocess.DEVNULL, stdout = hout)
+
+            with open(self.tmp_dir + '/' + self.temp_key + "_ref_polished_2nd.fa", 'r') as hin:
+                for line in hin:
+                    if line.startswith('>'): continue
+                    consensus = consensus + line.rstrip('\n')
+        except Exception as e:
+            logger.debug(f'{e}')
+            consensus = ''
+
+        print(f"{self.temp_key}\t{consensus}", file = self.hout)
+
+
+
+def generate_consensus(input_file, output_file, use_racon = False, debug = False): 
 
     if debug: logger.setLevel(logging.DEBUG)
 
@@ -207,3 +304,25 @@ def generate_consensus(input_file, output_file, use_racon, debug):
     del consensus_generator 
 
 
+def generate_consensus_sbnd(input_file, output_file, use_racon = False, debug = False):
+
+    if debug: logger.setLevel(logging.DEBUG)
+
+    # generate contig for single breakend
+    consensus_generator_sbnd = Consensus_generator(output_file, use_racon, debug)
+    with open(input_file, 'r') as hin:
+        for line in hin:
+            tkey, treadid, tsize, tseq = line.rstrip('\n').split('\t')
+            # when new key appears transaction            
+            if tkey != consensus_generator_sbnd.temp_key:
+                if consensus_generator_sbnd.temp_key is not None:
+                    consensus_generator_sbnd.print_consensus_sbnd()
+                consensus_generator_sbnd.initialize(tkey)
+
+            consensus_generator_sbnd.add_support_read_seq(treadid, tseq, tsize)
+
+        consensus_generator_sbnd.print_consensus_sbnd()
+
+    del consensus_generator_sbnd
+
+    
