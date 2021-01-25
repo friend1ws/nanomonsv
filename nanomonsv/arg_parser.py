@@ -86,7 +86,7 @@ def create_parser():
     get.add_argument("--use_racon", default = False, action = 'store_true',
                      help = "Use racon for error correction of clustered putative supporting reads")
 
-    get.add_argument("--single_end", default = False, action = 'store_true',
+    get.add_argument("--single_bnd", default = False, action = 'store_true',
                      help = "Generate single end breakpoints")
 
     # get.add_argument("--control_read_num_thres", default = 0, type = int,
