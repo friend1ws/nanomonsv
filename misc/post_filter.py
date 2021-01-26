@@ -235,7 +235,7 @@ class Duplicate_remover(object):
             if len(sv.filter) == 0: 
                 filter_print = "PASS"
             else:
-                filter_print = ';'.join(sv.filter)
+                filter_print = ';'.join(list(set(sv.filter)))
 
             print(f"{sv.print_line}\t{filter_print}", file = self.hout)
 
