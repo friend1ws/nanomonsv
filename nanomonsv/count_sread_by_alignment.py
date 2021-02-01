@@ -67,10 +67,10 @@ def gather_local_read_for_realignment(sv_file, bam_file, output_file,
                     
                     key2rname2mapq_sbnd[key][read.qname] = read.mapping_quality
 
-    # remove duplicated keys
-    for rname in rname2key_sbnd:
-        keys = list(set(rname2key_sbnd[rname]))
-        rname2key_sbnd[rname] = keys
+        # remove duplicated keys
+        for rname in rname2key_sbnd:
+            keys = list(set(rname2key_sbnd[rname]))
+            rname2key_sbnd[rname] = keys
 
  
     hout = open(output_file + ".tmp.unsorted", 'w')
@@ -103,6 +103,8 @@ def gather_local_read_for_realignment(sv_file, bam_file, output_file,
                 mapq = key2rname2mapq_sbnd[key][read.qname]
                 print(f"{key}\t{read.qname}\t{mapq}\tNone\t{read_seq}", file = hout_sbnd)
 
+    hout.close()
+    if sbnd_file is not None: hout_sbnd.close()
 
     with open(output_file, 'w') as hout:
         subprocess.call(["sort", "-k1,1", output_file + ".tmp.unsorted"], stdout = hout)
@@ -362,7 +364,8 @@ def count_sread_by_alignment(sv_file, bam_file, output_count_file, output_alignm
     var_read_min_mapq = 0, use_ssw_lib = False, debug = False):
 
     gather_local_read_for_realignment(sv_file, bam_file, output_count_file + ".tmp.local_read_for_realignment",
-        sbnd_file = sbnd_file, output_file_sbnd = output_count_file_sbnd + ".tmp.local_read_for_realignment")
+        sbnd_file = sbnd_file, 
+        output_file_sbnd = output_count_file_sbnd + ".tmp.local_read_for_realignment" if output_count_file_sbnd is not None else None)
 
     alignment_counter = Alignment_counter(output_count_file, output_alignment_info_file, reference_fasta,
         var_read_min_mapq, use_ssw_lib, debug)
