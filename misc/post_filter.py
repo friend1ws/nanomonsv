@@ -58,10 +58,12 @@ class Duplicate_remover(object):
 
     def filter_close_both_breakpoints(self, sv1, sv2, filter_item = "Duplicate_with_close_SV"):
 
+        # only apply when the first or the second sv is not insertion
+        if len(sv1.inseq) >= 100 or len(sv2.inseq) >= 100: return 
+
         if sv1.chr1 == sv2.chr1 and sv1.chr2 == sv2.chr2 and sv1.dir1 == sv2.dir1 and sv1.dir2 == sv2.dir2 and \
             abs(sv1.pos1 - sv2.pos1) < self.bp_dist_margin and abs(sv1.pos2 - sv2.pos2) < self.bp_dist_margin:
 
-            second_flag = False
             if sv1.var_read_tumor is not None and sv2.var_read_tumor is not None:
                 if sv1.var_read_tumor > sv2.var_read_tumor: 
                     sv1.filter.append(filter_item); return
@@ -141,7 +143,7 @@ class Duplicate_remover(object):
 
     def filter_dup_insertion(self, ins1, ins2, filter_item = "Duplicate_with_close_insertion"):
 
-        # only apply when the first sv is not insertion and the second sv is insertion type
+        # only apply when the first and the second sv is insertion type
         if len(ins1.inseq) < 100 or len(ins2.inseq) < 100: return None
 
         bp_match = (ins1.chr1 == ins2.chr1 and abs(ins1.pos1 - ins2.pos1) <= 2 * self.bp_dist_margin) and \
@@ -233,7 +235,7 @@ class Duplicate_remover(object):
             if len(sv.filter) == 0: 
                 filter_print = "PASS"
             else:
-                filter_print = ';'.join(sv.filter)
+                filter_print = ';'.join(list(set(sv.filter)))
 
             print(f"{sv.print_line}\t{filter_print}", file = self.hout)
 
