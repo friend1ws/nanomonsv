@@ -243,6 +243,15 @@ class Consensus_generator(object):
                 self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa"], 
                 stderr = subprocess.DEVNULL, stdout = hout)
 
+        paf_rec_count = 0
+        with open(self.tmp_dir + '/' + self.temp_key + "_ova_minimap2.paf", 'r') as hin:
+            for line in hin:
+                paf_rec_count + paf_rec_count + 1
+
+        if paf_rec_count < 3:
+            logger.debug(f"Not enough PAF records for the first round consensus generation for {self.temp_key}")
+            return
+
         consensus = ''
         try:
             with open(self.tmp_dir + '/' + self.temp_key + "_ref_polished.fa", 'w') as hout:
@@ -269,6 +278,15 @@ class Consensus_generator(object):
             subprocess.check_call(["minimap2", "-x", "map-ont", self.tmp_dir + '/' + self.temp_key + "_ref_2nd.fa",
                 self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa"],
                 stderr = subprocess.DEVNULL, stdout = hout)
+
+        paf_rec_count = 0
+        with open(self.tmp_dir + '/' + self.temp_key + "_ova_minimap2.paf", 'r') as hin:
+            for line in hin:
+                paf_rec_count + paf_rec_count + 1
+            
+        if paf_rec_count < 3:
+            logger.debug(f"Not enough PAF records for the first round consensus generation for {self.temp_key}")
+            return
 
         consensus = ''
         try:
