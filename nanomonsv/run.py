@@ -177,7 +177,7 @@ def get_main(args):
         debug = args.debug)
 
     # if args.single_bnd:
-    logger.info("Clustering single breakend type supporting reads fro putative SVs")
+    logger.info("Clustering single breakend type supporting reads for putative SVs")
     cluster_supporting_reads_sbnd(args.tumor_prefix + ".bp_info.sorted.bed.gz",
         args.tumor_prefix + ".singlebreakend.sorted.clustered.bed", control_bed = control_bp_bed,
         read_num_thres = args.min_tumor_variant_read_num, cluster_margin_size = args.cluster_margin_size,

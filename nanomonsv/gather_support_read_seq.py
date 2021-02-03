@@ -12,10 +12,12 @@ logger = get_logger(__name__)
 def set_readid2alignment(readid2alignment, input_file, mode, alignment_margin):
 
     # readid2alignment = {}
+    cid = 0
     with open(input_file, 'r') as hin:
         for line in hin:
             F = line.rstrip('\n').split('\t')
-            key = ','.join([F[0], F[1], F[2], F[8], F[3], F[4], F[5], F[9], mode])
+            key = f"{F[0]},{F[1]},{F[2]},{F[8]},{F[3]},{F[4]},{F[5]},{F[9]},{mode},{cid}"
+                # ','.join([F[0], F[1], F[2], F[8], F[3], F[4], F[5], F[9], mode])
             readids = F[6].split(';')
 
             if mode == "r":
@@ -59,15 +61,17 @@ def set_readid2alignment(readid2alignment, input_file, mode, alignment_margin):
                         else:
                             readid2alignment[readids[i]].append((key, max(tpos - int(size[i]) - alignment_margin, 1), min(tpos + alignment_margin, tlen - 1), tstrand, size[i]))
 
-    return(readid2alignment)
+            cid = cid + 1
+
 
 
 def set_readid2alignment_sbnd(readid2alignment_sbnd, input_file, alignment_margin):
 
+    cid = 0
     with open(input_file, 'r') as hin:
         for line in hin:
             tchr, tstart, tend, treadids, _, tstrand, tinfos = line.rstrip('\n').split('\t')
-            tkey = ','.join([tchr, tstart, tend, tstrand])
+            tkey = f"{tchr},{tstart},{tend},{tstrand},b,{cid}" # ','.join([tchr, tstart, tend, tstrand])
            
             readids = treadids.split(';')
             infos = tinfos.split(';') 
@@ -79,6 +83,8 @@ def set_readid2alignment_sbnd(readid2alignment_sbnd, input_file, alignment_margi
                     readid2alignment_sbnd[readids[i]].append((tkey, max(1, qpos - alignment_margin), qlen, qstrand, '*'))
                 else:
                     readid2alignment_sbnd[readids[i]].append((tkey, 1, min(qpos + alignment_margin, qlen), qstrand, '*'))
+
+            cid = cid + 1
 
 
 def gather_support_read_seq(rearrangement_file, insertion_file, deletion_file, output_file, tumor_bam, 
@@ -122,7 +128,7 @@ def gather_support_read_seq(rearrangement_file, insertion_file, deletion_file, o
             for talignment in readid2alignment_sbnd[read.query_name]:
 
                 akey, astart, aend, astrand, asize = talignment
-                tchr, tstart, tend, tstrand = akey.split(',')
+                tchr, tstart, tend, tstrand, _, tcid = akey.split(',')
 
                 read_seq = reverse_complement(read.query_sequence) if read.is_reverse else read.query_sequence
                 part_seq = read_seq[(astart - 1):aend]

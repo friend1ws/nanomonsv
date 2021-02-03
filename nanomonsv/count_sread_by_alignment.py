@@ -20,9 +20,9 @@ def gather_local_read_for_realignment(sv_file, bam_file, output_file,
             if line.startswith("#") or line.startswith("Chr_1"): continue
 
             F = line.rstrip('\n').split('\t')
-            tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq = F[0], int(F[1]), F[2], F[3], int(F[4]), F[5], F[6]
+            tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq, tid = F[0], int(F[1]), F[2], F[3], int(F[4]), F[5], F[6], F[7]
             # if tinseq == "---": tinseq = ''
-            key = f"{tchr1},{tpos1},{tdir1},{tchr2},{tpos2},{tdir2},{tinseq}"
+            key = f"{tchr1},{tpos1},{tdir1},{tchr2},{tpos2},{tdir2},{tinseq},{tid}"
 
             if key not in key2rname2mapq: key2rname2mapq[key] = {}
 
@@ -55,8 +55,8 @@ def gather_local_read_for_realignment(sv_file, bam_file, output_file,
             for line in hin:
                 if line.startswith("#") or line.startswith("Chr_1"): continue
                 F = line.rstrip('\n').split('\t')
-                tchr, tpos, tdir, tseq = F[0], int(F[1]), F[2], F[3][:validate_sequence_length]
-                key = f"{tchr},{tpos},{tdir},{tseq}"
+                tchr, tpos, tdir, tseq, tid = F[0], int(F[1]), F[2], F[3][:validate_sequence_length], F[4]
+                key = f"{tchr},{tpos},{tdir},{tseq},{tid}"
 
                 if key not in key2rname2mapq_sbnd: key2rname2mapq_sbnd[key] = {}
 
@@ -191,8 +191,8 @@ class Alignment_counter(object):
         self.temp_key = key
         # the insertion sequence is converted to its length. this is to shorten file names.
         tkeys = self.temp_key.split(',')
-        tkeys[-1] = '' if tkeys[-1] == '---' else tkeys[-1]
-        tkeys[-1] = str(len(tkeys[-1]))
+        tkeys[-2] = '' if tkeys[-2] == '---' else tkeys[-1]
+        tkeys[-2] = str(len(tkeys[-2]))
         self.temp_key2 = ','.join(tkeys)
         self.readid2mapq = {}
         self.temp_long_read_seq_file_h = open(self.tmp_dir + '/' + self.temp_key2 + ".long_read_seq.fa", 'w')
@@ -203,7 +203,7 @@ class Alignment_counter(object):
 
     def generate_segment_fasta_files(self):
 
-        tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq = self.temp_key.split(',')
+        tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq, tid = self.temp_key.split(',')
         tpos1, tpos2 = int(tpos1), int(tpos2)
         tinseq = '' if tinseq == "---" else tinseq
 
@@ -238,7 +238,7 @@ class Alignment_counter(object):
 
     def generate_segment_fasta_files_sbnd(self):
 
-        tchr, tpos, tdir, tcontig = self.temp_key.split(',')
+        tchr, tpos, tdir, tcontig, tid = self.temp_key.split(',')
         tpos = int(tpos)
 
         # referene_local_seq
@@ -310,7 +310,7 @@ class Alignment_counter(object):
             self.readid2mapq[rname][1] is not None and self.readid2mapq[rname][1] >= self.var_read_min_mapq]
 
 
-        tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq = self.temp_key.split(',')
+        tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq, tid = self.temp_key.split(',')
         print(f"{tchr1}\t{tpos1}\t{tdir1}\t{tchr2}\t{tpos2}\t{tdir2}\t{tinseq}\t{len(all_rnames)}\t{len(supporting_reads)}", file = self.hout_count)
         
         sread_info = { rname: alignment_info_var_1[rname] + alignment_info_var_2[rname] for rname in supporting_reads}
@@ -349,7 +349,7 @@ class Alignment_counter(object):
         supporting_reads = [rname for rname in supporting_reads if \
             self.readid2mapq[rname][0] is not None and self.readid2mapq[rname][0] >= self.var_read_min_mapq]
 
-        tchr, tpos, tdir, tcontig = self.temp_key.split(',')
+        tchr, tpos, tdir, tcontig, tid = self.temp_key.split(',')
         print(f"{tchr}\t{tpos}\t{tdir}\t{tcontig}\t{len(all_rnames)}\t{len(supporting_reads)}", file = self.hout_count)
 
         sread_info = { rname: alignment_info_var_1[rname] for rname in supporting_reads}
