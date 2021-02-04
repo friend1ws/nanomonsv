@@ -246,7 +246,7 @@ class Consensus_generator(object):
         paf_rec_count = 0
         with open(self.tmp_dir + '/' + self.temp_key + "_ova_minimap2.paf", 'r') as hin:
             for line in hin:
-                paf_rec_count + paf_rec_count + 1
+                paf_rec_count = paf_rec_count + 1
 
         if paf_rec_count < 3:
             logger.debug(f"Not enough PAF records for the first round consensus generation for {self.temp_key}")
@@ -263,10 +263,10 @@ class Consensus_generator(object):
             logger.warning(f'{e}')
             return
 
-            with open(self.tmp_dir + '/' + self.temp_key + "_ref_polished.fa", 'r') as hin:
-                for line in hin:
-                    if line.startswith('>'): continue
-                    consensus = consensus + line.rstrip('\n')
+        with open(self.tmp_dir + '/' + self.temp_key + "_ref_polished.fa", 'r') as hin:
+            for line in hin:
+                if line.startswith('>'): continue
+                consensus = consensus + line.rstrip('\n')
 
         if len(consensus) < 1000: return
                         
@@ -280,9 +280,9 @@ class Consensus_generator(object):
                 stderr = subprocess.DEVNULL, stdout = hout)
 
         paf_rec_count = 0
-        with open(self.tmp_dir + '/' + self.temp_key + "_ova_minimap2.paf", 'r') as hin:
+        with open(self.tmp_dir + '/' + self.temp_key + "_ova_minimap2_2nd.paf", 'r') as hin:
             for line in hin:
-                paf_rec_count + paf_rec_count + 1
+                paf_rec_count = paf_rec_count + 1
             
         if paf_rec_count < 3:
             logger.debug(f"Not enough PAF records for the first round consensus generation for {self.temp_key}")
@@ -299,10 +299,10 @@ class Consensus_generator(object):
             logger.warning(f'{e}')
             return
 
-            with open(self.tmp_dir + '/' + self.temp_key + "_ref_polished_2nd.fa", 'r') as hin:
-                for line in hin:
-                    if line.startswith('>'): continue
-                    consensus = consensus + line.rstrip('\n')
+        with open(self.tmp_dir + '/' + self.temp_key + "_ref_polished_2nd.fa", 'r') as hin:
+            for line in hin:
+                if line.startswith('>'): continue
+                consensus = consensus + line.rstrip('\n')
 
         print(f"{self.temp_key}\t{consensus}", file = self.hout)
 
