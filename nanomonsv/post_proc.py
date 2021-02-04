@@ -162,6 +162,65 @@ def proc_sread_info_file(tumor_sread_info_file, sv_result_file, output_file, val
             print(f"{tkey}\t{readid}\t{int(spos)}\t{sstrand}", file = hout)
 
 
+def integrate_realignment_result_sbnd(tumor_sbnd_count_file, ctrl_sbnd_count_file, output_file,
+    nonsbnd_result_file, refined_bp_sbnd_file,
+    min_tumor_variant_read_num = 3, min_tumor_VAF = 0.05, max_control_variant_read_num = 1, max_control_VAF = 0.03):
+
+    margin = 30
+    nanomonsv_bp_list = {}
+    with open(nonsbnd_result_file, 'r') as hin:
+        for line in hin:
+            F = line.rstrip('\n').split('\t')
+            if F[0] == "Chr_1": continue
+            nanomonsv_bp_list[(F[0], int(F[1]) - margin, int(F[1]) + margin)] = 1
+            nanomonsv_bp_list[(F[3], int(F[4]) - margin, int(F[4]) + margin)] = 1
+
+    key2count_ctrl = {}
+    if ctrl_sbnd_count_file is not None:
+        with open(ctrl_sbnd_count_file, 'r') as hin:
+            for line in hin:
+                F = line.rstrip('\n').split('\t')
+                key = f"{F[0]}\t{F[1]}\t{F[2]}"
+                key2count_ctrl[key] = (F[4], F[5])
+
+    key2contig = {}
+    with open(refined_bp_sbnd_file, 'r') as hin:
+        for line in hin:
+            F = line.rstrip('\n').split('\t')
+            key = f"{F[0]}\t{F[1]}\t{F[2]}"
+            key2contig[key] = F[3]
+
+    with open(tumor_sbnd_count_file, 'r') as hin, open(output_file, 'w') as hout:
+        for line in hin:
+            F = line.rstrip('\n').split('\t')
+            key = f"{F[0]}\t{F[1]}\t{F[2]}"
+            nanomonsv_flag = False
+            for bp in nanomonsv_bp_list:
+                if F[0] == bp[0] and int(F[1]) >= bp[1] and int(F[1]) <= bp[2]: nanomonsv_flag = True
+                if F[3] == bp[0] and int(F[4]) >= bp[1] and int(F[4]) <= bp[2]: nanomonsv_flag = True
+
+            if nanomonsv_flag: continue
+
+            # import pdb; pdb.set_trace()
+            if ctrl_sbnd_count_file is not None:
+                if key not in key2count_ctrl:
+                    continue
+                else:
+                    ctrl_count = key2count_ctrl[key]
+
+                if int(ctrl_count[0]) == 0: continue
+                if int(ctrl_count[1]) > max_control_variant_read_num: continue
+                if float(ctrl_count[1]) / float(ctrl_count[0]) > max_control_VAF: continue
+
+            if int(F[5]) < min_tumor_variant_read_num: continue
+            if float(F[5]) / float(F[4]) < min_tumor_VAF: continue
+
+            if ctrl_sbnd_count_file is not None:
+                print(f"{key}\t{key2contig[key]}\t{F[4]}\t{F[5]}\t{ctrl_count[0]}\t{ctrl_count[1]}", file = hout)
+            else:
+                print(f"{key}\t{key2contig[key]}\t{F[4]}\t{F[5]}", file = hout)
+    
+
 if __name__ == "__main__":
 
     import sys
