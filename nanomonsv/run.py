@@ -202,11 +202,10 @@ def get_main(args):
     locate_bp(args.tumor_prefix + ".consensus_seq.txt",
         args.tumor_prefix + ".refined_bp.txt",
         args.reference_fasta, args.debug)
-
     locate_bp_sbnd(args.tumor_prefix + ".consensus_seq.sbnd.txt",
         args.tumor_prefix + ".refined_bp.sbnd.txt",
         args.reference_fasta, args.debug)
-   
+
     logger.info("Counting the number of supprting read for the tumor by realignment of SV candidate segments")
     count_sread_by_alignment(args.tumor_prefix + ".refined_bp.txt", args.tumor_bam, 
         args.tumor_prefix + ".realignment.tumor.sread_count.txt", args.tumor_prefix + ".realignment.tumor.sread_info.txt", args.reference_fasta,
@@ -218,6 +217,7 @@ def get_main(args):
         logger.info("Counting the number of supprting read for the control by realignment of SV candidate segments")
         count_sread_by_alignment(args.tumor_prefix + ".refined_bp.txt", args.control_bam, 
             args.tumor_prefix + ".realignment.control.sread_count.txt", args.tumor_prefix + ".realignment.control.sread_info.txt", args.reference_fasta,
+
             sbnd_file = args.tumor_prefix + ".refined_bp.sbnd.txt", output_count_file_sbnd = args.tumor_prefix + ".realignment.control.sread_count.sbnd.txt",
             output_alignment_info_file_sbnd = args.tumor_prefix + ".realignment.control.sread_info.sbnd.txt",
             var_read_min_mapq = args.var_read_min_mapq, use_ssw_lib = args.use_ssw_lib, debug = args.debug)

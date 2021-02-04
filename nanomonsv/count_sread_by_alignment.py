@@ -311,12 +311,12 @@ class Alignment_counter(object):
 
 
         tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq, tid = self.temp_key.split(',')
-        print(f"{tchr1}\t{tpos1}\t{tdir1}\t{tchr2}\t{tpos2}\t{tdir2}\t{tinseq}\t{len(all_rnames)}\t{len(supporting_reads)}", file = self.hout_count)
+        print(f"{tchr1}\t{tpos1}\t{tdir1}\t{tchr2}\t{tpos2}\t{tdir2}\t{tinseq}\t{tid}\t{len(all_rnames)}\t{len(supporting_reads)}", file = self.hout_count)
         
         sread_info = { rname: alignment_info_var_1[rname] + alignment_info_var_2[rname] for rname in supporting_reads}
         for rname in supporting_reads:
             sinfo = '\t'.join([str(x) for x in alignment_info_var_1[rname] + alignment_info_var_2[rname]])
-            print(f"{tchr1}\t{tpos1}\t{tdir1}\t{tchr2}\t{tpos2}\t{tdir2}\t{tinseq}\t{rname}\t{sinfo}", file = self.hout_ainfo)
+            print(f"{tchr1}\t{tpos1}\t{tdir1}\t{tchr2}\t{tpos2}\t{tdir2}\t{tinseq}\t{tid}\t{rname}\t{sinfo}", file = self.hout_ainfo)
 
 
     def count_alignment_and_print_sbnd(self):
@@ -350,12 +350,12 @@ class Alignment_counter(object):
             self.readid2mapq[rname][0] is not None and self.readid2mapq[rname][0] >= self.var_read_min_mapq]
 
         tchr, tpos, tdir, tcontig, tid = self.temp_key.split(',')
-        print(f"{tchr}\t{tpos}\t{tdir}\t{tcontig}\t{len(all_rnames)}\t{len(supporting_reads)}", file = self.hout_count)
+        print(f"{tchr}\t{tpos}\t{tdir}\t{tcontig}\t{tid}\t{len(all_rnames)}\t{len(supporting_reads)}", file = self.hout_count)
 
         sread_info = { rname: alignment_info_var_1[rname] for rname in supporting_reads}
         for rname in supporting_reads:
             sinfo = '\t'.join([str(x) for x in alignment_info_var_1[rname] ])
-            print(f"{tchr}\t{tpos}\t{tdir}\t{tcontig}\t{rname}\t{sinfo}", file = self.hout_ainfo)
+            print(f"{tchr}\t{tpos}\t{tdir}\t{tcontig}\t{tid}\t{rname}\t{sinfo}", file = self.hout_ainfo)
 
 
 

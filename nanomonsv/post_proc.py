@@ -3,7 +3,7 @@
 
 class Sv(object):
 
-    def __init__(self, tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq, 
+    def __init__(self, tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq, sv_id, 
         total_read_tumor, var_read_tumor, total_read_ctrl, var_read_ctrl):
 
         self.chr1 = tchr1
@@ -13,6 +13,7 @@ class Sv(object):
         self.pos2 = tpos2
         self.dir2 = tdir2
         self.inseq = tinseq
+        self.sv_id = sv_id 
         self.total_read_tumor = total_read_tumor
         self.var_read_tumor = var_read_tumor
         self.total_read_ctrl = total_read_ctrl
@@ -59,21 +60,21 @@ class Duplicate_remover(object):
         return None
 
     
-    def add_sv(self, tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq,
+    def add_sv(self, tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq, sv_id,
         total_read_tumor, var_read_tumor, total_read_ctrl, var_read_ctrl):
                      
-        sv = Sv(tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq, 
+        sv = Sv(tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq, sv_id,
             total_read_tumor, var_read_tumor, total_read_ctrl, var_read_ctrl)
         self.sv_list.append(sv)
 
 
     def flush_sv_list(self):
 
-        header = "Chr_1\tPos_1\tDir_1\tChr_2\tPos_2\tDir_2\tInserted_Seq\tChecked_Read_Num_Tumor\tSupporting_Read_Num_Tumor" 
+        header = "Chr_1\tPos_1\tDir_1\tChr_2\tPos_2\tDir_2\tInserted_Seq\tSV_ID\tChecked_Read_Num_Tumor\tSupporting_Read_Num_Tumor" 
         if self.is_control: header = header + "\tChecked_Read_Num_Control\tSupporting_Read_Num_Control"
         print(header, file = self.hout)
         for sv in self.sv_list:
-            print_sv_line = f"{sv.chr1}\t{sv.pos1}\t{sv.dir1}\t{sv.chr2}\t{sv.pos2}\t{sv.dir2}\t{sv.inseq}"
+            print_sv_line = f"{sv.chr1}\t{sv.pos1}\t{sv.dir1}\t{sv.chr2}\t{sv.pos2}\t{sv.dir2}\t{sv.inseq}\t{sv.sv_id}"
             print_sv_line = print_sv_line + f"\t{sv.total_read_tumor}\t{sv.var_read_tumor}"
             if self.is_control: print_sv_line = print_sv_line + f"\t{sv.total_read_ctrl}\t{sv.var_read_ctrl}"
             print(print_sv_line, file = self.hout)
@@ -88,17 +89,17 @@ def integrate_realignment_result(tumor_file, control_file, output_file,
         with open(control_file, 'r') as hin:
             for line in hin:
                 F = line.rstrip('\n').split('\t')
-                svkey = (F[0], int(F[1]), F[2], F[3], int(F[4]), F[5], F[6])
-                svkey2control_info[svkey] = (int(F[7]), int(F[8]))
+                svkey = (F[0], int(F[1]), F[2], F[3], int(F[4]), F[5], F[6], F[7])
+                svkey2control_info[svkey] = (int(F[8]), int(F[9]))
 
     duplicate_remover = Duplicate_remover(output_file, is_control)
     with open(tumor_file, 'r') as hin:
         for line in hin:
             F = line.rstrip('\n').split('\t')
-            tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq = F[0], int(F[1]), F[2], F[3], int(F[4]), F[5], F[6]
-            tkey = (tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq)
+            tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq, tid = F[0], int(F[1]), F[2], F[3], int(F[4]), F[5], F[6], F[7]
+            tkey = (tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq, tid)
 
-            total_read_tumor, var_read_tumor = int(F[7]), int(F[8])
+            total_read_tumor, var_read_tumor = int(F[8]), int(F[9])
             total_read_ctrl, var_read_ctrl = None, None
 
             if tkey in svkey2control_info: total_read_ctrl, var_read_ctrl = svkey2control_info[tkey][0], svkey2control_info[tkey][1]
@@ -118,7 +119,7 @@ def integrate_realignment_result(tumor_file, control_file, output_file,
                 total_read_tumor, var_read_tumor, total_read_ctrl, var_read_ctrl)
 
             if cret is None:
-                duplicate_remover.add_sv(tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq,
+                duplicate_remover.add_sv(tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq, tid,
                     total_read_tumor, var_read_tumor, total_read_ctrl, var_read_ctrl)
 
     duplicate_remover.flush_sv_list()
@@ -132,16 +133,16 @@ def proc_sread_info_file(tumor_sread_info_file, sv_result_file, output_file, val
         header = hin.readline()
         for line in hin:
             F = line.rstrip('\t').split('\t')
-            svkey['\t'.join(F[:7])] = 1
+            svkey['\t'.join(F[:8])] = 1
 
     with open(tumor_sread_info_file, 'r') as hin, open(output_file, 'w') as hout:
         for line in hin:
             F = line.rstrip('\n').split('\t')
-            tkey = '\t'.join(F[:7])
+            tkey = '\t'.join(F[:8])
             if tkey not in svkey: continue
 
-            score1, cstart1, cend1, sstart1, send1, strand1 = int(F[8]), int(F[9]), int(F[10]), int(F[11]), int(F[12]), F[13]
-            score2, cstart2, cend2, sstart2, send2, strand2 = int(F[14]), int(F[15]), int(F[16]), int(F[17]), int(F[18]), F[19]
+            score1, cstart1, cend1, sstart1, send1, strand1 = int(F[9]), int(F[10]), int(F[11]), int(F[12]), int(F[13]), F[14]
+            score2, cstart2, cend2, sstart2, send2, strand2 = int(F[15]), int(F[16]), int(F[17]), int(F[18]), int(F[19]), F[20]
 
             tinseq = F[6]
             readid = F[7]
@@ -180,24 +181,24 @@ def integrate_realignment_result_sbnd(tumor_sbnd_count_file, ctrl_sbnd_count_fil
         with open(ctrl_sbnd_count_file, 'r') as hin:
             for line in hin:
                 F = line.rstrip('\n').split('\t')
-                key = f"{F[0]}\t{F[1]}\t{F[2]}"
-                key2count_ctrl[key] = (F[4], F[5])
+                key = F[4]
+                key2count_ctrl[key] = (F[5], F[6])
 
     key2contig = {}
     with open(refined_bp_sbnd_file, 'r') as hin:
         for line in hin:
             F = line.rstrip('\n').split('\t')
-            key = f"{F[0]}\t{F[1]}\t{F[2]}"
+            key = F[4]
             key2contig[key] = F[3]
 
     with open(tumor_sbnd_count_file, 'r') as hin, open(output_file, 'w') as hout:
         for line in hin:
             F = line.rstrip('\n').split('\t')
-            key = f"{F[0]}\t{F[1]}\t{F[2]}"
+            key = F[4]
             nanomonsv_flag = False
             for bp in nanomonsv_bp_list:
                 if F[0] == bp[0] and int(F[1]) >= bp[1] and int(F[1]) <= bp[2]: nanomonsv_flag = True
-                if F[3] == bp[0] and int(F[4]) >= bp[1] and int(F[4]) <= bp[2]: nanomonsv_flag = True
+                # if F[3] == bp[0] and int(F[4]) >= bp[1] and int(F[4]) <= bp[2]: nanomonsv_flag = True
 
             if nanomonsv_flag: continue
 
@@ -212,13 +213,13 @@ def integrate_realignment_result_sbnd(tumor_sbnd_count_file, ctrl_sbnd_count_fil
                 if int(ctrl_count[1]) > max_control_variant_read_num: continue
                 if float(ctrl_count[1]) / float(ctrl_count[0]) > max_control_VAF: continue
 
-            if int(F[5]) < min_tumor_variant_read_num: continue
-            if float(F[5]) / float(F[4]) < min_tumor_VAF: continue
+            if int(F[6]) < min_tumor_variant_read_num: continue
+            if float(F[6]) / float(F[5]) < min_tumor_VAF: continue
 
             if ctrl_sbnd_count_file is not None:
-                print(f"{key}\t{key2contig[key]}\t{F[4]}\t{F[5]}\t{ctrl_count[0]}\t{ctrl_count[1]}", file = hout)
+                print(f"{F[0]}\t{F[1]}\t{F[2]}\t{key2contig[key]}\t{F[4]}\t{F[5]}\t{F[6]}\t{ctrl_count[0]}\t{ctrl_count[1]}", file = hout)
             else:
-                print(f"{key}\t{key2contig[key]}\t{F[4]}\t{F[5]}", file = hout)
+                print(f"{F[0]}\t{F[1]}\t{F[2]}\t{key2contig[key]}\t{F[4]}\t{F[5]}\t{F[6]}", file = hout)
     
 
 if __name__ == "__main__":
