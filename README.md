@@ -78,12 +78,11 @@ You will see the result file named as `test_tumor.nanomonsv.result.txt`.
 
 ## Realistic example sequencing data
 
-You will be able to find the Oxford Nanopore Sequencing data from the following link.
+The Oxford Nanopore Sequencing data used in the bioRxiv paper is available through the public sequence repository service (BioProject ID: PRJDB10898):
 - COLO829: [tumor](https://www.ncbi.nlm.nih.gov/sra/DRX248304[accn]), [control](https://www.ncbi.nlm.nih.gov/sra/DRX248305[accn])
 - H2009: [tumor](https://www.ncbi.nlm.nih.gov/sra/DRX248308[accn]), [control](https://www.ncbi.nlm.nih.gov/sra/DRX248309[accn])
 - HCC1954: [tumor](https://www.ncbi.nlm.nih.gov/sra/DRX248306[accn]), [control](https://www.ncbi.nlm.nih.gov/sra/DRX248307[accn])
 
-The sequencing statistics are summarized in the Table 1 of the [bioRxiv paper](https://www.biorxiv.org/content/10.1101/2020.07.22.214262v1).
 When you perfrom nanomonsv to the above data and have experienced errors, please report to us.
 Also, please kindly cite the [bioRxiv paper](https://www.biorxiv.org/content/10.1101/2020.07.22.214262v1) if you use these data.
 
