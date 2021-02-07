@@ -76,7 +76,7 @@ nanomonsv get output/test_tumor tests/resource/bam/test_tumor.bam GRCh38.d1.vd1.
 
 You will see the result file named as `test_tumor.nanomonsv.result.txt`.
 
-## Example data
+## Realistic example sequencing data
 
 You will be able to find the Oxford Nanopore Sequencing data from the following link.
 - COLO829: [tumor](https://www.ncbi.nlm.nih.gov/sra/DRX248304[accn]), [control](https://www.ncbi.nlm.nih.gov/sra/DRX248305[accn])
