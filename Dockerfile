@@ -46,5 +46,15 @@ RUN wget https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library/arch
 
 ENV LD_LIBRARY_PATH /Complete-Striped-Smith-Waterman-Library-1.1/src:$LD_LIBRARY_PATH
 
-RUN pip3 install nanomonsv==0.3.0
+RUN wget https://github.com/lh3/minimap2/releases/download/v2.17/minimap2-2.17.tar.bz2 && \
+    tar jxvf minimap2-2.17.tar.bz2 && \
+    cd minimap2-2.17 && \
+    make
+
+ENV PATH $PATH:/minimap2-2.17
+
+RUN git  clone https://github.com/friend1ws/nanomonsv.git && \
+    cd nanomonsv && \
+    python3 -m pip install . 
+
 

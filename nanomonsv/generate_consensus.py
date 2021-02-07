@@ -347,7 +347,8 @@ def generate_consensus_sbnd(input_file, output_file, use_racon = False, debug = 
 
             consensus_generator_sbnd.add_support_read_seq(treadid, tseq, tsize)
 
-        consensus_generator_sbnd.print_consensus_sbnd()
+        if consensus_generator_sbnd.temp_key is not None:
+            consensus_generator_sbnd.print_consensus_sbnd()
 
     del consensus_generator_sbnd
 

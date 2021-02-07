@@ -123,6 +123,12 @@ def get_main(args):
         is_tool("mafft")
     if args.use_ssw_lib: libssw_check()
 
+    if args.single_bnd: 
+        is_tool("minimap2")
+        if not args.use_racon:
+            logger.error("single_bnd option has to be used with use_racon option")
+            sys.exit(1)
+       
     # check existences
     is_exists_bam(args.tumor_bam)
     is_exists(args.reference_fasta)
@@ -176,11 +182,15 @@ def get_main(args):
         median_mapQ_thres = args.median_mapQ_thres, max_overhang_size_thres = args.max_overhang_size_thres,
         debug = args.debug)
 
-    logger.info("Clustering single breakend type supporting reads for putative SVs")
-    cluster_supporting_reads_sbnd(args.tumor_prefix + ".bp_info.sorted.bed.gz",
-        args.tumor_prefix + ".singlebreakend.sorted.clustered.bed", control_bed = control_bp_bed,
-        read_num_thres = args.min_tumor_variant_read_num, cluster_margin_size = args.cluster_margin_size,
-        median_mapQ_thres = args.median_mapQ_thres, debug = args.debug)
+    if args.single_bnd:
+        logger.info("Clustering single breakend type supporting reads for putative SVs")
+        cluster_supporting_reads_sbnd(args.tumor_prefix + ".bp_info.sorted.bed.gz",
+            args.tumor_prefix + ".singlebreakend.sorted.clustered.bed", control_bed = control_bp_bed,
+            read_num_thres = args.min_tumor_variant_read_num, cluster_margin_size = args.cluster_margin_size,
+            median_mapQ_thres = args.median_mapQ_thres, debug = args.debug)
+    else:
+        with open(args.tumor_prefix + ".singlebreakend.sorted.clustered.bed", 'w'):
+            pass
 
     logger.info("Gathering sequences of supporting reads")
     gather_support_read_seq(args.tumor_prefix + ".rearrangement.sorted.clustered.bedpe",
@@ -241,17 +251,25 @@ def get_main(args):
         os.remove(args.tumor_prefix + ".rearrangement.sorted.clustered.bedpe")
         os.remove(args.tumor_prefix + ".insertion.sorted.clustered.bedpe")
         os.remove(args.tumor_prefix + ".deletion.sorted.clustered.bedpe")
+        os.remove(args.tumor_prefix + ".singlebreakend.sorted.clustered.bed")
         os.remove(args.tumor_prefix + ".support_read_seq.txt")
+        os.remove(args.tumor_prefix + ".support_read_seq.sbnd.txt")
         os.remove(args.tumor_prefix + ".consensus_seq.txt")
+        os.remove(args.tumor_prefix + ".consensus_seq.sbnd.txt")
         os.remove(args.tumor_prefix + ".refined_bp.txt")
+        os.remove(args.tumor_prefix + ".refined_bp.sbnd.txt")
         os.remove(args.tumor_prefix + ".realignment.tumor.sread_count.txt")
-        os.remove(args.tumor_prefix + ".realignment.tumor.sread_info.txt")
-        
+        os.remove(args.tumor_prefix + ".realignment.tumor.sread_count.sbnd.txt")
+        os.remove(args.tumor_prefix + ".realignment.tumor.sread_info.txt")  
+        os.remove(args.tumor_prefix + ".realignment.tumor.sread_info.sbnd.txt")
         if args.control_bam is not None:
             os.remove(args.tumor_prefix + ".realignment.control.sread_count.txt")
+            os.remove(args.tumor_prefix + ".realignment.control.sread_count.sbnd.txt")
             os.remove(args.tumor_prefix + ".realignment.control.sread_info.txt")
+            os.remove(args.tumor_prefix + ".realignment.control.sread_info.sbnd.txt")
 
-
+        if not args.single_bnd:
+            os.remove(args.tumor_prefix + ".nanomonsv.sbnd.result.txt")   
 def validate_main(args):
    
     # executable check
