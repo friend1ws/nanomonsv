@@ -1,5 +1,12 @@
 #! /usr/bin/env python3
 
+import csv, itertools
+import pysam, parasail
+
+from nanomonsv.my_seq import reverse_complement
+from nanomonsv.logger import get_logger
+
+logger = get_logger(__name__)
 
 class Sv(object):
 
@@ -18,46 +25,151 @@ class Sv(object):
         self.var_read_tumor = var_read_tumor
         self.total_read_ctrl = total_read_ctrl
         self.var_read_ctrl = var_read_ctrl
+        self.filter = []
 
 
-class Duplicate_remover(object):
+class Sv_filterer(object):
 
-    def __init__(self, output_file, is_control, bp_dist_margin = 20):
+    def __init__(self, output_file, reference_fasta, is_control, 
+        min_tumor_VAF = 0.05, bp_dist_margin = 30, validate_seg_len = 100):
         self.sv_list = []
         self.hout = open(output_file, 'w')
         self.bp_dist_margin = bp_dist_margin
         self.is_control = is_control
+        self.reference_h = pysam.FastaFile(reference_fasta)
+        self.min_tumor_VAF = min_tumor_VAF
+        self.bp_dist_margin = bp_dist_margin
+        self.validate_seg_len = validate_seg_len
+        self.header = None
+
 
     def __del__(self):
         self.hout.close()
+        self.reference_h.close()
 
 
-    def check_duplicate(self, tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq,
-        total_read_tumor, var_read_tumor, total_read_ctrl, var_read_ctrl):
+    def filter_close_both_breakpoints(self, sv1, sv2, filter_item = "Duplicate_with_close_SV"):
 
-        for sv in self.sv_list:
+        # only apply when the first or the second sv is not insertion
+        if len(sv1.inseq) >= 100 or len(sv2.inseq) >= 100: return 
 
-            if tchr1 == sv.chr1 and tchr2 == sv.chr2 and tdir1 == sv.dir1 and tdir2 == sv.dir2 and \
-                abs(tpos1 - sv.pos1) < self.bp_dist_margin and abs(tpos2 - sv.pos2) < self.bp_dist_margin:
+        if sv1.chr1 == sv2.chr1 and sv1.chr2 == sv2.chr2 and sv1.dir1 == sv2.dir1 and sv1.dir2 == sv2.dir2 and \
+            abs(sv1.pos1 - sv2.pos1) < self.bp_dist_margin and abs(sv1.pos2 - sv2.pos2) < self.bp_dist_margin:
 
-                replace_flag = False
-                if var_read_tumor > sv.var_read_tumor:
-                    replace_flag = True
-                elif var_read_tumor == sv.var_read_tumor:
-                    if len(tinseq) < len(sv.inseq):
-                        replace_flag = True
-                    elif len(tinseq) == len(sv.inseq):
-                        if tpos1 < sv.pos1 or tpos1 == sv.pos1 and tpos2 < sv.pos2:
-                            replace_flag = True
+            if sv1.var_read_tumor is not None and sv2.var_read_tumor is not None:
+                if sv1.var_read_tumor > sv2.var_read_tumor: 
+                    sv1.filter.append(filter_item); return
+                if sv2.var_read_tumor < sv1.var_read_tumor: 
+                    sv2.filter.append(filter_item); return
 
-                if replace_flag == True:
-                    sv.pos1, sv.pos2, sv.inseq = tpos1, tpos2, tinseq
-                    self.total_read_tumor, self.var_read_tumor = total_read_tumor, var_read_tumor
-                    self.total_read_ctrl, self.var_read_ctrl = total_read_ctrl, var_read_ctrl
+            if len(sv1.inseq) < len(sv2.inseq):
+                sv1.filter.append(filter_item); return
+            if len(sv2.inseq) < len(sv1.inseq): 
+                sv2.filter.append(filter_item); return
 
-                return sv
+            if sv1.pos1 < sv2.pos1: 
+                sv1.filter.append(filter_item); return
+            if sv2.pos1 < sv1.pos1: 
+                sv2.filter.append(filter_item); return
 
-        return None
+            if sv1.pos2 < sv2.pos2: 
+                sv1.filter.append(filter_item); return
+            if sv2.pos2 < sv1.pos2: 
+                sv2.filter.append(filter_item) ; return
+
+            sv2.filter.append(filter_item); return
+
+
+
+    def filter_sv_insertion_match(self, sv, ins, filter_item = "Duplicate_with_insertion"):
+    
+        # only apply when the first sv is not insertion and the second sv is insertion type
+        if len(sv.inseq) >= 100 or len(ins.inseq) < 100: return 
+
+        if not (sv.chr1 == ins.chr1 and abs(sv.pos1 - ins.pos1) <= self.bp_dist_margin) and \
+            not (sv.chr2 == ins.chr2 and abs(sv.pos2 - ins.pos2) <= self.bp_dist_margin):
+            return 
+
+        ins_seg = self.reference_h.fetch(ins.chr1, max(ins.pos1 - self.validate_seg_len - self.bp_dist_margin - 1, 0), ins.pos1 - 1)
+        ins_seg = ins_seg + ins.inseq
+        ins_seg = ins_seg + self.reference_h.fetch(ins.chr1, ins.pos2 - 1, ins.pos2 + self.validate_seg_len + self.bp_dist_margin - 1)
+
+        if sv.dir1 == '+':
+            tseq = self.reference_h.fetch(sv.chr1, max(sv.pos1 - self.validate_seg_len - 1, 0), sv.pos1 - 1)
+        else:
+            tseq = self.reference_h.fetch(sv.chr1, sv.pos1 - 1, sv.pos1 + self.validate_seg_len - 1) 
+            tseq = reverse_complement(tseq)
+
+        if sv.dir1 == '+':
+            sv_seg = tseq + sv.inseq
+        else:
+            sv_seg = tseq + reverse_complement(sv.inseq)
+
+        if sv.dir2 == '-':
+            tseq = self.reference_h.fetch(sv.chr2, sv.pos2 - 1, sv.pos2 + self.validate_seg_len - 1)
+        else:
+            tseq = self.reference_h.fetch(sv.chr2, max(sv.pos2 - self.validate_seg_len - 1, 0), sv.pos2 - 1)
+            tseq = reverse_complement(tseq)
+ 
+        sv_seg = sv_seg + tseq
+
+        user_matrix = parasail.matrix_create("ACGT", 2, -2)
+        res = parasail.ssw(sv_seg, ins_seg, 3, 1, user_matrix)
+        res_r = parasail.ssw(reverse_complement(sv_seg), ins_seg, 3, 1, user_matrix)
+
+        if res.score1 > res_r.score1:
+            match_ratio = float(res.score1) / (2 * (res.ref_end1 - res.ref_begin1 + 1))
+            if match_ratio > 0.75:
+                if res.read_begin1 < 0.1 * len(sv_seg) and res.read_end1 > 0.9 * len(sv_seg): 
+                    sv.filter.append(filter_item)
+                    return 
+        else:
+            match_ratio = float(res_r.score1) / (2 * (res_r.ref_end1 - res_r.ref_begin1 + 1))
+            if match_ratio > 0.75:
+                if res_r.read_begin1 < 0.1 * len(sv_seg) and res_r.read_end1 > 0.9 * len(sv_seg): 
+                    sv.filter.append(filter_item)
+                    return
+
+        return
+
+
+    def filter_dup_insertion(self, ins1, ins2, filter_item = "Duplicate_with_close_insertion"):
+
+        # only apply when the first and the second sv is insertion type
+        if len(ins1.inseq) < 100 or len(ins2.inseq) < 100: return None
+
+        bp_match = (ins1.chr1 == ins2.chr1 and abs(ins1.pos1 - ins2.pos1) <= 2 * self.bp_dist_margin) and \
+            (ins1.chr2 == ins2.chr2 and abs(ins1.pos2 - ins2.pos2) <= 2 * self.bp_dist_margin)
+
+        if bp_match == False: return None
+
+        # insertion with shorter length will be filtered
+        if len(ins1.inseq) < len(ins2.inseq):
+            ins1.filter.append(filter_item)
+            return
+        else:
+            ins2.filter.append(filter_item)
+
+
+    def filter_sv_with_decoy(self, sv, filter_item = "SV_with_decoy"):
+
+        if sv.chr1.endswith("decoy") or sv.chr2.endswith("decoy"): 
+            sv.filter.append(filter_item)
+            return
+
+
+    def filter_small_sv(self, sv, size_thres = 100, filter_item = "Too_small_size"):
+
+        if sv.chr1 == sv.chr2 and sv.dir1 == '+' and sv.dir2 == '-':
+            sv_size = sv.pos2 - sv.pos1 + len(sv.inseq) - 1
+            if sv_size < size_thres:
+                sv.filter.append(filter_item)
+                return
+
+    def filter_low_vaf_sv(self, sv, filter_item = "Too_low_VAF"):
+
+        if float(sv.var_read_tumor) / float(sv.total_read_tumor) < self.min_tumor_VAF:
+            sv.filter.append(filter_item)
 
     
     def add_sv(self, tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq, sv_id,
@@ -68,19 +180,61 @@ class Duplicate_remover(object):
         self.sv_list.append(sv)
 
 
+    def apply_filters(self):
+
+        for sv in self.sv_list:
+            self.filter_low_vaf_sv(sv)
+
+        for sv in self.sv_list:
+            self.filter_small_sv(sv)
+
+        for sv in self.sv_list:
+            self.filter_sv_with_decoy(sv)
+
+        # logger.info("filter_close_both_breakpoints")
+        for sv1, sv2 in itertools.combinations(self.sv_list, 2):
+            if len(sv1.filter) > 0 or len(sv2.filter) > 0: continue
+            self.filter_close_both_breakpoints(sv1, sv2)
+
+        # logger.info("filter_sv_insertion_match")
+        for sv1, sv2 in itertools.combinations(self.sv_list, 2):
+            if len(sv1.filter) > 0 or len(sv2.filter) > 0: continue
+            if len(sv1.inseq) < 100 and len(sv2.inseq) >= 100: 
+                self.filter_sv_insertion_match(sv1, sv2)
+            elif len(sv2.inseq) < 100 and len(sv1.inseq) >= 100:
+                self.filter_sv_insertion_match(sv2, sv1)
+
+        # logger.info("filter_dup_insertion")
+        for ins1, ins2 in itertools.combinations(self.sv_list, 2):
+            if len(ins1.filter) > 0 or len(ins2.filter) > 0: continue
+            if len(ins1.inseq) >= 100 and len(ins2.inseq) >= 100:
+                self.filter_dup_insertion(ins1, ins2)
+
+
     def flush_sv_list(self):
 
         header = "Chr_1\tPos_1\tDir_1\tChr_2\tPos_2\tDir_2\tInserted_Seq\tSV_ID\tChecked_Read_Num_Tumor\tSupporting_Read_Num_Tumor" 
         if self.is_control: header = header + "\tChecked_Read_Num_Control\tSupporting_Read_Num_Control"
+        header = header + '\t' + "Is_Filter"
         print(header, file = self.hout)
         for sv in self.sv_list:
+
             print_sv_line = f"{sv.chr1}\t{sv.pos1}\t{sv.dir1}\t{sv.chr2}\t{sv.pos2}\t{sv.dir2}\t{sv.inseq}\t{sv.sv_id}"
             print_sv_line = print_sv_line + f"\t{sv.total_read_tumor}\t{sv.var_read_tumor}"
+
             if self.is_control: print_sv_line = print_sv_line + f"\t{sv.total_read_ctrl}\t{sv.var_read_ctrl}"
-            print(print_sv_line, file = self.hout)
+            if len(sv.filter) == 0: 
+                filter_print = "PASS"
+            else:
+                if "Duplicate_with_close_SV" in sv.filter: continue
+                if "Duplicate_with_insertion" in sv.filter: continue
+                if "Duplicate_with_close_insertion" in sv.filter: continue
+                filter_print = ';'.join(list(set(sv.filter)))
+
+            print(f"{print_sv_line}\t{filter_print}", file = self.hout)
 
     
-def integrate_realignment_result(tumor_file, control_file, output_file,
+def integrate_realignment_result(tumor_file, control_file, output_file, reference_fasta,
     min_tumor_variant_read_num = 3, min_tumor_VAF = 0.05, max_control_variant_read_num = 1, max_control_VAF = 0.03):
 
     is_control = True if control_file is not None else False
@@ -92,7 +246,7 @@ def integrate_realignment_result(tumor_file, control_file, output_file,
                 svkey = (F[0], int(F[1]), F[2], F[3], int(F[4]), F[5], F[6], F[7])
                 svkey2control_info[svkey] = (int(F[8]), int(F[9]))
 
-    duplicate_remover = Duplicate_remover(output_file, is_control)
+    sv_filterer = Sv_filterer(output_file, reference_fasta, is_control, min_tumor_VAF)
     with open(tumor_file, 'r') as hin:
         for line in hin:
             F = line.rstrip('\n').split('\t')
@@ -107,7 +261,6 @@ def integrate_realignment_result(tumor_file, control_file, output_file,
             # filtering by supporting read and variant frequencies
             if total_read_tumor == 0: continue
             if var_read_tumor < min_tumor_variant_read_num: continue
-            if float(var_read_tumor) / float(total_read_tumor) < min_tumor_VAF: continue
 
             if is_control:
                 if total_read_ctrl is None or total_read_ctrl == 0: continue
@@ -115,15 +268,12 @@ def integrate_realignment_result(tumor_file, control_file, output_file,
                 if float(var_read_ctrl) / float(total_read_ctrl) > max_control_VAF: continue
 
 
-            cret = duplicate_remover.check_duplicate(tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq, 
+            sv_filterer.add_sv(tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq, tid,
                 total_read_tumor, var_read_tumor, total_read_ctrl, var_read_ctrl)
 
-            if cret is None:
-                duplicate_remover.add_sv(tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq, tid,
-                    total_read_tumor, var_read_tumor, total_read_ctrl, var_read_ctrl)
-
-    duplicate_remover.flush_sv_list()
-    del duplicate_remover
+    sv_filterer.apply_filters()
+    sv_filterer.flush_sv_list()
+    del sv_filterer
 
 
 def proc_sread_info_file(tumor_sread_info_file, sv_result_file, output_file, validate_sequence_length = 200):

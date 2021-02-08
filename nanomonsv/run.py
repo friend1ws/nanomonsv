@@ -10,6 +10,7 @@ from .locate_bp import *
 from .locate_bp_sbnd import *
 from .count_sread_by_alignment import *
 from .post_proc import *
+from .vcf_convert import *
 from .insert_classify import *
 from .utils import *
 from .logger import get_logger
@@ -235,8 +236,11 @@ def get_main(args):
     logger.info("Final processing") 
     control_sread_count_file = args.tumor_prefix + ".realignment.control.sread_count.txt" if args.control_bam is not None else None
     integrate_realignment_result(args.tumor_prefix + ".realignment.tumor.sread_count.txt", control_sread_count_file,
-        args.tumor_prefix + ".nanomonsv.result.txt",
+        args.tumor_prefix + ".nanomonsv.result.txt", args.reference_fasta,
         args.min_tumor_variant_read_num, args.min_tumor_VAF, args.max_control_variant_read_num, args.max_control_VAF)
+
+    genomesv2vcf_convert(args.tumor_prefix + ".nanomonsv.result.txt", args.tumor_prefix + ".nanomonsv.result.vcf", 
+        args.reference_fasta)
 
     proc_sread_info_file(args.tumor_prefix + ".realignment.tumor.sread_info.txt",
         args.tumor_prefix + ".nanomonsv.result.txt",
@@ -270,6 +274,8 @@ def get_main(args):
 
         if not args.single_bnd:
             os.remove(args.tumor_prefix + ".nanomonsv.sbnd.result.txt")   
+
+
 def validate_main(args):
    
     # executable check
@@ -290,7 +296,7 @@ def validate_main(args):
     logger.info("Final processing")
     control_sread_count_file = args.output + ".realignment.control.sread_count.txt" if args.control_bam is not None else None
     integrate_realignment_result(args.output + ".realignment.tumor.sread_count.txt", control_sread_count_file, args.output,
-        0, 0, float("inf"), float("inf"))
+        args.reference_fasta, 0, 0, float("inf"), float("inf"))
 
     if not args.debug:
         os.remove(args.output + ".realignment.tumor.sread_count.txt")
