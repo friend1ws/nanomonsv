@@ -342,17 +342,20 @@ def integrate_realignment_result_sbnd(tumor_sbnd_count_file, ctrl_sbnd_count_fil
             key2contig[key] = F[3]
 
     with open(tumor_sbnd_count_file, 'r') as hin, open(output_file, 'w') as hout:
+        header = "Chr_1\tPos_2\tDir_2\tContig\tSV_ID\tChecked_Read_Num_Tumor\tSupporting_Read_Num_Tumor"
+        if ctrl_sbnd_count_file is not None: header = header + "\tChecked_Read_Num_Control\tSupporting_Read_Num_Control"
+        print(header, file = hout)
+
         for line in hin:
             F = line.rstrip('\n').split('\t')
             key = F[4]
+            """
             nanomonsv_flag = False
             for bp in nanomonsv_bp_list:
                 if F[0] == bp[0] and int(F[1]) >= bp[1] and int(F[1]) <= bp[2]: nanomonsv_flag = True
-                # if F[3] == bp[0] and int(F[4]) >= bp[1] and int(F[4]) <= bp[2]: nanomonsv_flag = True
-
             if nanomonsv_flag: continue
+            """
 
-            # import pdb; pdb.set_trace()
             if ctrl_sbnd_count_file is not None:
                 if key not in key2count_ctrl:
                     continue
