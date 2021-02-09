@@ -342,7 +342,7 @@ def integrate_realignment_result_sbnd(tumor_sbnd_count_file, ctrl_sbnd_count_fil
             key2contig[key] = F[3]
 
     with open(tumor_sbnd_count_file, 'r') as hin, open(output_file, 'w') as hout:
-        header = "Chr_1\tPos_2\tDir_2\tContig\tSV_ID\tChecked_Read_Num_Tumor\tSupporting_Read_Num_Tumor"
+        header = "Chr_1\tPos_1\tDir_1\tContig\tSV_ID\tChecked_Read_Num_Tumor\tSupporting_Read_Num_Tumor"
         if ctrl_sbnd_count_file is not None: header = header + "\tChecked_Read_Num_Control\tSupporting_Read_Num_Control"
         print(header, file = hout)
 
