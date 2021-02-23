@@ -104,7 +104,7 @@ nanomonsv parse [-h] [--debug]
 See the help (`nanomonsv parse -h`) for other options.
 
 After successful completion, you will find supporting reads stratified by deletions, insertions, and rearrangements
-({output_prefix}.deletion.sorted.bed.gz, {output_prefix}.insertion.sorted.bed.gz, and {output_prefix}.rearrangement.sorted.bedpe.gz)
+({output_prefix}.deletion.sorted.bed.gz, {output_prefix}.insertion.sorted.bed.gz, {output_prefix}.rearrangement.sorted.bedpe.gz, and {output_prefix}.bp_info.sorted.bed.gz)
 and their indexes (.tbi files). 
 
 
@@ -143,6 +143,8 @@ though we do not generally recomend this.
 
 Also, we have prepared the script (misc/post_fileter.py) for filtering the result.
 Please see the [wiki page](https://github.com/friend1ws/nanomonsv/wiki/filter).
+
+From the version 0.4.0, we will also provide the VCF format result files.
 
 #### result
 
