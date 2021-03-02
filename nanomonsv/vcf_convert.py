@@ -83,7 +83,7 @@ def genomesv2vcf_convert(result_file, output_vcf, reference):
                 print(f"{tchrom}\t{tpos}\t{tid}\t{tref}\t{talt}\t{tqual}\t{tfilter}\t{tinfo}\t{tformat_sample}", file = hout)
 
             # Duplication
-            elif F["Chr_1"] == F["Chr_2"] and F["Dir_1"] == '-' and F["Dir_2"] == '+': 
+            elif F["Chr_1"] == F["Chr_2"] and F["Dir_1"] == '-' and F["Dir_2"] == '+' and F["Pos_1"] != '1': 
 
                 tpos = int(F["Pos_1"]) - 1
                 tref = ref_tb.fetch(tchrom, tpos - 1, tpos)
