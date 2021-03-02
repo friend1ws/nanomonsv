@@ -15,7 +15,7 @@ Precise characterization of somatic structural variations and mobile element ins
 
 ### Binary programs
 
-[htslib](http://www.htslib.org/), [mafft](https://mafft.cbrc.jp/alignment/software/), [racon](https://github.com/isovic/racon)(optional from ver. 0.3.0, use --use_racon option)
+[htslib](http://www.htslib.org/), [mafft](https://mafft.cbrc.jp/alignment/software/), [racon](https://github.com/isovic/racon)(optional from ver. 0.3.0, use --use_racon option. However, we recommend to use this option.)
 
 ### Python
 Pytnon (tested with 3.5, 3.6, 3.7), pysam, numpy, parasail
@@ -104,7 +104,7 @@ nanomonsv parse [-h] [--debug]
 See the help (`nanomonsv parse -h`) for other options.
 
 After successful completion, you will find supporting reads stratified by deletions, insertions, and rearrangements
-({output_prefix}.deletion.sorted.bed.gz, {output_prefix}.insertion.sorted.bed.gz, and {output_prefix}.rearrangement.sorted.bedpe.gz)
+({output_prefix}.deletion.sorted.bed.gz, {output_prefix}.insertion.sorted.bed.gz, {output_prefix}.rearrangement.sorted.bedpe.gz, and {output_prefix}.bp_info.sorted.bed.gz)
 and their indexes (.tbi files). 
 
 
@@ -141,8 +141,13 @@ See the help (`nanomonsv get -h`) for other options.
 When you want to change the engine of Smith-Waterman algorithm to SSW Library, specify `--use_ssw_lib` option,
 though we do not generally recomend this.
 
+Also, we basically recommend to use `--use_racon` option. This will slightly improve the identification of single-base resolution breakpoint, 
+and polishing of inserted sequences. 
+
 Also, we have prepared the script (misc/post_fileter.py) for filtering the result.
 Please see the [wiki page](https://github.com/friend1ws/nanomonsv/wiki/filter).
+
+From the version 0.4.0, we will also provide the VCF format result files.
 
 #### result
 
