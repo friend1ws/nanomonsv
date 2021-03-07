@@ -183,10 +183,10 @@ nanomonsv insert_classify [-h] [--grc] [--genome_id {hg19,hg38,mm10}]
 * **Is_Inversion**: Type of inverted form for Solo LINE1 insertion (Simple, Inverted, Other)
 * **L1_Raito**: The match rate with LINE1 sequences for the inserted sequences
 * **Alu_Ratio**: The match rate with Alu sequences for the inserted sequences
-* **SV_Ratio**: The match rate with SVA sequences for the inserted sequences
+* **SVA_Ratio**: The match rate with SVA sequences for the inserted sequences
 * **RMSK_Info**: Summary information of RepeatMasker
 * **Alignment_Info**: Alignment information to the human genome
-* **Inserted_Pos**: Inserted position (appears only when the inserted sequence is aligned near the inserted positions and implicated to be the tandem duplication or nested LINE1 transduction).
+* **Inserted_Pos**: Inserted position (appears only when the inserted sequence is aligned near the other insertion and implicated to be the tandem duplication or nested LINE1 transduction).
 * **Is_PolyA_T**: Extracted poly-A or poly-T sequences
 * **Target_Site_Duplication**: Nucleotides of target site duplications
 * **L1_Source_Info**: Inferred source site of LINE1 transduction
