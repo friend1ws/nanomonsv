@@ -127,6 +127,7 @@ class Consensus_generator(object):
 
     def print_consensus_racon(self):
 
+        target_flag = False
         with open(self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa", 'r') as hin, \
             open(self.tmp_dir + '/' + self.temp_key + ".tmp.seg.first.fa", 'w') as hout: 
             for line in hin:
@@ -135,8 +136,12 @@ class Consensus_generator(object):
 
                 if not self.readid2is_bp[tid]:
                     print(f'>{tid}\n{tseq}', file = hout)
+                    target_flag = True
                     break
 
+        if target_flag == False:
+            logger.debug(f"Template sequence could not be found for for {self.temp_key}")
+            return
 
         paf_rec_count = self.generate_paf_file(self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa",
             self.tmp_dir + '/' + self.temp_key + ".tmp.seg.first.fa",
