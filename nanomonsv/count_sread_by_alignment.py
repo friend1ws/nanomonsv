@@ -1,15 +1,30 @@
 #! /usr/bin/env python3
 
-import sys, os, subprocess, shutil
+import sys, os, subprocess, shutil, random
 import pysam
 import parasail
 
 from .pyssw import *
 from .my_seq import reverse_complement
 
+# when the total read number exceeds max_read_num, then max_read_num reads are randomly selected
+def bam_subsample_fetch(bam_ps, tchr, tstart, tend, max_read_num = 500):
+
+    rec = 0
+    for read in bam_ps.fetch(tchr, tstart, tend):
+        rec = rec + 1
+
+    selected_inds = random.sample(range(rec), min(max_read_num, rec))
+
+    rec2 = 0
+    for read in bam_ps.fetch(tchr, tstart, tend):
+        if rec2 in selected_inds:
+            yield read
+        rec2 = rec2 + 1
+
 # function for gathering sequence read for realignment validation
 def gather_local_read_for_realignment(sv_file, bam_file, output_file, 
-    sbnd_file = None, output_file_sbnd = None, validate_sequence_length = 200):
+    sbnd_file = None, output_file_sbnd = None, validate_sequence_length = 200, check_read_max_num = 500):
 
     bam_ps = pysam.AlignmentFile(bam_file, "rb")
 
@@ -18,7 +33,6 @@ def gather_local_read_for_realignment(sv_file, bam_file, output_file,
     with open(sv_file, 'r') as hin:
         for line in hin:
             if line.startswith("#") or line.startswith("Chr_1"): continue
-
             F = line.rstrip('\n').split('\t')
             tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq, tid = F[0], int(F[1]), F[2], F[3], int(F[4]), F[5], F[6], F[7]
             # if tinseq == "---": tinseq = ''
@@ -26,15 +40,17 @@ def gather_local_read_for_realignment(sv_file, bam_file, output_file,
 
             if key not in key2rname2mapq: key2rname2mapq[key] = {}
 
-            for read in bam_ps.fetch(tchr1, max(tpos1 - 100, 0), tpos1 + 100):
-
+            # for read in bam_ps.fetch(tchr1, max(tpos1 - 100, 0), tpos1 + 100):
+            for read in bam_subsample_fetch(bam_ps, tchr1, max(tpos1 - 100, 0), tpos1 + 100):
+    
                 if read.qname not in rname2key: rname2key[read.qname] = []
                 rname2key[read.qname].append(key)
 
                 if read.qname not in key2rname2mapq[key]: key2rname2mapq[key][read.qname] = [None, None]
                 key2rname2mapq[key][read.qname][0] = read.mapping_quality
 
-            for read in bam_ps.fetch(tchr2, max(tpos2 - 100, 0), tpos2 + 100):
+            # for read in bam_ps.fetch(tchr2, max(tpos2 - 100, 0), tpos2 + 100):
+            for read in bam_subsample_fetch(bam_ps, tchr2, max(tpos2 - 100, 0), tpos2 + 100):
 
                 if read.qname not in rname2key: rname2key[read.qname] = []
                 rname2key[read.qname].append(key)
@@ -60,8 +76,9 @@ def gather_local_read_for_realignment(sv_file, bam_file, output_file,
 
                 if key not in key2rname2mapq_sbnd: key2rname2mapq_sbnd[key] = {}
 
-                for read in bam_ps.fetch(tchr, max(tpos - 100, 0), tpos + 100):
-                
+                # for read in bam_ps.fetch(tchr, max(tpos - 100, 0), tpos + 100):
+                for read in bam_subsample_fetch(bam_ps, tchr, max(tpos - 100, 0), tpos + 100):
+
                     if read.qname not in rname2key_sbnd: rname2key_sbnd[read.qname] = []
                     rname2key_sbnd[read.qname].append(key)
                     
@@ -361,11 +378,12 @@ class Alignment_counter(object):
 
 def count_sread_by_alignment(sv_file, bam_file, output_count_file, output_alignment_info_file, reference_fasta, 
     sbnd_file = None, output_count_file_sbnd = None, output_alignment_info_file_sbnd = None,
-    var_read_min_mapq = 0, use_ssw_lib = False, debug = False):
+    check_read_max_num = 500, var_read_min_mapq = 0, use_ssw_lib = False, debug = False):
 
     gather_local_read_for_realignment(sv_file, bam_file, output_count_file + ".tmp.local_read_for_realignment",
         sbnd_file = sbnd_file, 
-        output_file_sbnd = output_count_file_sbnd + ".tmp.local_read_for_realignment" if output_count_file_sbnd is not None else None)
+        output_file_sbnd = output_count_file_sbnd + ".tmp.local_read_for_realignment" if output_count_file_sbnd is not None else None,
+        check_read_max_num = check_read_max_num)
 
     alignment_counter = Alignment_counter(output_count_file, output_alignment_info_file, reference_fasta,
         var_read_min_mapq, use_ssw_lib, debug)
