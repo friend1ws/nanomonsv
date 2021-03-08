@@ -15,10 +15,14 @@ def get_refined_bp_sbnd(tconsensus, fasta_file_h, tchr, tstart, tend, tdir, hout
 
     tconsensus_part = tconsensus[:1000] if len(tconsensus) > 1000 else tconsensus
 
+    ref_len = fasta_file_h.get_reference_length(tchr)
+    if tstart < 1: tstart = 1
+    if ref_len < tend: tend = ref_len 
+
     if tdir == '+':
-        qseq = fasta_file_h.fetch(tchr, int(tstart) - margin, int(tend))
+        qseq = fasta_file_h.fetch(tchr, max(int(tstart) - margin, 0), int(tend))
     else:
-        qseq = fasta_file_h.fetch(tchr, int(tstart), int(tend) + margin)
+        qseq = fasta_file_h.fetch(tchr, max(int(tstart) - 1, 0), int(tend) + margin)
         qseq = reverse_complement(qseq)
 
     user_matrix = parasail.matrix_create("ACGT", 1, -2)

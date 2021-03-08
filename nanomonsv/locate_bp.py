@@ -17,8 +17,14 @@ def get_refined_bp(contig, fasta_file_ins, chr1, start1, end1, dir1, chr2, start
 
     if mode != "i":
 
+        ref_len1 = fasta_file_ins.get_reference_length(chr1)
+        ref_len2 = fasta_file_ins.get_reference_length(chr2)
+
         bstart1, bend1 = max(int(start1) - rd_margin, 1), int(end1) + rd_margin
         bstart2, bend2 = max(int(start2) - rd_margin, 1), int(end2) + rd_margin
+
+        if ref_len1 < bend1: bend1 = ref_len1
+        if ref_len2 < bend2: bend2 = ref_len2    
 
         region1_seq = fasta_file_ins.fetch(chr1, bstart1 - 1, bend1)
         region2_seq = fasta_file_ins.fetch(chr2, bstart2 - 1, bend2)
