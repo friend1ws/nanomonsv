@@ -18,7 +18,7 @@ Precise characterization of somatic structural variations and mobile element ins
 [htslib](http://www.htslib.org/), [mafft](https://mafft.cbrc.jp/alignment/software/), [racon](https://github.com/isovic/racon)(optional from ver. 0.3.0, use --use_racon option. However, we recommend to use this option.)
 
 ### Python
-Pytnon (tested with 3.5, 3.6, 3.7), pysam, numpy, parasail
+Pytnon (tested with >=3.6), pysam, numpy, parasail
 
 > [SSW Library](https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library) (This became optional since version 0.2.0. We have changed the main engine of Smith-Waterman algorithm to parasail.)
 
@@ -104,8 +104,7 @@ nanomonsv parse [-h] [--debug]
 See the help (`nanomonsv parse -h`) for other options.
 
 After successful completion, you will find supporting reads stratified by deletions, insertions, and rearrangements
-({output_prefix}.deletion.sorted.bed.gz, {output_prefix}.insertion.sorted.bed.gz, {output_prefix}.rearrangement.sorted.bedpe.gz, and {output_prefix}.bp_info.sorted.bed.gz)
-and their indexes (.tbi files). 
+({output_prefix}.deletion.sorted.bed.gz, {output_prefix}.insertion.sorted.bed.gz, {output_prefix}.rearrangement.sorted.bedpe.gz, and {output_prefix}.bp_info.sorted.bed.gz and their indexes (.tbi files). 
 
 
 ### get
@@ -132,6 +131,7 @@ nanomonsv get [-h] [--control_prefix CONTROL_PREFIX]
  
 This software can generate a list of SVs without specifying the matched control.
 But we have not tested the performance of the approach just using tumor sample, and strongly recommend using the matched control data.
+Even when only tumor sample is available, we still recommend using non-matched (collected from other person's tissue) control sample.
 - **control_prefix**: Prefix to the matched control data set in the parse step
 - **control_bam**: Path to the matched control BAM file
 
@@ -146,6 +146,7 @@ and polishing of inserted sequences.
 
 Also, we have prepared the script (misc/post_fileter.py) for filtering the result.
 Please see the [wiki page](https://github.com/friend1ws/nanomonsv/wiki/filter).
+For output files of the version 0.4.0 and later, some filtering has already been performed.
 
 From the version 0.4.0, we will also provide the VCF format result files.
 
