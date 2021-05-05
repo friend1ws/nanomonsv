@@ -5,7 +5,7 @@
 
 ## Introduction
 
-nanomonsv is a software for detecting somatic structural variations from paired (tumor and matched control) cancer genome sequence data. nanomonsv is presented in the following preprint. **If you use nanomonsv or any resource of this repository, please kindly site this preprint**.
+nanomonsv is a software for detecting somatic structural variations from paired (tumor and matched control) cancer genome sequence data. nanomonsv is presented in the following preprint. **When you use nanomonsv or any resource of this repository, please kindly site this preprint**.
 
 Precise characterization of somatic structural variations and mobile element insertions from paired long-read sequencing data with nanomonsv, Shiraishi et al., bioRxiv, 2020, [[link]](https://www.biorxiv.org/content/10.1101/2020.07.22.214262v1)
 
@@ -15,7 +15,7 @@ Precise characterization of somatic structural variations and mobile element ins
 
 ### Binary programs
 
-[htslib](http://www.htslib.org/), [mafft](https://mafft.cbrc.jp/alignment/software/), [racon](https://github.com/isovic/racon)(optional from ver. 0.3.0, use --use_racon option. However, we recommend to use this option.)
+[htslib](http://www.htslib.org/), [mafft](https://mafft.cbrc.jp/alignment/software/), [racon](https://github.com/isovic/racon)(optional from ver. 0.3.0. However, we recommend to use this option. Add --use_racon option when you perfrom get command.)
 
 ### Python
 Pytnon (tested with >=3.6), pysam, numpy, parasail
