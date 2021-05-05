@@ -169,6 +169,7 @@ From the version 0.4.0, we will also provide the VCF format result files.
 ### insert_classify
 
 This command classifies the long insertions into several mobile element insertions (still in alpha version).
+This does not yet support VCF format, but we will do so in the near future.
 
 ```
 nanomonsv insert_classify [-h] [--grc] [--genome_id {hg19,hg38,mm10}]
