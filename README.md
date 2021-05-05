@@ -84,7 +84,7 @@ The Oxford Nanopore Sequencing data used in the bioRxiv paper is available throu
 - HCC1954: [tumor](https://www.ncbi.nlm.nih.gov/sra/DRX248306[accn]), [control](https://www.ncbi.nlm.nih.gov/sra/DRX248307[accn])
 
 When you perfrom nanomonsv to the above data and have experienced errors, please report to us.
-Also, please kindly cite the [bioRxiv paper](https://www.biorxiv.org/content/10.1101/2020.07.22.214262v1) if you use these data.
+Also, please kindly cite the [bioRxiv paper](https://www.biorxiv.org/content/10.1101/2020.07.22.214262v1) when you use these data.
 
 ## Commands
 
@@ -131,7 +131,7 @@ nanomonsv get [-h] [--control_prefix CONTROL_PREFIX]
  
 This software can generate a list of SVs without specifying the matched control.
 But we have not tested the performance of the approach just using tumor sample, and strongly recommend using the matched control data.
-Even when only tumor sample is available, we still recommend using non-matched (collected from other person's tissue) control sample.
+Even when only tumor sample is available, we still recommend using non-matched control sample (collected from other person's tissue).
 - **control_prefix**: Prefix to the matched control data set in the parse step
 - **control_bam**: Path to the matched control BAM file
 
