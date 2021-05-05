@@ -145,8 +145,8 @@ Also, we basically recommend to use `--use_racon` option. This will slightly imp
 and polishing of inserted sequences. 
 
 Also, we have prepared the script (misc/post_fileter.py) for filtering the result.
-Please see the [wiki page](https://github.com/friend1ws/nanomonsv/wiki/filter).
-For output files of the version 0.4.0 and later, some filtering has already been performed.
+Please see the [wiki page](https://github.com/friend1ws/nanomonsv/wiki/How-to-filter-nanomonsv-result).
+For output files of the version 0.4.0 and later, some filtering has already been performed (see the [wiki page](https://github.com/friend1ws/nanomonsv/wiki/How-to-understand-nanomonsv-result-filtering)). 
 
 From the version 0.4.0, we will also provide the VCF format result files.
 
@@ -159,10 +159,12 @@ From the version 0.4.0, we will also provide the VCF format result files.
 * **Pos_2**: Coordinate for the 2nd breakpoint
 * **Dir_2**: Direction of the 2nd breakpoint
 * **Inserted_Seq**: Inserted nucleotides within the breakpoints
+* **SV_ID**: Identifier of SVs (originally comming from cluster of SV supporting reads)
 * **Checked_Read_Num_Tumor**: Total number of reads in the tumor used for the validation alignment step
 * **Supporting_Read_Num_Tumor**: Total number of variant reads in the tumor determined in the validation alignment step
 * **Checked_Read_Num_Control**: Total number of reads in the normal used for the validation alignment step
 * **Supporting_Read_Num_Control**: Total number of variant reads in the matched control determined in the validation alignment step
+* **Is_Filter**: Filter status. PASS if this SV has passed all the filters
 
 ### insert_classify
 
