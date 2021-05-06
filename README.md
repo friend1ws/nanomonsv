@@ -136,7 +136,7 @@ Even when only tumor sample is available, we still recommend using non-matched c
 - **control_prefix**: Prefix to the matched control data set in the parse step
 - **control_bam**: Path to the matched control BAM file
 
-After successful execution, you will be able to find the result file names as {tumor_prefix}.nanomonsv.result.txt
+After successful execution, you will be able to find the result file names as {tumor_prefix}.nanomonsv.result.txt.
 See the help (`nanomonsv get -h`) for other options. 
 
 When you want to change the engine of Smith-Waterman algorithm to SSW Library, specify `--use_ssw_lib` option,
