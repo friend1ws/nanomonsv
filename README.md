@@ -83,6 +83,7 @@ The Oxford Nanopore Sequencing data used in the bioRxiv paper is available throu
 - H2009: [tumor](https://www.ncbi.nlm.nih.gov/sra/DRX248308[accn]), [control](https://www.ncbi.nlm.nih.gov/sra/DRX248309[accn])
 - HCC1954: [tumor](https://www.ncbi.nlm.nih.gov/sra/DRX248306[accn]), [control](https://www.ncbi.nlm.nih.gov/sra/DRX248307[accn])
 
+The result of nanomonsv is available [here](https://github.com/friend1ws/nanomonsv/tree/master/misc/example/v0.4.0).
 When you perfrom nanomonsv to the above data and have experienced errors, please report to us.
 Also, please kindly cite the [bioRxiv paper](https://www.biorxiv.org/content/10.1101/2020.07.22.214262v1) when you use these data.
 
