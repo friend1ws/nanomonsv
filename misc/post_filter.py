@@ -11,8 +11,8 @@ logger = get_logger(__name__)
 class Sv(object):
 
     def __init__(self, tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq, 
-        total_read_tumor = None, var_read_tumor = None, total_read_ctrl = None, var_read_ctrl = None, print_line = None,
-        insert_type = None):
+        total_read_tumor = None, var_read_tumor = None, total_read_ctrl = None, var_read_ctrl = None, 
+        insert_type = None, print_line = None):
 
         self.chr1 = tchr1
         self.pos1 = tpos1
@@ -49,10 +49,10 @@ class Duplicate_remover(object):
         if self.simple_repeat_tb is not None: self.simple_repeat_tb.close()
 
     def add_sv(self, tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq,
-        total_read_tumor, var_read_tumor, total_read_ctrl, var_read_ctrl, print_line):
+        total_read_tumor, var_read_tumor, total_read_ctrl, var_read_ctrl, insert_type, print_line):
                      
         sv = Sv(tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq, 
-            total_read_tumor, var_read_tumor, total_read_ctrl, var_read_ctrl, print_line)
+            total_read_tumor, var_read_tumor, total_read_ctrl, var_read_ctrl, insert_type, print_line)
         self.sv_list.append(sv)
 
 
@@ -260,6 +260,11 @@ def post_filter_main(args):
             else:
                 total_read_ctrl, var_read_ctrl = None, None
 
+            if is_insert_type:
+                insert_type = F["Insert_Type"] if F["Insert_Type"] not in ["None", "---"] else None
+            else:
+                insert_type = None
+
             """
             # filtering by supporting read and variant frequencies
             if total_read_tumor == 0: continue
@@ -275,7 +280,7 @@ def post_filter_main(args):
             duplicate_remover.add_sv(tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq,
                 total_read_tumor = total_read_tumor, var_read_tumor = var_read_tumor, 
                 total_read_ctrl = total_read_ctrl, var_read_ctrl = var_read_ctrl, 
-                print_line = '\t'.join(F.values()))
+                insert_type = insert_type, print_line = '\t'.join(F.values()))
 
 
     duplicate_remover.apply_filters()
