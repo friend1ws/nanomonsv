@@ -1,11 +1,11 @@
 # nanomonsv
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![Build Status](https://travis-ci.org/friend1ws/nanomonsv.svg?branch=master)](https://travis-ci.org/friend1ws/nanomonsv)
+[![Build Status](https://travis-ci.com/friend1ws/nanomonsv.svg?branch=master)](https://travis-ci.com/friend1ws/nanomonsv.svg?branch=master&status=started)
 
 ## Introduction
 
-nanomonsv is a software for detecting somatic structural variations from paired (tumor and matched control) cancer genome sequence data. nanomonsv is presented in the following preprint. **If you use nanomonsv or any resource of this repository, please kindly site this preprint**.
+nanomonsv is a software for detecting somatic structural variations from paired (tumor and matched control) cancer genome sequence data. nanomonsv is presented in the following preprint. **When you use nanomonsv or any resource of this repository, please kindly site this preprint**.
 
 Precise characterization of somatic structural variations and mobile element insertions from paired long-read sequencing data with nanomonsv, Shiraishi et al., bioRxiv, 2020, [[link]](https://www.biorxiv.org/content/10.1101/2020.07.22.214262v1)
 
@@ -15,10 +15,10 @@ Precise characterization of somatic structural variations and mobile element ins
 
 ### Binary programs
 
-[htslib](http://www.htslib.org/), [mafft](https://mafft.cbrc.jp/alignment/software/), [racon](https://github.com/isovic/racon)(optional from ver. 0.3.0, use --use_racon option)
+[htslib](http://www.htslib.org/), [mafft](https://mafft.cbrc.jp/alignment/software/), [racon](https://github.com/isovic/racon)(optional from ver. 0.3.0. However, we recommend to use this option. Add --use_racon option when you perfrom get command.)
 
 ### Python
-Pytnon (tested with 3.5, 3.6, 3.7), pysam, numpy, parasail
+Pytnon (tested with >=3.6), pysam, numpy, parasail
 
 > [SSW Library](https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library) (This became optional since version 0.2.0. We have changed the main engine of Smith-Waterman algorithm to parasail.)
 
@@ -76,6 +76,17 @@ nanomonsv get output/test_tumor tests/resource/bam/test_tumor.bam GRCh38.d1.vd1.
 
 You will see the result file named as `test_tumor.nanomonsv.result.txt`.
 
+## Realistic example sequencing data
+
+The Oxford Nanopore Sequencing data used in the bioRxiv paper is available through the public sequence repository service (BioProject ID: PRJDB10898):
+- COLO829: [tumor](https://www.ncbi.nlm.nih.gov/sra/DRX248304[accn]), [control](https://www.ncbi.nlm.nih.gov/sra/DRX248305[accn])
+- H2009: [tumor](https://www.ncbi.nlm.nih.gov/sra/DRX248308[accn]), [control](https://www.ncbi.nlm.nih.gov/sra/DRX248309[accn])
+- HCC1954: [tumor](https://www.ncbi.nlm.nih.gov/sra/DRX248306[accn]), [control](https://www.ncbi.nlm.nih.gov/sra/DRX248307[accn])
+
+The results of nanomonsv for the above data are available [here](https://github.com/friend1ws/nanomonsv/tree/master/misc/example).
+When you perfrom nanomonsv to the above data and have experienced errors, please report to us.
+Also, please kindly cite the [bioRxiv paper](https://www.biorxiv.org/content/10.1101/2020.07.22.214262v1) when you use these data.
+
 ## Commands
 
 ### parse
@@ -94,8 +105,7 @@ nanomonsv parse [-h] [--debug]
 See the help (`nanomonsv parse -h`) for other options.
 
 After successful completion, you will find supporting reads stratified by deletions, insertions, and rearrangements
-({output_prefix}.deletion.sorted.bed.gz, {output_prefix}.insertion.sorted.bed.gz, and {output_prefix}.rearrangement.sorted.bedpe.gz)
-and their indexes (.tbi files). 
+({output_prefix}.deletion.sorted.bed.gz, {output_prefix}.insertion.sorted.bed.gz, {output_prefix}.rearrangement.sorted.bedpe.gz, and {output_prefix}.bp_info.sorted.bed.gz and their indexes (.tbi files). 
 
 
 ### get
@@ -122,17 +132,24 @@ nanomonsv get [-h] [--control_prefix CONTROL_PREFIX]
  
 This software can generate a list of SVs without specifying the matched control.
 But we have not tested the performance of the approach just using tumor sample, and strongly recommend using the matched control data.
+Even when only tumor sample is available, we still recommend using non-matched control sample (collected from other person's tissue).
 - **control_prefix**: Prefix to the matched control data set in the parse step
 - **control_bam**: Path to the matched control BAM file
 
-After successful execution, you will be able to find the result file names as {tumor_prefix}.nanomonsv.result.txt
+After successful execution, you will be able to find the result file names as {tumor_prefix}.nanomonsv.result.txt.
 See the help (`nanomonsv get -h`) for other options. 
 
 When you want to change the engine of Smith-Waterman algorithm to SSW Library, specify `--use_ssw_lib` option,
 though we do not generally recomend this.
 
+Also, we basically recommend to use `--use_racon` option. This will slightly improve the identification of single-base resolution breakpoint, 
+and polishing of inserted sequences. 
+
 Also, we have prepared the script (misc/post_fileter.py) for filtering the result.
-Please see the [wiki page](https://github.com/friend1ws/nanomonsv/wiki/filter).
+Please see the [wiki page](https://github.com/friend1ws/nanomonsv/wiki/How-to-filter-nanomonsv-result).
+For output files of the version 0.4.0 and later, some filtering has already been performed (see the [wiki page](https://github.com/friend1ws/nanomonsv/wiki/How-to-understand-nanomonsv-result-filtering)). 
+
+From the version 0.4.0, we will also provide the VCF format result files.
 
 #### result
 
@@ -143,14 +160,17 @@ Please see the [wiki page](https://github.com/friend1ws/nanomonsv/wiki/filter).
 * **Pos_2**: Coordinate for the 2nd breakpoint
 * **Dir_2**: Direction of the 2nd breakpoint
 * **Inserted_Seq**: Inserted nucleotides within the breakpoints
+* **SV_ID**: Identifier of SVs (originally comming from cluster of SV supporting reads)
 * **Checked_Read_Num_Tumor**: Total number of reads in the tumor used for the validation alignment step
 * **Supporting_Read_Num_Tumor**: Total number of variant reads in the tumor determined in the validation alignment step
 * **Checked_Read_Num_Control**: Total number of reads in the normal used for the validation alignment step
 * **Supporting_Read_Num_Control**: Total number of variant reads in the matched control determined in the validation alignment step
+* **Is_Filter**: Filter status. PASS if this SV has passed all the filters
 
 ### insert_classify
 
 This command classifies the long insertions into several mobile element insertions (still in alpha version).
+This does not yet support VCF format, but we will do so in the near future.
 
 ```
 nanomonsv insert_classify [-h] [--grc] [--genome_id {hg19,hg38,mm10}]
@@ -168,10 +188,10 @@ nanomonsv insert_classify [-h] [--grc] [--genome_id {hg19,hg38,mm10}]
 * **Is_Inversion**: Type of inverted form for Solo LINE1 insertion (Simple, Inverted, Other)
 * **L1_Raito**: The match rate with LINE1 sequences for the inserted sequences
 * **Alu_Ratio**: The match rate with Alu sequences for the inserted sequences
-* **SV_Ratio**: The match rate with SVA sequences for the inserted sequences
+* **SVA_Ratio**: The match rate with SVA sequences for the inserted sequences
 * **RMSK_Info**: Summary information of RepeatMasker
 * **Alignment_Info**: Alignment information to the human genome
-* **Inserted_Pos**: Inserted position (appears only when the inserted sequence is aligned near the inserted positions and implicated to be the tandem duplication or nested LINE1 transduction).
+* **Inserted_Pos**: Inserted position (appears only when the inserted sequence is aligned near the other insertion and implicated to be the tandem duplication or nested LINE1 transduction).
 * **Is_PolyA_T**: Extracted poly-A or poly-T sequences
 * **Target_Site_Duplication**: Nucleotides of target site duplications
 * **L1_Source_Info**: Inferred source site of LINE1 transduction

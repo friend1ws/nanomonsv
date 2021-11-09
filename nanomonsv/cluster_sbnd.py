@@ -139,7 +139,7 @@ def cluster_supporting_reads_sbnd(input_file, output_file, control_bed = None,
         for line in hin:
 
             tchr, _, tpos, treadid, _, tdir, tinfo = line.rstrip('\n').split('\t')
-            tstart = int(tpos) - sbnd_cluster_margin_size
+            tstart = max(int(tpos) - sbnd_cluster_margin_size, 0)
             tend = int(tpos) + sbnd_cluster_margin_size
 
             # skip single breakend from secondary alignment

@@ -77,6 +77,9 @@ def create_parser():
     get.add_argument("--max_overhang_size_thres", default = 100, type = int,
                      help = "Threshould for maximum overhang size")
 
+    get.add_argument("--check_read_max_num", default = 500, type = int,
+                     help = "The maximum number of reads to check per breakpoint in the phase of realignment validation")
+
     get.add_argument("--var_read_min_mapq", default = 0, type = int,
                      help = "Threshould for mapping quality in validate step")
 

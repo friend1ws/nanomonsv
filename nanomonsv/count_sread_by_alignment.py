@@ -1,15 +1,30 @@
 #! /usr/bin/env python3
 
-import sys, os, subprocess, shutil
+import sys, os, subprocess, shutil, random
 import pysam
 import parasail
 
 from .pyssw import *
 from .my_seq import reverse_complement
 
+# when the total read number exceeds max_read_num, then max_read_num reads are randomly selected
+def bam_subsample_fetch(bam_ps, tchr, tstart, tend, max_read_num = 500):
+
+    rec = 0
+    for read in bam_ps.fetch(tchr, tstart, tend):
+        rec = rec + 1
+
+    selected_inds = random.sample(range(rec), min(max_read_num, rec))
+
+    rec2 = 0
+    for read in bam_ps.fetch(tchr, tstart, tend):
+        if rec2 in selected_inds:
+            yield read
+        rec2 = rec2 + 1
+
 # function for gathering sequence read for realignment validation
 def gather_local_read_for_realignment(sv_file, bam_file, output_file, 
-    sbnd_file = None, output_file_sbnd = None, validate_sequence_length = 200):
+    sbnd_file = None, output_file_sbnd = None, validate_sequence_length = 200, check_read_max_num = 500):
 
     bam_ps = pysam.AlignmentFile(bam_file, "rb")
 
@@ -18,23 +33,24 @@ def gather_local_read_for_realignment(sv_file, bam_file, output_file,
     with open(sv_file, 'r') as hin:
         for line in hin:
             if line.startswith("#") or line.startswith("Chr_1"): continue
-
             F = line.rstrip('\n').split('\t')
-            tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq = F[0], int(F[1]), F[2], F[3], int(F[4]), F[5], F[6]
+            tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq, tid = F[0], int(F[1]), F[2], F[3], int(F[4]), F[5], F[6], F[7]
             # if tinseq == "---": tinseq = ''
-            key = f"{tchr1},{tpos1},{tdir1},{tchr2},{tpos2},{tdir2},{tinseq}"
+            key = f"{tchr1},{tpos1},{tdir1},{tchr2},{tpos2},{tdir2},{tinseq},{tid}"
 
             if key not in key2rname2mapq: key2rname2mapq[key] = {}
 
-            for read in bam_ps.fetch(tchr1, max(tpos1 - 100, 0), tpos1 + 100):
-
+            # for read in bam_ps.fetch(tchr1, max(tpos1 - 100, 0), tpos1 + 100):
+            for read in bam_subsample_fetch(bam_ps, tchr1, max(tpos1 - 100, 0), tpos1 + 100):
+    
                 if read.qname not in rname2key: rname2key[read.qname] = []
                 rname2key[read.qname].append(key)
 
                 if read.qname not in key2rname2mapq[key]: key2rname2mapq[key][read.qname] = [None, None]
                 key2rname2mapq[key][read.qname][0] = read.mapping_quality
 
-            for read in bam_ps.fetch(tchr2, max(tpos2 - 100, 0), tpos2 + 100):
+            # for read in bam_ps.fetch(tchr2, max(tpos2 - 100, 0), tpos2 + 100):
+            for read in bam_subsample_fetch(bam_ps, tchr2, max(tpos2 - 100, 0), tpos2 + 100):
 
                 if read.qname not in rname2key: rname2key[read.qname] = []
                 rname2key[read.qname].append(key)
@@ -55,22 +71,23 @@ def gather_local_read_for_realignment(sv_file, bam_file, output_file,
             for line in hin:
                 if line.startswith("#") or line.startswith("Chr_1"): continue
                 F = line.rstrip('\n').split('\t')
-                tchr, tpos, tdir, tseq = F[0], int(F[1]), F[2], F[3][:validate_sequence_length]
-                key = f"{tchr},{tpos},{tdir},{tseq}"
+                tchr, tpos, tdir, tseq, tid = F[0], int(F[1]), F[2], F[3][:validate_sequence_length], F[4]
+                key = f"{tchr},{tpos},{tdir},{tseq},{tid}"
 
                 if key not in key2rname2mapq_sbnd: key2rname2mapq_sbnd[key] = {}
 
-                for read in bam_ps.fetch(tchr, max(tpos - 100, 0), tpos + 100):
-                
+                # for read in bam_ps.fetch(tchr, max(tpos - 100, 0), tpos + 100):
+                for read in bam_subsample_fetch(bam_ps, tchr, max(tpos - 100, 0), tpos + 100):
+
                     if read.qname not in rname2key_sbnd: rname2key_sbnd[read.qname] = []
                     rname2key_sbnd[read.qname].append(key)
                     
                     key2rname2mapq_sbnd[key][read.qname] = read.mapping_quality
 
-    # remove duplicated keys
-    for rname in rname2key_sbnd:
-        keys = list(set(rname2key_sbnd[rname]))
-        rname2key_sbnd[rname] = keys
+        # remove duplicated keys
+        for rname in rname2key_sbnd:
+            keys = list(set(rname2key_sbnd[rname]))
+            rname2key_sbnd[rname] = keys
 
  
     hout = open(output_file + ".tmp.unsorted", 'w')
@@ -103,6 +120,8 @@ def gather_local_read_for_realignment(sv_file, bam_file, output_file,
                 mapq = key2rname2mapq_sbnd[key][read.qname]
                 print(f"{key}\t{read.qname}\t{mapq}\tNone\t{read_seq}", file = hout_sbnd)
 
+    hout.close()
+    if sbnd_file is not None: hout_sbnd.close()
 
     with open(output_file, 'w') as hout:
         subprocess.call(["sort", "-k1,1", output_file + ".tmp.unsorted"], stdout = hout)
@@ -189,8 +208,8 @@ class Alignment_counter(object):
         self.temp_key = key
         # the insertion sequence is converted to its length. this is to shorten file names.
         tkeys = self.temp_key.split(',')
-        tkeys[-1] = '' if tkeys[-1] == '---' else tkeys[-1]
-        tkeys[-1] = str(len(tkeys[-1]))
+        tkeys[-2] = '' if tkeys[-2] == '---' else tkeys[-1]
+        tkeys[-2] = str(len(tkeys[-2]))
         self.temp_key2 = ','.join(tkeys)
         self.readid2mapq = {}
         self.temp_long_read_seq_file_h = open(self.tmp_dir + '/' + self.temp_key2 + ".long_read_seq.fa", 'w')
@@ -201,7 +220,7 @@ class Alignment_counter(object):
 
     def generate_segment_fasta_files(self):
 
-        tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq = self.temp_key.split(',')
+        tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq, tid = self.temp_key.split(',')
         tpos1, tpos2 = int(tpos1), int(tpos2)
         tinseq = '' if tinseq == "---" else tinseq
 
@@ -236,7 +255,7 @@ class Alignment_counter(object):
 
     def generate_segment_fasta_files_sbnd(self):
 
-        tchr, tpos, tdir, tcontig = self.temp_key.split(',')
+        tchr, tpos, tdir, tcontig, tid = self.temp_key.split(',')
         tpos = int(tpos)
 
         # referene_local_seq
@@ -308,13 +327,13 @@ class Alignment_counter(object):
             self.readid2mapq[rname][1] is not None and self.readid2mapq[rname][1] >= self.var_read_min_mapq]
 
 
-        tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq = self.temp_key.split(',')
-        print(f"{tchr1}\t{tpos1}\t{tdir1}\t{tchr2}\t{tpos2}\t{tdir2}\t{tinseq}\t{len(all_rnames)}\t{len(supporting_reads)}", file = self.hout_count)
+        tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq, tid = self.temp_key.split(',')
+        print(f"{tchr1}\t{tpos1}\t{tdir1}\t{tchr2}\t{tpos2}\t{tdir2}\t{tinseq}\t{tid}\t{len(all_rnames)}\t{len(supporting_reads)}", file = self.hout_count)
         
         sread_info = { rname: alignment_info_var_1[rname] + alignment_info_var_2[rname] for rname in supporting_reads}
         for rname in supporting_reads:
             sinfo = '\t'.join([str(x) for x in alignment_info_var_1[rname] + alignment_info_var_2[rname]])
-            print(f"{tchr1}\t{tpos1}\t{tdir1}\t{tchr2}\t{tpos2}\t{tdir2}\t{tinseq}\t{rname}\t{sinfo}", file = self.hout_ainfo)
+            print(f"{tchr1}\t{tpos1}\t{tdir1}\t{tchr2}\t{tpos2}\t{tdir2}\t{tinseq}\t{tid}\t{rname}\t{sinfo}", file = self.hout_ainfo)
 
 
     def count_alignment_and_print_sbnd(self):
@@ -347,22 +366,24 @@ class Alignment_counter(object):
         supporting_reads = [rname for rname in supporting_reads if \
             self.readid2mapq[rname][0] is not None and self.readid2mapq[rname][0] >= self.var_read_min_mapq]
 
-        tchr, tpos, tdir, tcontig = self.temp_key.split(',')
-        print(f"{tchr}\t{tpos}\t{tdir}\t{tcontig}\t{len(all_rnames)}\t{len(supporting_reads)}", file = self.hout_count)
+        tchr, tpos, tdir, tcontig, tid = self.temp_key.split(',')
+        print(f"{tchr}\t{tpos}\t{tdir}\t{tcontig}\t{tid}\t{len(all_rnames)}\t{len(supporting_reads)}", file = self.hout_count)
 
         sread_info = { rname: alignment_info_var_1[rname] for rname in supporting_reads}
         for rname in supporting_reads:
             sinfo = '\t'.join([str(x) for x in alignment_info_var_1[rname] ])
-            print(f"{tchr}\t{tpos}\t{tdir}\t{tcontig}\t{rname}\t{sinfo}", file = self.hout_ainfo)
+            print(f"{tchr}\t{tpos}\t{tdir}\t{tcontig}\t{tid}\t{rname}\t{sinfo}", file = self.hout_ainfo)
 
 
 
 def count_sread_by_alignment(sv_file, bam_file, output_count_file, output_alignment_info_file, reference_fasta, 
     sbnd_file = None, output_count_file_sbnd = None, output_alignment_info_file_sbnd = None,
-    var_read_min_mapq = 0, use_ssw_lib = False, debug = False):
+    check_read_max_num = 500, var_read_min_mapq = 0, use_ssw_lib = False, debug = False):
 
     gather_local_read_for_realignment(sv_file, bam_file, output_count_file + ".tmp.local_read_for_realignment",
-        sbnd_file = sbnd_file, output_file_sbnd = output_count_file_sbnd + ".tmp.local_read_for_realignment")
+        sbnd_file = sbnd_file, 
+        output_file_sbnd = output_count_file_sbnd + ".tmp.local_read_for_realignment" if output_count_file_sbnd is not None else None,
+        check_read_max_num = check_read_max_num)
 
     alignment_counter = Alignment_counter(output_count_file, output_alignment_info_file, reference_fasta,
         var_read_min_mapq, use_ssw_lib, debug)

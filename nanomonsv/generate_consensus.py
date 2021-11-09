@@ -127,6 +127,7 @@ class Consensus_generator(object):
 
     def print_consensus_racon(self):
 
+        target_flag = False
         with open(self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa", 'r') as hin, \
             open(self.tmp_dir + '/' + self.temp_key + ".tmp.seg.first.fa", 'w') as hout: 
             for line in hin:
@@ -135,8 +136,12 @@ class Consensus_generator(object):
 
                 if not self.readid2is_bp[tid]:
                     print(f'>{tid}\n{tseq}', file = hout)
+                    target_flag = True
                     break
 
+        if target_flag == False:
+            logger.debug(f"Template sequence could not be found for for {self.temp_key}")
+            return
 
         paf_rec_count = self.generate_paf_file(self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa",
             self.tmp_dir + '/' + self.temp_key + ".tmp.seg.first.fa",
@@ -145,13 +150,17 @@ class Consensus_generator(object):
         if paf_rec_count < 3: 
             logger.debug(f"Not enough PAF records for the first round consensus generation for {self.temp_key}")
             return
- 
-        with open(self.tmp_dir + '/' + self.temp_key + ".racon1.fa", 'w') as hout:
-            subprocess.check_call(["racon", "-u", 
-                self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa",
-                self.tmp_dir + '/' + self.temp_key + ".parasail.paf",
-                self.tmp_dir + '/' + self.temp_key + ".tmp.seg.first.fa"],
-                stdout = hout, stderr = subprocess.DEVNULL)
+
+        try: 
+            with open(self.tmp_dir + '/' + self.temp_key + ".racon1.fa", 'w') as hout:
+                subprocess.check_call(["racon", "-u", 
+                    self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa",
+                    self.tmp_dir + '/' + self.temp_key + ".parasail.paf",
+                    self.tmp_dir + '/' + self.temp_key + ".tmp.seg.first.fa"],
+                    stdout = hout, stderr = subprocess.DEVNULL)
+        except Exception as e:
+            logger.warning(f'{e}')
+            return
 
         with open(self.tmp_dir + '/' + self.temp_key + ".racon1.fa", 'r') as hin, \
             open(self.tmp_dir + "/" + self.temp_key + ".racon1.mod.fa", 'w') as hout:
@@ -168,12 +177,16 @@ class Consensus_generator(object):
             logger.debug(f"Not enough PAF records for the second round consensus generation for {self.temp_key}")
             return
 
-        with open(self.tmp_dir + '/' + self.temp_key + ".racon2.fa", 'w') as hout:
-            subprocess.check_call(["racon", "-u",
-                self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa",
-                self.tmp_dir + '/' + self.temp_key + ".parasail2.paf",
-                self.tmp_dir + '/' + self.temp_key + ".racon1.mod.fa"],
-                stdout = hout, stderr = subprocess.DEVNULL)
+        try:
+            with open(self.tmp_dir + '/' + self.temp_key + ".racon2.fa", 'w') as hout:
+                subprocess.check_call(["racon", "-u",
+                    self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa",
+                    self.tmp_dir + '/' + self.temp_key + ".parasail2.paf",
+                    self.tmp_dir + '/' + self.temp_key + ".racon1.mod.fa"],
+                    stdout = hout, stderr = subprocess.DEVNULL)
+        except Exception as e: 
+            logger.warning(f'{e}')
+            return
 
         with open(self.tmp_dir + "/" + self.temp_key + ".racon2.fa") as hin:
             header = hin.readline()
@@ -235,6 +248,15 @@ class Consensus_generator(object):
                 self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa"], 
                 stderr = subprocess.DEVNULL, stdout = hout)
 
+        paf_rec_count = 0
+        with open(self.tmp_dir + '/' + self.temp_key + "_ova_minimap2.paf", 'r') as hin:
+            for line in hin:
+                paf_rec_count = paf_rec_count + 1
+
+        if paf_rec_count < 3:
+            logger.debug(f"Not enough PAF records for the first round consensus generation for {self.temp_key}")
+            return
+
         consensus = ''
         try:
             with open(self.tmp_dir + '/' + self.temp_key + "_ref_polished.fa", 'w') as hout:
@@ -242,14 +264,14 @@ class Consensus_generator(object):
                     self.tmp_dir + '/' + self.temp_key + "_ova_minimap2.paf",
                     self.tmp_dir + '/' + self.temp_key + "_ref.fa"], 
                     stderr = subprocess.DEVNULL, stdout = hout)
-
-            with open(self.tmp_dir + '/' + self.temp_key + "_ref_polished.fa", 'r') as hin:
-                for line in hin:
-                    if line.startswith('>'): continue
-                    consensus = consensus + line.rstrip('\n')
         except Exception as e:
-            logger.debug(f'{e}')
-            consensus = ''
+            logger.warning(f'{e}')
+            return
+
+        with open(self.tmp_dir + '/' + self.temp_key + "_ref_polished.fa", 'r') as hin:
+            for line in hin:
+                if line.startswith('>'): continue
+                consensus = consensus + line.rstrip('\n')
 
         if len(consensus) < 1000: return
                         
@@ -262,6 +284,15 @@ class Consensus_generator(object):
                 self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa"],
                 stderr = subprocess.DEVNULL, stdout = hout)
 
+        paf_rec_count = 0
+        with open(self.tmp_dir + '/' + self.temp_key + "_ova_minimap2_2nd.paf", 'r') as hin:
+            for line in hin:
+                paf_rec_count = paf_rec_count + 1
+            
+        if paf_rec_count < 3:
+            logger.debug(f"Not enough PAF records for the first round consensus generation for {self.temp_key}")
+            return
+
         consensus = ''
         try:
             with open(self.tmp_dir + '/' + self.temp_key + "_ref_polished_2nd.fa", 'w') as hout:
@@ -269,14 +300,14 @@ class Consensus_generator(object):
                     self.tmp_dir + '/' + self.temp_key + "_ova_minimap2_2nd.paf",
                     self.tmp_dir + '/' + self.temp_key + "_ref_2nd.fa"],
                     stderr = subprocess.DEVNULL, stdout = hout)
-
-            with open(self.tmp_dir + '/' + self.temp_key + "_ref_polished_2nd.fa", 'r') as hin:
-                for line in hin:
-                    if line.startswith('>'): continue
-                    consensus = consensus + line.rstrip('\n')
         except Exception as e:
-            logger.debug(f'{e}')
-            consensus = ''
+            logger.warning(f'{e}')
+            return
+
+        with open(self.tmp_dir + '/' + self.temp_key + "_ref_polished_2nd.fa", 'r') as hin:
+            for line in hin:
+                if line.startswith('>'): continue
+                consensus = consensus + line.rstrip('\n')
 
         print(f"{self.temp_key}\t{consensus}", file = self.hout)
 
@@ -321,7 +352,8 @@ def generate_consensus_sbnd(input_file, output_file, use_racon = False, debug = 
 
             consensus_generator_sbnd.add_support_read_seq(treadid, tseq, tsize)
 
-        consensus_generator_sbnd.print_consensus_sbnd()
+        if consensus_generator_sbnd.temp_key is not None:
+            consensus_generator_sbnd.print_consensus_sbnd()
 
     del consensus_generator_sbnd
 

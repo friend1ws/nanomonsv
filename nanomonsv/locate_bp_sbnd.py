@@ -15,10 +15,14 @@ def get_refined_bp_sbnd(tconsensus, fasta_file_h, tchr, tstart, tend, tdir, hout
 
     tconsensus_part = tconsensus[:1000] if len(tconsensus) > 1000 else tconsensus
 
+    ref_len = fasta_file_h.get_reference_length(tchr)
+    if tstart < 1: tstart = 1
+    if ref_len < tend: tend = ref_len 
+
     if tdir == '+':
-        qseq = fasta_file_h.fetch(tchr, int(tstart) - margin, int(tend))
+        qseq = fasta_file_h.fetch(tchr, max(int(tstart) - margin, 0), int(tend))
     else:
-        qseq = fasta_file_h.fetch(tchr, int(tstart), int(tend) + margin)
+        qseq = fasta_file_h.fetch(tchr, max(int(tstart) - 1, 0), int(tend) + margin)
         qseq = reverse_complement(qseq)
 
     user_matrix = parasail.matrix_create("ACGT", 1, -2)
@@ -48,14 +52,15 @@ def locate_bp_sbnd(consensus_file, output_file, reference_fasta, debug):
             F = line.rstrip('\n').split('\t')
             temp_key, tconsensus = F[0], F[1]
             print(temp_key + '\n' + tconsensus, file = hout_log)
-            tchr, tstart, tend, tdir = temp_key.split(',')
+            tchr, tstart, tend, tdir, _, tcid = temp_key.split(',')
             tstart, tend = int(tstart), int(tend)  
             bret = get_refined_bp_sbnd(tconsensus, fasta_file_ins, tchr, tstart, tend, tdir, hout_log)
             if bret is not None:  
                 bp_pos, tconsensus_after = bret
                 print(bp_pos, tconsensus_after, file = hout_log)
                 print('', file = hout_log)
-                print('\t'.join([tchr, str(bp_pos), tdir, tconsensus_after]), file = hout)
+                print(f"{tchr}\t{bp_pos}\t{tdir}\t{tconsensus_after}\tb_{tcid}", file = hout)
+                # print('\t'.join([tchr, str(bp_pos), tdir, tconsensus_after]), file = hout)
 
     if not debug: os.remove(output_file + ".locate_bp.sbnd.log")
 
