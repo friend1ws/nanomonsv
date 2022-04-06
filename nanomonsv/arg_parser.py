@@ -35,7 +35,19 @@ def create_parser():
 
     parse.set_defaults(func = parse_main)
     ##########
-    
+   
+    ##########
+    # merge_control
+    merge_control = subparsers.add_parser("merge_control", 
+                                          help = "Merge control panel files from parse results")
+
+    merge_control.add_argument("prefix_list_file", default = None, type = str,
+                               help = "Path to prefix for the parse function for control panels")
+        
+    merge_control.add_argument("output_prefix", default = None, type = str,
+                               help = "Prefix of merged control files")
+    ##########
+
     ##########
     # get
     get = subparsers.add_parser("get",

@@ -2,6 +2,7 @@
 
 import os, subprocess, shutil
 from .parse import *
+from .merge_control import *
 from .cluster import *
 from .cluster_sbnd import *
 from .gather_support_read_seq import *
@@ -44,7 +45,7 @@ def parse_main(args):
     ####################
     # deletion processing
     hout = open(args.output_prefix + ".tmp.deletion.sorted.bed", 'w')
-    subprocess.check_call(["sort", "-k1,1", "-k2,2n", "-k3,3n", args.output_prefix + ".tmp.deletion_info.txt"], stdout = hout)
+    subprocess.check_call(["sort", "-k1,1", "-k2,2n", "-k3,3n", "-k5,5n", args.output_prefix + ".tmp.deletion_info.txt"], stdout = hout)
     hout.close()
 
     hout = open(args.output_prefix + ".deletion.sorted.bed.gz", 'w')
@@ -57,7 +58,7 @@ def parse_main(args):
     ####################
     # insertion processing
     hout = open(args.output_prefix + ".tmp.insertion.sorted.bed", 'w')
-    subprocess.check_call(["sort", "-k1,1", "-k2,2n", "-k3,3n", args.output_prefix + ".tmp.insertion_info.txt"], stdout = hout)
+    subprocess.check_call(["sort", "-k1,1", "-k2,2n", "-k3,3n", "-k5,5n", args.output_prefix + ".tmp.insertion_info.txt"], stdout = hout)
     hout.close()
     
     hout = open(args.output_prefix + ".insertion.sorted.bed.gz", 'w') 
@@ -113,6 +114,11 @@ def parse_main(args):
         subprocess.check_call(["rm", "-rf", args.output_prefix + ".tmp.rearrangement.sorted.bedpe"])
         subprocess.check_call(["rm", "-rf", args.output_prefix + ".tmp.bp_info.txt"])
         subprocess.check_call(["rm", "-rf", args.output_prefix + ".bp_info.sorted.bed"])
+
+
+def merge_control_main(args):
+
+    merge_control_from_parse_files(args.prefix_list_file, args.output_prefix)
 
 
 def get_main(args):
@@ -208,7 +214,7 @@ def get_main(args):
     generate_consensus_sbnd(args.tumor_prefix + ".support_read_seq.sbnd.txt",
         args.tumor_prefix + ".consensus_seq.sbnd.txt",
         use_racon = args.use_racon, debug = args.debug)
-    
+
     logger.info("Locating single-base resolution break points for candidate SVs")
     locate_bp(args.tumor_prefix + ".consensus_seq.txt",
         args.tumor_prefix + ".refined_bp.txt",
