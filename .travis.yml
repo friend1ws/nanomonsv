@@ -20,11 +20,11 @@ before_script:
   - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD
   - cd ../..
 
-  - pip install -U setuptools 
-  - pip install requests
-  - pip install numpy==1.16.6
-  - pip install pysam==0.16.0.1
-  - pip install parasail==1.2
+  - python -m pip install -U setuptools 
+  - python -m pip install requests
+  - python -m pip install numpy==1.16.6
+  - python -m pip install pysam==0.16.0.1
+  - python -m pip install parasail==1.2
 
 script:
   - python -m pip install .
