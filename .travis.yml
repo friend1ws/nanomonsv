@@ -20,6 +20,7 @@ before_script:
   - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$PWD
   - cd ../..
 
+  - pip install -U pluggy
   - pip install requests
   - pip install numpy==1.16.6
   - pip install pysam==0.16.0.1
