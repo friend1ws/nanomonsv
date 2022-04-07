@@ -47,7 +47,7 @@ def create_parser():
     merge_control.add_argument("output_prefix", default = None, type = str,
                                help = "Prefix of merged control files")
 
-    parse.set_defaults(func = merge_control_main)
+    merge_control.set_defaults(func = merge_control_main)
     ##########
 
     ##########
