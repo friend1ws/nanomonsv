@@ -26,5 +26,5 @@ before_script:
   - pip install parasail==1.2
 
 script:
-  - pip install .
+  - python -m pip install .
   - python setup.py test
