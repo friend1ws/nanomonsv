@@ -30,7 +30,7 @@ class Sbnd_clusterer(object):
             self.control_tb = pysam.TabixFile(control_bed)
 
         self.control_panel_tb = None
-        if contro_panel_bed is not None:
+        if control_panel_bed is not None:
             self.control_panel_tb = pysam.TabixFile(control_panel_bed)
 
         self.sbnd_cluster_list = []
