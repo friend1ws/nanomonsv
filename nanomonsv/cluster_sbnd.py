@@ -21,7 +21,7 @@ class Sbnd_cluster(object):
 
 class Sbnd_clusterer(object):
 
-    def __init__(self, output_file, control_bed = None,
+    def __init__(self, output_file, control_bed = None, contro_panel_bed = None,
         cluster_margin_size = None, read_num_thres = None, median_mapQ_thres = None):
 
         self.hout = open(output_file, 'w')
