@@ -144,6 +144,7 @@ def get_main(args):
     # check parsed files existences
     is_exists_parsed_files(args.tumor_prefix)
     if args.control_prefix is not None: is_exists_parsed_files(args.control_prefix)
+    if args.control_panel_prefix is not None: is_exists_parsed_files(args.control_panel_prefix)
  
     # BAM format check
     bam_format_check(args.tumor_bam)
@@ -161,6 +162,18 @@ def get_main(args):
         # if args.single_bnd is not None:
         control_bp_bed = args.control_prefix + ".bp_info.sorted.bed.gz"
 
+
+    control_panel_rearrangement_bedpe = None
+    control_panel_deletion_bed = None
+    control_panel_insertion_bed = None
+    control_panel_bp_bed = None
+    if args.control_panel_prefix is not None:
+        control_panel_rearrangement_bedpe = args.control_panel_prefix + ".rearrangement.sorted.bedpe.gz"
+        control_panel_deletion_bed = args.control_panel_prefix + ".deletion.sorted.bed.gz"
+        control_panel_insertion_bed = args.control_panel_prefix + ".insertion.sorted.bed.gz"
+        # if args.single_bnd is not None:
+        control_panel_bp_bed = args.control_panel_prefix + ".bp_info.sorted.bed.gz"
+
     bp_bed = None
     if args.use_racon:
         bp_bed = args.tumor_prefix + ".bp_info.sorted.bed.gz"
@@ -169,6 +182,7 @@ def get_main(args):
     cluster_supporting_reads(args.tumor_prefix + ".rearrangement.sorted.bedpe.gz", 
         args.tumor_prefix + ".rearrangement.sorted.clustered.bedpe",
         "rearrangement", control_junction_bedpe = control_rearrangement_bedpe,
+        control_panel_junction_bedpe = control_panel_rearrangement_bedpe,
         read_num_thres = args.min_tumor_variant_read_num, cluster_margin_size = args.cluster_margin_size, 
         median_mapQ_thres = args.median_mapQ_thres, max_overhang_size_thres = args.max_overhang_size_thres,
         maximum_local_variant_num = 1000, debug = args.debug)
@@ -176,7 +190,8 @@ def get_main(args):
     logger.info("Clustering insertion type supporting reads for putative SVs")
     cluster_supporting_reads(args.tumor_prefix + ".insertion.sorted.bed.gz",
         args.tumor_prefix + ".insertion.sorted.clustered.bedpe",
-        "insertion", control_junction_bedpe = control_insertion_bed, bp_bed = bp_bed,
+        "insertion", control_junction_bedpe = control_insertion_bed, 
+        control_panel_junction_bedpe = control_panel_insertion_bed, bp_bed = bp_bed,
         read_num_thres = args.min_tumor_variant_read_num, cluster_margin_size = args.cluster_margin_size, 
         median_mapQ_thres = args.median_mapQ_thres, max_overhang_size_thres = args.max_overhang_size_thres,
         debug = args.debug)
@@ -184,7 +199,8 @@ def get_main(args):
     logger.info("Clustering deletion type supporting reads for putative SVs")
     cluster_supporting_reads(args.tumor_prefix + ".deletion.sorted.bed.gz",
         args.tumor_prefix + ".deletion.sorted.clustered.bedpe",
-        "deletion", control_junction_bedpe = control_deletion_bed, bp_bed = bp_bed,
+        "deletion", control_junction_bedpe = control_deletion_bed, 
+        control_panel_junction_bedpe = control_panel_deletion_bed, bp_bed = bp_bed,
         read_num_thres = args.min_tumor_variant_read_num, cluster_margin_size = args.cluster_margin_size, 
         median_mapQ_thres = args.median_mapQ_thres, max_overhang_size_thres = args.max_overhang_size_thres,
         debug = args.debug)
@@ -193,6 +209,7 @@ def get_main(args):
         logger.info("Clustering single breakend type supporting reads for putative SVs")
         cluster_supporting_reads_sbnd(args.tumor_prefix + ".bp_info.sorted.bed.gz",
             args.tumor_prefix + ".singlebreakend.sorted.clustered.bed", control_bed = control_bp_bed,
+            control_panel_bed = control_panel_bp_bed, 
             read_num_thres = args.min_tumor_variant_read_num, cluster_margin_size = args.cluster_margin_size,
             median_mapQ_thres = args.median_mapQ_thres, debug = args.debug)
     else:

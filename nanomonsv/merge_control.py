@@ -76,6 +76,10 @@ def bgzip_tabix(input_bed, output_bedgz):
 
 def merge_control_from_parse_files(prefix_list_file, output_prefix):
 
+    output_dir = os.path.dirname(output_prefix)
+    if output_dir != '' and not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
     with open(prefix_list_file, 'r') as hin:
         for line in hin:
             prefix = line.rstrip('\n')

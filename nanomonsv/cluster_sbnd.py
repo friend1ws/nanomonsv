@@ -29,6 +29,10 @@ class Sbnd_clusterer(object):
         if control_bed is not None:
             self.control_tb = pysam.TabixFile(control_bed)
 
+        self.control_panel_tb = None
+        if contro_panel_bed is not None:
+            self.control_panel_tb = pysam.TabixFile(control_panel_bed)
+
         self.sbnd_cluster_list = []
         self.cluster_margin_size = cluster_margin_size
         self.read_num_thres = read_num_thres
@@ -38,6 +42,7 @@ class Sbnd_clusterer(object):
     def __del__(self):
         self.hout.close()
         if self.control_tb is not None: self.control_tb.close()
+        if self.control_panel_tb is not None: self.control_panel_tb.close()
 
  
     def check_mergeability(self, tchr, tstart, tend, tdir, treadid, tinfo):
@@ -81,9 +86,9 @@ class Sbnd_clusterer(object):
 
         if is_filter == True: return(True)
 
+        control_flag = False
         if self.control_tb is not None:
 
-            control_flag = False
             tabix_error_flag = False
             try:
                 records = self.control_tb.fetch(cl.chr, max(0, cl.start - 10), cl.end + 10)
@@ -100,7 +105,27 @@ class Sbnd_clusterer(object):
                     if cl.end >= int(rec[2]) and cl.start <= int(rec[2]):
                         control_flag = True
 
-            if control_flag == True: is_filter = True 
+        control_panel_flag = False
+        if self.control_panel_tb is not None:
+
+            tabix_error_flag = False
+            try:
+                records = self.control_panel_tb.fetch(cl.chr, max(0, cl.start - 10), cl.end + 10)
+            except Exception as e:
+                logger.debug(f'{e}')
+                tabix_error_flag = True
+                
+            if not tabix_error_flag:
+                for record_line in records:
+                    rec = record_line.split('\t')
+                    
+                    if cl.chr != rec[0] or cl.dir != rec[5]: continue
+                    
+                    if cl.end >= int(rec[2]) and cl.start <= int(rec[2]):
+                        control_panel_flag = True
+            
+
+        if control_flag == True or control_panel_flag == True: is_filter = True 
 
         return(is_filter)
 
@@ -124,14 +149,14 @@ class Sbnd_clusterer(object):
             self.sbnd_cluster_list.remove(cl)
 
 
-def cluster_supporting_reads_sbnd(input_file, output_file, control_bed = None, 
+def cluster_supporting_reads_sbnd(input_file, output_file, control_bed = None, control_panel_bed = None, 
     cluster_margin_size = 100, sbnd_cluster_margin_size = 20, 
     read_num_thres = 3, median_mapQ_thres = 20, debug = False):
 
     if debug: logger.setLevel(logging.DEBUG)
 
 
-    sbnd_clusterer = Sbnd_clusterer(output_file, control_bed = control_bed,
+    sbnd_clusterer = Sbnd_clusterer(output_file, control_bed = control_bed, control_panel_bed = control_panel_bed,
         cluster_margin_size = cluster_margin_size, read_num_thres = read_num_thres, 
         median_mapQ_thres = median_mapQ_thres)
     

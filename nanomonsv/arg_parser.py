@@ -70,6 +70,9 @@ def create_parser():
     get.add_argument("--control_bam", type = str, # required = True,
                      help = "Path to control BAM file")
 
+    get.add_argument("--control_panel_prefix", type = str, 
+                     help = "Prefix of non-matched control panel data processed in merge_control step")
+
     get.add_argument("--min_tumor_variant_read_num", default = 3, type = int,
                      help = "Minimum required supporting read number for a tumor sample")
 
