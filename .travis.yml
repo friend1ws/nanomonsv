@@ -21,11 +21,11 @@ before_script:
   - cd ../..
 
   - python -m pip install -U setuptools 
+  - python -m pip install -U importlib-metadata
   - python -m pip install requests
   - python -m pip install numpy==1.16.6
   - python -m pip install pysam==0.16.0.1
   - python -m pip install parasail==1.2
-  - python -m pip install -U importlib-metadata
 
 script:
   - python -m pip install .
