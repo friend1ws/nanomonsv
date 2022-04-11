@@ -131,8 +131,8 @@ class Sbnd_clusterer(object):
                     if cl.chr != rec[0] or cl.dir != rec[5]: continue
                     
                     if cl.end >= int(rec[2]) and cl.start <= int(rec[2]):
-                        readnums = F[10].split(',')
-                        psamples = F[11].split(',')
+                        readnums = rec[6].split(',')
+                        psamples = rec[7].split(',')
                         for psample, readnum in zip(psamples, readnums):
                             if psample not in sample2readnum_panel:
                                 sample2readnum_panel[psample] = 0

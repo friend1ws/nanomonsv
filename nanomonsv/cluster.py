@@ -206,8 +206,8 @@ class Sv_clusterer(object):
                             panel_key_match = True
 
                     if panel_key_match:
-                        readnums = F[10].split(',')
-                        psamples = F[11].split(',')
+                        readnums = rec[10].split(',')
+                        psamples = rec[11].split(',')
                         for psample, readnum in zip(psamples, readnums):
                             if psample not in sample2readnum_panel: 
                                 sample2readnum_panel[psample] = 0
@@ -298,8 +298,8 @@ class Sv_clusterer(object):
                         cl.end2 + self.control_check_margin >= int(rec[1]) and \
                         int(rec[4]) >= median_size * 0.5:
         
-                        readnums = F[6].split(',')
-                        psamples = F[7].split(',')
+                        readnums = rec[6].split(',')
+                        psamples = rec[7].split(',')
                         for psample, readnum in zip(psamples, readnums):
                             if psample not in sample2readnum_panel: sample2readnum_panel[psample] = 0
                             sample2readnum_panel[psample] = sample2readnum_panel[psample] + int(readnum)
