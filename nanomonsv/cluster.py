@@ -31,7 +31,8 @@ class Sv_clusterer(object):
     def __init__(self, svtype, output_file, control_junction_bedpe = None, control_panel_junction_bedpe = None, bp_bed = None,
         cluster_margin_size = None, size_margin_ratio = None, maximum_local_variant_num = None, skip_margin = None,
         read_num_thres = None, median_mapQ_thres = None, 
-        max_overhang_size_thres = None, control_read_num_thres = None, control_check_margin = None):
+        max_overhang_size_thres = None, max_control_read_num = None, control_check_margin = None,
+        max_panel_read_num = None, max_panel_sample_num = None):
 
         self.hout = open(output_file, 'w')
         self.control_tb = None
@@ -57,8 +58,10 @@ class Sv_clusterer(object):
         self.read_num_thres = read_num_thres
         self.median_mapQ_thres = median_mapQ_thres
         self.max_overhang_size_thres = max_overhang_size_thres
-        self.control_read_num_thres = control_read_num_thres
+        self.max_control_read_num = max_control_read_num
         self.control_check_margin = control_check_margin
+        self.max_panel_read_num = max_panel_read_num
+        self.max_panel_sample_num = max_panel_sample_num
 
         self.next_pos_after_skip = 0
         self.temp_chr = None
@@ -153,6 +156,7 @@ class Sv_clusterer(object):
                 logger.debug(f'{e}')
                 tabix_error_flag = True
 
+            support_read_num = 0
             if not tabix_error_flag:
                 for record_line in records:
                     rec = record_line.split('\t')
@@ -161,13 +165,16 @@ class Sv_clusterer(object):
         
                     if is_short_deletion:
                         if cl.start1 <= int(rec[5]) and cl.end2 >= int(rec[1]):
-                            control_flag = True
+                            support_read_num = support_read_num + 1
                     else:
                         if cl.end1 >= int(rec[1]) - self.control_check_margin and \
                             cl.start1 <= int(rec[2]) + self.control_check_margin and \
                             cl.end2 >= int(rec[4]) - self.control_check_margin and \
                             cl.start2 <= int(rec[5]) + self.control_check_margin:
-                            control_flag = True
+                            support_read_num = support_read_num + 1
+
+                if support_read_num > self.max_control_read_num:
+                    control_flag = True
 
 
         if self.control_panel_tb is not None:
@@ -179,21 +186,36 @@ class Sv_clusterer(object):
                 logger.debug(f'{e}')
                 tabix_error_flag = True
 
+            sample2readnum_panel = {}
             if not tabix_error_flag:
                 for record_line in records:
                     rec = record_line.split('\t')
 
                     if cl.chr1 != rec[0] or cl.chr2 != rec[3] or cl.dir1 != rec[8] or cl.dir2 != rec[9]: continue
 
+                    panel_key_match = False
                     if is_short_deletion:
                         if cl.start1 <= int(rec[5]) and cl.end2 >= int(rec[1]):
-                            control_panel_flag = True
+                            panel_key_match = True
                     else:
                         if cl.end1 >= int(rec[1]) - self.control_check_margin and \
                             cl.start1 <= int(rec[2]) + self.control_check_margin and \
                             cl.end2 >= int(rec[4]) - self.control_check_margin and \
                             cl.start2 <= int(rec[5]) + self.control_check_margin:
-                            control_panel_flag = True
+
+                            panel_key_match = True
+
+                    if panel_key_match:
+                        readnums = F[10].split(',')
+                        psamples = F[11].split(',')
+                        for psample, readnum in zip(psamples, readnums):
+                            if psample not in sample2readnum_panel: 
+                                sample2readnum_panel[psample] = 0
+                            sample2readnum_panel[psample] = sample2readnum_panel[psample] + int(readnum)
+
+                readnums_panel = [sample2readnum_panel[x] for x in sample2readnum_panel]
+                if len([x for x in readnums_panel if x > self.max_panel_read_num]) > self.max_panel_sample_num:
+                    control_panel_flag = True
 
         if control_flag == True or control_panel_flag == True: is_filter = True 
 
@@ -267,6 +289,7 @@ class Sv_clusterer(object):
                 logger.debug(f'{e}')
                 tabix_error_flag2 = True
 
+            sample2readnum_panel = {}
             if not tabix_error_flag2:
                 for record_line in records:
                     rec = record_line.split('\t')
@@ -274,7 +297,16 @@ class Sv_clusterer(object):
                     if cl.chr1 == rec[0] and cl.start1 - self.control_check_margin <= int(rec[2]) and \
                         cl.end2 + self.control_check_margin >= int(rec[1]) and \
                         int(rec[4]) >= median_size * 0.5:
-                        control_panel_flag = True
+        
+                        readnums = F[6].split(',')
+                        psamples = F[7].split(',')
+                        for psample, readnum in zip(psamples, readnums):
+                            if psample not in sample2readnum_panel: sample2readnum_panel[psample] = 0
+                            sample2readnum_panel[psample] = sample2readnum_panel[psample] + int(readnum)
+
+                readnums_panel = [sample2readnum_panel[x] for x in sample2readnum_panel]
+                if len([x for x in readnums_panel if x > self.max_panel_read_num]) > self.max_panel_sample_num:
+                    control_panel_flag = True
 
         if control_flag == True or control_panel_flag == True: is_filter = True
 
@@ -328,7 +360,7 @@ def cluster_supporting_reads(input_file, output_file, svtype, control_junction_b
     cluster_margin_size = 100, indel_cluster_margin_size = 10, size_margin_ratio = 0.2, min_indel_size = 90,
     maximum_local_variant_num = 100, skip_margin = 5000, 
     read_num_thres = 3, median_mapQ_thres = 20, max_overhang_size_thres = 100,
-    control_read_num_thres = 0, control_check_margin = 50, debug = False):
+    max_control_read_num = 0, control_check_margin = 50, max_panel_read_num = 1, max_panel_sample_num = 1, debug = False):
 
     if debug: logger.setLevel(logging.DEBUG)
 
@@ -337,8 +369,8 @@ def cluster_supporting_reads(input_file, output_file, svtype, control_junction_b
         cluster_margin_size = cluster_margin_size, size_margin_ratio = size_margin_ratio,
         maximum_local_variant_num = maximum_local_variant_num, skip_margin = skip_margin,
         read_num_thres = read_num_thres, median_mapQ_thres = median_mapQ_thres, 
-        max_overhang_size_thres = max_overhang_size_thres, control_read_num_thres = control_read_num_thres,
-        control_check_margin = control_check_margin)
+        max_overhang_size_thres = max_overhang_size_thres, max_control_read_num = max_control_read_num,
+        control_check_margin = control_check_margin, max_panel_read_num = max_panel_read_num, max_panel_sample_num = max_panel_sample_num)
     
     with gzip.open(input_file, 'rt') as hin: # , open(output_file, 'w') as hout:
         for line in hin:

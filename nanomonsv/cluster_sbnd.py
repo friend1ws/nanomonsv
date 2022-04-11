@@ -22,7 +22,8 @@ class Sbnd_cluster(object):
 class Sbnd_clusterer(object):
 
     def __init__(self, output_file, control_bed = None, control_panel_bed = None,
-        cluster_margin_size = None, read_num_thres = None, median_mapQ_thres = None):
+        cluster_margin_size = None, read_num_thres = None, median_mapQ_thres = None,
+        max_control_read_num = None, max_panel_read_num = None, max_panel_sample_num = None):
 
         self.hout = open(output_file, 'w')
         self.control_tb = None
@@ -37,7 +38,9 @@ class Sbnd_clusterer(object):
         self.cluster_margin_size = cluster_margin_size
         self.read_num_thres = read_num_thres
         self.median_mapQ_thres = median_mapQ_thres
-
+        self.max_control_read_num = max_control_read_num
+        self.max_panel_read_num = max_panel_read_num
+        self.max_panel_sample_num = max_panel_sample_num
 
     def __del__(self):
         self.hout.close()
@@ -88,7 +91,8 @@ class Sbnd_clusterer(object):
 
         control_flag = False
         if self.control_tb is not None:
-
+    
+            support_read_num = 0
             tabix_error_flag = False
             try:
                 records = self.control_tb.fetch(cl.chr, max(0, cl.start - 10), cl.end + 10)
@@ -103,18 +107,23 @@ class Sbnd_clusterer(object):
                     if cl.chr != rec[0] or cl.dir != rec[5]: continue
         
                     if cl.end >= int(rec[2]) and cl.start <= int(rec[2]):
-                        control_flag = True
+                        support_read_num = support_read_num + 1
+
+            if support_read_num > self.max_control_read_num:
+                control_flag = True
+
 
         control_panel_flag = False
         if self.control_panel_tb is not None:
-
+        
             tabix_error_flag = False
             try:
                 records = self.control_panel_tb.fetch(cl.chr, max(0, cl.start - 10), cl.end + 10)
             except Exception as e:
                 logger.debug(f'{e}')
                 tabix_error_flag = True
-                
+        
+            sample2readnum_panel = {}        
             if not tabix_error_flag:
                 for record_line in records:
                     rec = record_line.split('\t')
@@ -122,7 +131,16 @@ class Sbnd_clusterer(object):
                     if cl.chr != rec[0] or cl.dir != rec[5]: continue
                     
                     if cl.end >= int(rec[2]) and cl.start <= int(rec[2]):
-                        control_panel_flag = True
+                        readnums = F[10].split(',')
+                        psamples = F[11].split(',')
+                        for psample, readnum in zip(psamples, readnums):
+                            if psample not in sample2readnum_panel:
+                                sample2readnum_panel[psample] = 0
+                            sample2readnum_panel[psample] = sample2readnum_panel[psample] + int(readnum)
+
+                readnums_panel = [sample2readnum_panel[x] for x in sample2readnum_panel]
+                if len([x for x in readnums_panel if x > self.max_panel_read_num]) > self.max_panel_sample_num:
+                    control_panel_flag = True
             
 
         if control_flag == True or control_panel_flag == True: is_filter = True 
@@ -151,14 +169,17 @@ class Sbnd_clusterer(object):
 
 def cluster_supporting_reads_sbnd(input_file, output_file, control_bed = None, control_panel_bed = None, 
     cluster_margin_size = 100, sbnd_cluster_margin_size = 20, 
-    read_num_thres = 3, median_mapQ_thres = 20, debug = False):
+    read_num_thres = 3, median_mapQ_thres = 20, max_control_read_num = 1,
+    max_panel_read_num = 1, max_panel_sample_num = 1, debug = False):
 
     if debug: logger.setLevel(logging.DEBUG)
 
 
     sbnd_clusterer = Sbnd_clusterer(output_file, control_bed = control_bed, control_panel_bed = control_panel_bed,
         cluster_margin_size = cluster_margin_size, read_num_thres = read_num_thres, 
-        median_mapQ_thres = median_mapQ_thres)
+        median_mapQ_thres = median_mapQ_thres, max_control_read_num = max_control_read_num, 
+        max_panel_read_num = max_panel_read_num, max_panel_sample_num = max_panel_sample_num)
+
     
     with gzip.open(input_file, 'rt') as hin: 
         for line in hin:

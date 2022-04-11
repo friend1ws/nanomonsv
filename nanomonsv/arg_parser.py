@@ -112,6 +112,12 @@ def create_parser():
     # get.add_argument("--control_read_num_thres", default = 0, type = int,
     #                  help = "Filter if the number of supporting reads for the control sample is larger than this value")
 
+    get.add_argument("--max_panel_read_num", default = 1, type = int,
+                     help= "Maximum allowed supporting read number for a nonmatched control sample")
+
+    get.add_argument("--max_panel_sample_num", default = 1, type = int,
+                     help= "Maximum allowed sample number for a nonmatched control sample")
+
     get.add_argument("--debug", default = False, action = 'store_true', help = "keep intermediate files")
 
     get.set_defaults(func = get_main)
