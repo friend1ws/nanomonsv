@@ -357,7 +357,7 @@ class Sv_clusterer(object):
 
 def cluster_supporting_reads(input_file, output_file, svtype, control_junction_bedpe = None, 
     control_panel_junction_bedpe = None, bp_bed = None, 
-    cluster_margin_size = 100, indel_cluster_margin_size = 10, size_margin_ratio = 0.2, min_indel_size = 90,
+    cluster_margin_size = 100, indel_cluster_margin_size = 10, size_margin_ratio = 0.2, min_indel_size = 35,
     maximum_local_variant_num = 100, skip_margin = 5000, 
     read_num_thres = 3, median_mapQ_thres = 20, max_overhang_size_thres = 100,
     max_control_read_num = 0, control_check_margin = 50, max_panel_read_num = 1, max_panel_sample_num = 1, debug = False):
@@ -384,7 +384,6 @@ def cluster_supporting_reads(input_file, output_file, svtype, control_junction_b
                 tchr2, tdir1, tdir2 = tchr1, '+', '-'
                 tsize, tinfo2 = int(tsize), None
 
-                # this should be parametrized    
                 if tsize < min_indel_size: continue
                 
             elif sv_clusterer.svtype == "rearrangement": # rearrangement

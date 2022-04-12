@@ -195,7 +195,7 @@ def get_main(args):
         control_panel_junction_bedpe = control_panel_insertion_bed, bp_bed = bp_bed,
         read_num_thres = args.min_tumor_variant_read_num, cluster_margin_size = args.cluster_margin_size, 
         median_mapQ_thres = args.median_mapQ_thres, max_overhang_size_thres = args.max_overhang_size_thres,
-        max_control_read_num = args.max_control_variant_read_num, 
+        min_indel_size = int(0.7 * args.min_indel_size), max_control_read_num = args.max_control_variant_read_num, 
         max_panel_read_num = args.max_panel_read_num, max_panel_sample_num = args.max_panel_sample_num, debug = args.debug)
 
     logger.info("Clustering deletion type supporting reads for putative SVs")
@@ -205,7 +205,7 @@ def get_main(args):
         control_panel_junction_bedpe = control_panel_deletion_bed, bp_bed = bp_bed,
         read_num_thres = args.min_tumor_variant_read_num, cluster_margin_size = args.cluster_margin_size, 
         median_mapQ_thres = args.median_mapQ_thres, max_overhang_size_thres = args.max_overhang_size_thres,
-        max_control_read_num = args.max_control_variant_read_num, 
+        min_indel_size = int(0.7 * args.min_indel_size), max_control_read_num = args.max_control_variant_read_num, 
         max_panel_read_num = args.max_panel_read_num, max_panel_sample_num = args.max_panel_sample_num, debug = args.debug)
 
     if args.single_bnd:
@@ -262,8 +262,9 @@ def get_main(args):
     logger.info("Final processing") 
     control_sread_count_file = args.tumor_prefix + ".realignment.control.sread_count.txt" if args.control_bam is not None else None
     integrate_realignment_result(args.tumor_prefix + ".realignment.tumor.sread_count.txt", control_sread_count_file,
-        args.tumor_prefix + ".nanomonsv.result.txt", args.reference_fasta,
-        args.min_tumor_variant_read_num, args.min_tumor_VAF, args.max_control_variant_read_num, args.max_control_VAF)
+        args.tumor_prefix + ".nanomonsv.result.txt", args.reference_fasta, min_indel_size = args.min_indel_size,
+        min_tumor_variant_read_num = args.min_tumor_variant_read_num, min_tumor_VAF = args.min_tumor_VAF, 
+        max_control_variant_read_num = args.max_control_variant_read_num, max_control_VAF = args.max_control_VAF)
 
     genomesv2vcf_convert(args.tumor_prefix + ".nanomonsv.result.txt", args.tumor_prefix + ".nanomonsv.result.vcf", 
         args.reference_fasta)

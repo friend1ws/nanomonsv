@@ -330,7 +330,8 @@ def generate_consensus(input_file, output_file, use_racon = False, debug = False
 
             consensus_generator.add_support_read_seq(treadid, tseq, tsize)
 
-        consensus_generator.print_consensus()
+        if consensus_generator.temp_key is not None:
+            consensus_generator.print_consensus()
 
     del consensus_generator 
 

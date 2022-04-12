@@ -85,6 +85,15 @@ def create_parser():
     get.add_argument("--max_control_VAF", default = 0.03, type = float,
                      help = "Maximum allowed variant allele frequeycy for a control sample (default: 0.03)")
 
+    get.add_argument("--min_indel_size", default = 50, type = int,
+                     help = "Minimum indel size for the output (default: 50)")
+
+    get.add_argument("--max_panel_read_num", default = 1, type = int,
+                     help= "Maximum allowed supporting read number for a nonmatched control sample (default: 1)")
+
+    get.add_argument("--max_panel_sample_num", default = 0, type = int,
+                     help= "Maximum allowed sample number for a nonmatched control sample (default: 0)")
+
     get.add_argument("--cluster_margin_size", default = 100, type = int,
                      help = "Two breakpoints are margined if they are within this threshould value (default: 100)")
 
@@ -111,12 +120,6 @@ def create_parser():
 
     # get.add_argument("--control_read_num_thres", default = 0, type = int,
     #                  help = "Filter if the number of supporting reads for the control sample is larger than this value")
-
-    get.add_argument("--max_panel_read_num", default = 1, type = int,
-                     help= "Maximum allowed supporting read number for a nonmatched control sample (default: 1)")
-
-    get.add_argument("--max_panel_sample_num", default = 0, type = int,
-                     help= "Maximum allowed sample number for a nonmatched control sample (default: 0)")
 
     get.add_argument("--debug", default = False, action = 'store_true', help = "keep intermediate files (default: False)")
 
