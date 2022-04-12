@@ -28,10 +28,10 @@ def create_parser():
     parse.add_argument("--debug", default = False, action = 'store_true', help = "keep intermediate files")
 
     parse.add_argument("--split_alignment_check_margin", default = 50, type = int,
-                       help = "Two split alignments whose margin sizes are no more than this value is counted as candidate breakpoint")
+                       help = "Two split alignments whose margin sizes are no more than this value is counted as candidate breakpoint (default: 50)")
 
     parse.add_argument("--minimum_breakpoint_ambiguity", default = 20, type = int,
-                       help = "Sizes of ambiguities of breakpoint positions from the observed ones") 
+                       help = "Sizes of ambiguities of breakpoint positions from the observed ones (default: 20)") 
 
     parse.set_defaults(func = parse_main)
     ##########
@@ -74,51 +74,51 @@ def create_parser():
                      help = "Prefix of non-matched control panel data processed in merge_control step")
 
     get.add_argument("--min_tumor_variant_read_num", default = 3, type = int,
-                     help = "Minimum required supporting read number for a tumor sample")
+                     help = "Minimum required supporting read number for a tumor sample (default: 3)")
 
     get.add_argument("--min_tumor_VAF", default = 0.05, type = float,
-                     help = "Minimum required variant allele frequency for a tumor sample")
+                     help = "Minimum required variant allele frequency for a tumor sample (default: 0.05)")
 
     get.add_argument("--max_control_variant_read_num", default = 1, type = int,
-                     help = "Maximum allowed supporting read number for a control sample")
+                     help = "Maximum allowed supporting read number for a control sample (default: 1)")
         
     get.add_argument("--max_control_VAF", default = 0.03, type = float,
-                     help = "Maximum allowed variant allele frequeycy for a control sample")
+                     help = "Maximum allowed variant allele frequeycy for a control sample (default: 0.03)")
 
     get.add_argument("--cluster_margin_size", default = 100, type = int,
-                     help = "Two breakpoints are margined if they are within this threshould value")
+                     help = "Two breakpoints are margined if they are within this threshould value (default: 100)")
 
     get.add_argument("--median_mapQ_thres", default = 20, type = int,
-                     help = "Threshould for median mapping quality")
+                     help = "Threshould for median mapping quality (default: 20)")
 
     get.add_argument("--max_overhang_size_thres", default = 100, type = int,
-                     help = "Threshould for maximum overhang size")
+                     help = "Threshould for maximum overhang size (default: 100)")
 
     get.add_argument("--check_read_max_num", default = 500, type = int,
-                     help = "The maximum number of reads to check per breakpoint in the phase of realignment validation")
+                     help = "The maximum number of reads to check per breakpoint in the phase of realignment validation (default: 500)")
 
     get.add_argument("--var_read_min_mapq", default = 0, type = int,
-                     help = "Threshould for mapping quality in validate step")
+                     help = "Threshould for mapping quality in validate step (default: 0)")
 
     get.add_argument("--use_ssw_lib", default = False, action = 'store_true',
-                     help = "Use SSW Library. This is for backward comaptibility, and may be removed in the future")
+                     help = "Use SSW Library. This is for backward comaptibility, and may be removed in the future (default: False)")
 
     get.add_argument("--use_racon", default = False, action = 'store_true',
-                     help = "Use racon for error correction of clustered putative supporting reads")
+                     help = "Use racon for error correction of clustered putative supporting reads (default: False)")
 
     get.add_argument("--single_bnd", default = False, action = 'store_true',
-                     help = "Generate single end breakpoints")
+                     help = "Generate single end breakpoints (default: False)")
 
     # get.add_argument("--control_read_num_thres", default = 0, type = int,
     #                  help = "Filter if the number of supporting reads for the control sample is larger than this value")
 
     get.add_argument("--max_panel_read_num", default = 1, type = int,
-                     help= "Maximum allowed supporting read number for a nonmatched control sample")
+                     help= "Maximum allowed supporting read number for a nonmatched control sample (default: 1)")
 
-    get.add_argument("--max_panel_sample_num", default = 1, type = int,
-                     help= "Maximum allowed sample number for a nonmatched control sample")
+    get.add_argument("--max_panel_sample_num", default = 0, type = int,
+                     help= "Maximum allowed sample number for a nonmatched control sample (default: 0)")
 
-    get.add_argument("--debug", default = False, action = 'store_true', help = "keep intermediate files")
+    get.add_argument("--debug", default = False, action = 'store_true', help = "keep intermediate files (default: False)")
 
     get.set_defaults(func = get_main)
     ##########
