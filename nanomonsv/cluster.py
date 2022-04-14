@@ -274,9 +274,15 @@ class Sv_clusterer(object):
                 for record_line in records:
                     rec = record_line.split('\t')
 
+                    """
                     if cl.chr1 == rec[0] and cl.start1 - self.control_check_margin <= int(rec[2]) and \
                         cl.end2 + self.control_check_margin >= int(rec[1]) and \
                         int(rec[4]) >= median_size * 0.5:
+                    """
+                    if cl.chr1 == rec[0] and cl.start1 <= int(rec[1]) <= cl.end1 and \
+                        cl.start2 <= int(rec[2]) <= cl.end2 and \
+                        median_size * 0.75 <= int(rec[4]) <= median_size * 1.25:
+
                         control_flag = True
 
 
@@ -294,10 +300,15 @@ class Sv_clusterer(object):
                 for record_line in records:
                     rec = record_line.split('\t')
 
+                    """
                     if cl.chr1 == rec[0] and cl.start1 - self.control_check_margin <= int(rec[2]) and \
                         cl.end2 + self.control_check_margin >= int(rec[1]) and \
                         int(rec[4]) >= median_size * 0.5:
-        
+                    """
+                    if cl.chr1 == rec[0] and cl.start1 <= int(rec[1]) <= cl.end1 and \
+                        cl.start2 <= int(rec[2]) <= cl.end2 and \
+                        median_size * 0.75 <= int(rec[4]) <= median_size * 1.25:
+
                         readnums = rec[6].split(',')
                         psamples = rec[7].split(',')
                         for psample, readnum in zip(psamples, readnums):

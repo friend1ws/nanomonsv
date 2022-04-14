@@ -332,7 +332,7 @@ class Alignment_counter(object):
         
         sread_info = { rname: alignment_info_var_1[rname] + alignment_info_var_2[rname] for rname in supporting_reads}
         for rname in supporting_reads:
-            sinfo = '\t'.join([str(x) for x in alignment_info_var_1[rname] + alignment_info_var_2[rname]])
+            sinfo = '\t'.join([str(x) for x in alignment_info_var_1[rname] + alignment_info_var_2[rname] + alignment_info_ref_1[rname] + alignment_info_ref_2[rname]])
             print(f"{tchr1}\t{tpos1}\t{tdir1}\t{tchr2}\t{tpos2}\t{tdir2}\t{tinseq}\t{tid}\t{rname}\t{sinfo}", file = self.hout_ainfo)
 
 
