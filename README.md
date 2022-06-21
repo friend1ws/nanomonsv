@@ -5,7 +5,7 @@
 
 ## Introduction
 
-nanomonsv is a software for detecting somatic structural variations from paired (tumor and matched control) cancer genome sequence data. nanomonsv is presented in the following preprint. **When you use nanomonsv or any resource of this repository, please kindly site this preprint**.
+nanomonsv is a software for detecting somatic structural variations　 from paired (tumor and matched control) cancer genome sequence data. nanomonsv is presented in the following preprint. **When you use nanomonsv or any resource of this repository, please kindly site this preprint**.
 
 Precise characterization of somatic structural variations and mobile element insertions from paired long-read sequencing data with nanomonsv, Shiraishi et al., bioRxiv, 2020, [[link]](https://www.biorxiv.org/content/10.1101/2020.07.22.214262v1)
 
@@ -38,8 +38,9 @@ assuming those are installed, and the paths are already added to the running env
 > ##### For use of SSW Library
 > Since version 0.2.0, nanomonsv can be executed without SSW Library. When users want to use SSW Library, create the libssw.so and add the path to the LD_LIBRARY_PATH environment variable. Please refer the **How to use the Python wrapper ssw_lib.py** section in the [SSW Library](https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library) repository page.
 
-> ##### For use of racon
-> Since version 0.3.0, we support racon for the step where generating consensus sequence and get single-base resolution breakpoints. racon may become the default instead of mafft in the future.
+###### For use of racon
+Since version 0.3.0, we support racon for the step where generating consensus sequence and get single-base resolution breakpoints. racon may become the default instead of mafft in the future.
+
 
 ### For advanced use (`insert_classify` command)
 `bwa`, `minimap2`, `bedtools` and `RepeatMasker` are required to be installed and these pathese are added to the running environment.
@@ -48,6 +49,24 @@ assuming those are installed, and the paths are already added to the running env
 ### Input file
 
 nanomonsv accept the BAM file aligned by `minimap2`. 
+
+
+### Control panel
+Starting with version 0.5.0, the use of the control panel is supported. 
+In this software, supporting reads for SVs are collected for multiple samples other than the sample of interest, 
+and such reads are removed as commonly noise (or those derived from common SVs). 
+This srategy is expected to exclude many false positives in addition to improving computational cost.
+
+We have prepared the command to create control panels from the user's own sequencing data.
+In addition, for users who do not have sufficient sequencing data that can serve as a control panel (or just do not have time for processsing), 
+we provide a control panel that has been created in advance from the [Human Pangenome Reference Consortium](https://humanpangenome.org/),
+which you can download by the following command:
+
+```
+wget https://ncc-gap-pub.s3.ap-northeast-1.amazonaws.com/nanomonsv/control_panel/hprc_year1_data_freeze_nanopore_minimap2_2_24_merge_control.tar.gz
+```
+
+**When you use these control panels and publish, do not forget to credit to [HPRC](https://github.com/human-pangenomics/HG002_Data_Freeze_v1.0#citations)!**
 
 
 ## Quickstart
@@ -166,6 +185,7 @@ From the version 0.4.0, we will also provide the VCF format result files.
 * **Checked_Read_Num_Control**: Total number of reads in the normal used for the validation alignment step
 * **Supporting_Read_Num_Control**: Total number of variant reads in the matched control determined in the validation alignment step
 * **Is_Filter**: Filter status. PASS if this SV has passed all the filters
+
 
 ### insert_classify
 
