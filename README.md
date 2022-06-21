@@ -53,13 +53,13 @@ nanomonsv accept the BAM file aligned by `minimap2`.
 
 ### Control panel
 Starting with version 0.5.0, the use of the control panel is supported. 
-In this software, supporting reads for SVs are collected for multiple samples other than the sample of interest, 
-and such reads are removed as commonly noise (or those derived from common SVs). 
-This srategy is expected to exclude many false positives in addition to improving computational cost.
+In this software, supporting reads for SVs are collected for multiple samples other than the target sample, 
+and such reads are removed as common noise (or those derived from common SVs) in the `get` stage. 
+This strategy is expected to exclude many false positives as well as improving computational cost.
 
 We have prepared the command to create control panels from the user's own sequencing data.
-In addition, for users who do not have sufficient sequencing data that can serve as a control panel (or just do not have time for processsing), 
-we provide a control panel that has been created in advance from the [Human Pangenome Reference Consortium](https://humanpangenome.org/),
+In addition, for users who do not have sufficient sequencing data that can serve as a control panel (or just do not have time for processing), 
+we prepared a control panel that has been created using the 30 Nanopore sequencing data from the [Human Pangenome Reference Consortium](https://humanpangenome.org/),
 which you can download by the following command:
 
 ```
