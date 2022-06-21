@@ -66,6 +66,7 @@ which you can download by the following command:
 wget https://ncc-gap-pub.s3.ap-northeast-1.amazonaws.com/nanomonsv/control_panel/hprc_year1_data_freeze_nanopore_minimap2_2_24_merge_control.tar.gz
 ```
 
+This control panel is made by aligning 30 Nanopore sequencing data to the GRCh38 reference genome (obtained from [here](https://console.cloud.google.com/storage/browser/genomics-public-data/resources/broad/hg38/v0;tab=objects)) with minimap2 version 2.24. 
 **When you use these control panels and publish, do not forget to credit to [HPRC](https://github.com/human-pangenomics/HG002_Data_Freeze_v1.0#citations)!**
 
 
@@ -151,9 +152,12 @@ nanomonsv get [-h] [--control_prefix CONTROL_PREFIX]
  
 This software can generate a list of SVs without specifying the matched control.
 But we have not tested the performance of the approach just using tumor sample, and strongly recommend using the matched control data.
-Even when only tumor sample is available, we still recommend using non-matched control sample (collected from other person's tissue).
+Even when only tumor sample is available, we still recommend using dummy control sample (collected from other person's tissue).
 - **control_prefix**: Prefix to the matched control data set in the parse step
 - **control_bam**: Path to the matched control BAM file
+
+When you use control panel (recommended!), use the following argument.
+- **-control_panel_prefix**: Prefix of non-matched control panel data processed in merge_control step.
 
 After successful execution, you will be able to find the result file names as {tumor_prefix}.nanomonsv.result.txt.
 See the help (`nanomonsv get -h`) for other options. 
@@ -185,6 +189,18 @@ From the version 0.4.0, we will also provide the VCF format result files.
 * **Checked_Read_Num_Control**: Total number of reads in the normal used for the validation alignment step
 * **Supporting_Read_Num_Control**: Total number of variant reads in the matched control determined in the validation alignment step
 * **Is_Filter**: Filter status. PASS if this SV has passed all the filters
+
+
+### merge_control
+
+This command merges non-matched control panel supporting reads obtained by performing `parse` command.
+
+```
+nanomonsv merge_control [-h] prefix_list_file output_prefix
+```
+
+- **prefix_list_file**: The list of output_prefix generated at the above `parse` stage. 
+- **output_prefix**: Prefix to the merged control supporting reads. 
 
 
 ### insert_classify
