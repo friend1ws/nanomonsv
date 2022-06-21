@@ -88,12 +88,10 @@ def genomesv2vcf_convert(result_file, output_vcf, reference):
                         tinfo = tinfo + f";SVINSLEN={tsvinslen};SVINSSEQ={tsvinsseq}"
 
                 # Insertion
-                elif tsvlen > 0:
+                else:
                     talt = "<INS>"
                     tinfo = f"END={tend};SVTYPE=INS;SVINSLEN={tsvinslen};SVINSSEQ={tsvinsseq}"
 
-                else:
-                    continue
                 print(f"{tchrom}\t{tpos}\t{tid}\t{tref}\t{talt}\t{tqual}\t{tfilter}\t{tinfo}\t{tformat_sample}", file = hout)
 
             # Duplication
