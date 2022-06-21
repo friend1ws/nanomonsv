@@ -55,7 +55,7 @@ nanomonsv accept the BAM file aligned by `minimap2`.
 Starting with version 0.5.0, the use of the control panel is supported. 
 In this software, supporting reads for SVs are collected for multiple samples other than the target sample, 
 and such reads are removed as common noise (or those derived from common SVs) in the `get` stage. 
-This strategy is expected to exclude many false positives as well as improving computational cost.
+This strategy is expected to exclude many false positives as well as improve computational cost.
 
 We have prepared the command to create control panels from the user's own sequencing data.
 In addition, for users who do not have sufficient sequencing data that can serve as a control panel (or just do not have time for processing), 
@@ -94,7 +94,7 @@ nanomonsv parse tests/resource/bam/test_ctrl.bam output/test_ctrl
 nanomonsv get output/test_tumor tests/resource/bam/test_tumor.bam GRCh38.d1.vd1.fa --control_prefix output/test_ctrl --control_bam tests/resource/bam/test_ctrl.bam
 ```
 
-You will see the result file named as `test_tumor.nanomonsv.result.txt`.
+You will see the result file named `test_tumor.nanomonsv.result.txt`.
 
 ## Realistic example sequencing data
 
@@ -104,7 +104,7 @@ The Oxford Nanopore Sequencing data used in the bioRxiv paper is available throu
 - HCC1954: [tumor](https://www.ncbi.nlm.nih.gov/sra/DRX248306[accn]), [control](https://www.ncbi.nlm.nih.gov/sra/DRX248307[accn])
 
 The results of nanomonsv for the above data are available [here](https://github.com/friend1ws/nanomonsv/tree/master/misc/example).
-When you perfrom nanomonsv to the above data and have experienced errors, please report to us.
+When you perform nanomonsv to the above data and have experienced errors, please report to us.
 Also, please kindly cite the [bioRxiv paper](https://www.biorxiv.org/content/10.1101/2020.07.22.214262v1) when you use these data.
 
 ## Commands
@@ -124,7 +124,7 @@ nanomonsv parse [-h] [--debug]
 
 See the help (`nanomonsv parse -h`) for other options.
 
-After successful completion, you will find supporting reads stratified by deletions, insertions, and rearrangements
+After successful completion, you will find supporting reads stratified by deletions, insertions, and rearrangements: 
 ({output_prefix}.deletion.sorted.bed.gz, {output_prefix}.insertion.sorted.bed.gz, {output_prefix}.rearrangement.sorted.bedpe.gz, and {output_prefix}.bp_info.sorted.bed.gz and their indexes (.tbi files). 
 
 
@@ -156,16 +156,16 @@ Even when only tumor sample is available, we still recommend using dummy control
 - **control_prefix**: Prefix to the matched control data set in the parse step
 - **control_bam**: Path to the matched control BAM file
 
-When you use control panel (recommended!), use the following argument.
+When you use the control panel (recommended!), use the following argument.
 - **-control_panel_prefix**: Prefix of non-matched control panel data processed in merge_control step.
 
 After successful execution, you will be able to find the result file names as {tumor_prefix}.nanomonsv.result.txt.
 See the help (`nanomonsv get -h`) for other options. 
 
 When you want to change the engine of Smith-Waterman algorithm to SSW Library, specify `--use_ssw_lib` option,
-though we do not generally recomend this.
+though we do not generally recommend this.
 
-Also, we basically recommend to use `--use_racon` option. This will slightly improve the identification of single-base resolution breakpoint, 
+Also, we basically recommend using `--use_racon` option. This will slightly improve the identification of single-base resolution breakpoint, 
 and polishing of inserted sequences. 
 
 Also, we have prepared the script (misc/post_fileter.py) for filtering the result.
