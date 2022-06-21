@@ -296,7 +296,7 @@ def proc_sread_info_file(tumor_sread_info_file, sv_result_file, output_file, val
             score2, cstart2, cend2, sstart2, send2, strand2 = int(F[15]), int(F[16]), int(F[17]), int(F[18]), int(F[19]), F[20]
 
             tinseq = F[6]
-            readid = F[7]
+            readid = F[8]
                 
             if score1 >= score2:
                 sstrand = strand1
