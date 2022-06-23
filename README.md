@@ -143,7 +143,8 @@ nanomonsv get [-h] [--control_prefix CONTROL_PREFIX]
               [--median_mapQ_thres MEDIAN_MAPQ_THRES]
               [--max_overhang_size_thres MAX_OVERHANG_SIZE_THRES]
               [--var_read_min_mapq VAR_READ_MIN_MAPQ] [--use_ssw_lib] [--use_racon]
-              [--debug]
+              [--threads THREADS] [--processes PROCESSES] 
+              [--sort_option SORT_OPTION] [--debug]
               tumor_prefix tumor_bam reference.fa
  ```
  - **tumor_prefix**: Prefix to the tumor data set in the parse step

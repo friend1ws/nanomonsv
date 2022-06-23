@@ -23,8 +23,9 @@ def bam_subsample_fetch(bam_ps, tchr, tstart, tend, max_read_num = 500):
         rec2 = rec2 + 1
 
 # function for gathering sequence read for realignment validation
-def gather_local_read_for_realignment(sv_file, bam_file, output_file, 
-    sbnd_file = None, output_file_sbnd = None, validate_sequence_length = 200, check_read_max_num = 500):
+def gather_local_read_for_realignment(sv_file, bam_file, output_file,
+    sbnd_file = None, output_file_sbnd = None, validate_sequence_length = 200, check_read_max_num = 500,
+    sort_option = None):
 
     bam_ps = pysam.AlignmentFile(bam_file, "rb")
 
@@ -124,12 +125,12 @@ def gather_local_read_for_realignment(sv_file, bam_file, output_file,
     if sbnd_file is not None: hout_sbnd.close()
 
     with open(output_file, 'w') as hout:
-        subprocess.call(["sort", "-k1,1", output_file + ".tmp.unsorted"], stdout = hout)
+        subprocess.call(["sort", "-k1,1"] + sort_option.split(" ") + [output_file + ".tmp.unsorted"], stdout = hout)
     os.remove(output_file + ".tmp.unsorted")
 
     if sbnd_file is not None:
         with open(output_file_sbnd, 'w') as hout:
-            subprocess.call(["sort", "-k1,1", output_file_sbnd + ".tmp.unsorted"], stdout = hout)
+            subprocess.call(["sort", "-k1,1"] + sort_option.split(" ") + [output_file_sbnd + ".tmp.unsorted"], stdout = hout)
         os.remove(output_file_sbnd + ".tmp.unsorted")
 
     bam_ps.close()
@@ -378,12 +379,13 @@ class Alignment_counter(object):
 
 def count_sread_by_alignment(sv_file, bam_file, output_count_file, output_alignment_info_file, reference_fasta, 
     sbnd_file = None, output_count_file_sbnd = None, output_alignment_info_file_sbnd = None,
-    check_read_max_num = 500, var_read_min_mapq = 0, use_ssw_lib = False, debug = False):
+    check_read_max_num = 500, var_read_min_mapq = 0, use_ssw_lib = False, sort_option = None, debug = False):
 
     gather_local_read_for_realignment(sv_file, bam_file, output_count_file + ".tmp.local_read_for_realignment",
         sbnd_file = sbnd_file, 
         output_file_sbnd = output_count_file_sbnd + ".tmp.local_read_for_realignment" if output_count_file_sbnd is not None else None,
-        check_read_max_num = check_read_max_num)
+        check_read_max_num = check_read_max_num,
+        sort_option = sort_option)
 
     alignment_counter = Alignment_counter(output_count_file, output_alignment_info_file, reference_fasta,
         var_read_min_mapq, use_ssw_lib, debug)

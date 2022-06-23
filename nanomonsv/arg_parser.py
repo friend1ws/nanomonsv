@@ -121,6 +121,15 @@ def create_parser():
     # get.add_argument("--control_read_num_thres", default = 0, type = int,
     #                  help = "Filter if the number of supporting reads for the control sample is larger than this value")
 
+    get.add_argument("--threads", default = 1, type = int,
+                     help = "Number of threads (not recommended) (default: 1)")
+
+    get.add_argument("--processes", default = 1, type = int,
+                     help = "Number of processes (default: 1)")
+
+    get.add_argument("--sort_option", metavar = "-S 1G", type = str, default = "-S 1G", 
+                     help = "options for sort command")
+
     get.add_argument("--debug", default = False, action = 'store_true', help = "keep intermediate files (default: False)")
 
     get.set_defaults(func = get_main)
@@ -151,6 +160,9 @@ def create_parser():
 
     validate.add_argument("--use_ssw_lib", default = False, action = 'store_true',
                           help = "Use SSW Library. This is for backward comaptibility, and may be removed in the future")
+
+    validate.add_argument("--sort_option", metavar = "-S 1G", type = str, default = "-S 1G", 
+                     help = "options for sort command")
 
     validate.add_argument("--debug", default = False, action = 'store_true', help = "keep intermediate files")
 
