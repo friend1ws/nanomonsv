@@ -122,13 +122,13 @@ def create_parser():
     #                  help = "Filter if the number of supporting reads for the control sample is larger than this value")
 
     get.add_argument("--threads", default = 1, type = int,
-                     help = "Number of threads (not recommended) (default: 1)")
+                     help = "Number of parallel threads to use (not recommended) (default: 1)")
 
     get.add_argument("--processes", default = 1, type = int,
-                     help = "Number of processes (default: 1)")
+                     help = "Number of parallel processes to use (default: 1)")
 
     get.add_argument("--sort_option", metavar = "-S 1G", type = str, default = "-S 1G", 
-                     help = "options for sort command")
+                     help = "Options for Linux sort command (default: '-S 1G')")
 
     get.add_argument("--debug", default = False, action = 'store_true', help = "keep intermediate files (default: False)")
 
