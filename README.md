@@ -158,7 +158,7 @@ Even when only tumor sample is available, we still recommend using dummy control
 - **control_bam**: Path to the matched control BAM file
 
 When you use the control panel (recommended!), use the following argument.
-- **-control_panel_prefix**: Prefix of non-matched control panel data processed in merge_control step.
+- **control_panel_prefix**: Prefix of non-matched control panel data processed in merge_control step.
 
 After successful execution, you will be able to find the result file names as {tumor_prefix}.nanomonsv.result.txt.
 See the help (`nanomonsv get -h`) for other options. 
