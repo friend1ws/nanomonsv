@@ -1,6 +1,8 @@
-FROM ubuntu:18.04
+FROM ubuntu:20.04
 MAINTAINER Yuichi Shiraishi <friend1ws@gmail.com> 
 
+ENV TZ=Asia/Tokyo
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 RUN apt-get update && apt-get install -y \
     git \
@@ -17,9 +19,9 @@ RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip
 
-RUN wget https://github.com/samtools/htslib/releases/download/1.15.1/htslib-1.15.1.tar.bz2 && \
-    tar jxvf htslib-1.15.1.tar.bz2 && \
-    cd htslib-1.15.1 && \
+RUN wget https://github.com/samtools/htslib/releases/download/1.15/htslib-1.15.tar.bz2 && \
+    tar jxvf htslib-1.15.tar.bz2 && \
+    cd htslib-1.15 && \
     ./configure && \
     make && \
     make install 
@@ -36,7 +38,7 @@ RUN wget https://github.com/isovic/racon/releases/download/1.4.3/racon-v1.4.3.ta
 RUN pip3 install --upgrade setuptools
 
 RUN pip3 install pysam==0.19.1
-RUN pip3 install numpy==1.19.5
+RUN pip3 install numpy==1.23.0
 RUN pip3 install parasail==1.2.4
 
 RUN wget https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library/archive/v1.1.tar.gz && \
