@@ -294,27 +294,29 @@ def get_main(args):
 
     last_key = ""
     last_tpos = -1
-    for row in open(args.tumor_prefix + ".support_read_seq.txt"):
-        if row.rstrip() == "": continue
-        key = row.split("\t")[0]
-        if last_key != key:
-            last_key = key
-            last_tpos += 1
-            if last_tpos == parallel_num:
-                last_tpos = 0
-        fw_support_read_seqs[last_tpos].write(row)
+    with open(args.tumor_prefix + ".support_read_seq.txt") as hin:
+        for row in hin:
+            if row.rstrip() == "": continue
+            key = row.split("\t")[0]
+            if last_key != key:
+                last_key = key
+                last_tpos += 1
+                if last_tpos == parallel_num:
+                    last_tpos = 0
+            fw_support_read_seqs[last_tpos].write(row)
     
     last_key = ""
     last_tpos = -1
-    for row in open(args.tumor_prefix + ".support_read_seq.sbnd.txt"):
-        if row.rstrip() == "": continue
-        key = row.split("\t")[0]
-        if last_key != key:
-            last_key = key
-            last_tpos += 1
-            if last_tpos == parallel_num:
-                last_tpos = 0
-        fw_support_read_seq_sbnds[last_tpos].write(row)
+    with open(args.tumor_prefix + ".support_read_seq.sbnd.txt") as hin:
+        for row in hin:
+            if row.rstrip() == "": continue
+            key = row.split("\t")[0]
+            if last_key != key:
+                last_key = key
+                last_tpos += 1
+                if last_tpos == parallel_num:
+                    last_tpos = 0
+            fw_support_read_seq_sbnds[last_tpos].write(row)
 
     for i in range(parallel_num):
         fw_support_read_seqs[i].close()
