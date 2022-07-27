@@ -77,6 +77,14 @@ This control panel is made by aligning 30 Nanopore sequencing data to the GRCh38
 pip install nanomonsv (--user)
 ```
 
+Installation with conda
+
+Perhaps the simplest way to start using medaka is through conda; nanomonsv is available via the bioconda channel:
+```
+conda create -n nanomonsv -c conda-forge -c bioconda nanomonsv
+```
+Occasionally the conda releases lag behind the source code and PyPI releases.
+
 2. Prepare the reference genome for the test data (here, we show the path to Genomic Data Commons reference genome).
 ```
 wget https://api.gdc.cancer.gov/data/254f697d-310d-4d7d-a27b-27fbf767a834 -O GRCh38.d1.vd1.fa.tar.gz
