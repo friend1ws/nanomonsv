@@ -4,6 +4,7 @@ import sys, os, subprocess, shutil, statistics, logging
 from collections import Counter
 import pysam
 import parasail
+import resource
 
 from .logger import get_logger
 
@@ -12,7 +13,7 @@ logger = get_logger(__name__)
 
 class Consensus_generator(object):
 
-    def __init__(self, output_file, use_racon, debug):
+    def __init__(self, output_file, use_racon, debug, max_memory_minimap2):
 
         self.tmp_dir = output_file + ".tmp_dir"
         os.makedirs(self.tmp_dir, exist_ok = True)
@@ -28,6 +29,7 @@ class Consensus_generator(object):
         self.start_margin = 120
         self.min_inclusion_ratio = 0.9
         self.min_inclusion_count = 3
+        self.max_memory_minimap2 = max_memory_minimap2
 
     def __del__(self):
         self.hout.close()
@@ -202,6 +204,12 @@ class Consensus_generator(object):
         else:
             self.print_consensus_mafft()
 
+    def preexec_fn(self):
+        limit = self.max_memory_minimap2 * 1024 ** 3
+        if "RLIMIT_AS" in resource.__dict__:
+            resource.setrlimit(resource.RLIMIT_AS, (limit, limit))
+        elif "RLIMIT_VMEM" in resource.__dict__:
+            resource.setrlimit(resource.RLIMIT_VMEM, (limit, limit))
 
     def print_consensus_sbnd(self):
 
@@ -211,7 +219,7 @@ class Consensus_generator(object):
             subprocess.check_call(["minimap2", "-x", "ava-ont", 
                 self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa",
                 self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa"],
-                stderr = subprocess.DEVNULL, stdout = hout)
+                stderr = subprocess.DEVNULL, stdout = hout, preexec_fn = self.preexec_fn)
 
         readid2inclusion_count = {}
         with open(self.tmp_dir + '/' + self.temp_key + "_ava_minimap2.paf") as hin:
@@ -246,7 +254,7 @@ class Consensus_generator(object):
         with open(self.tmp_dir + '/' + self.temp_key + "_ova_minimap2.paf", 'w') as hout:
             subprocess.check_call(["minimap2", "-x", "map-ont", self.tmp_dir + '/' + self.temp_key + "_ref.fa",
                 self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa"], 
-                stderr = subprocess.DEVNULL, stdout = hout)
+                stderr = subprocess.DEVNULL, stdout = hout, preexec_fn = self.preexec_fn)
 
         paf_rec_count = 0
         with open(self.tmp_dir + '/' + self.temp_key + "_ova_minimap2.paf", 'r') as hin:
@@ -282,7 +290,7 @@ class Consensus_generator(object):
         with open(self.tmp_dir + '/' + self.temp_key + "_ova_minimap2_2nd.paf", 'w') as hout:
             subprocess.check_call(["minimap2", "-x", "map-ont", self.tmp_dir + '/' + self.temp_key + "_ref_2nd.fa",
                 self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa"],
-                stderr = subprocess.DEVNULL, stdout = hout)
+                stderr = subprocess.DEVNULL, stdout = hout, preexec_fn = self.preexec_fn)
 
         paf_rec_count = 0
         with open(self.tmp_dir + '/' + self.temp_key + "_ova_minimap2_2nd.paf", 'r') as hin:
@@ -313,11 +321,11 @@ class Consensus_generator(object):
 
 
 
-def generate_consensus(input_file, output_file, use_racon = False, debug = False): 
+def generate_consensus(input_file, output_file, use_racon = False, debug = False, max_memory_minimap2 = 1): 
 
     if debug: logger.setLevel(logging.DEBUG)
 
-    consensus_generator = Consensus_generator(output_file, use_racon, debug)
+    consensus_generator = Consensus_generator(output_file, use_racon, debug, max_memory_minimap2)
         
     with open(input_file, 'r') as hin:
         for line in hin:
@@ -336,12 +344,12 @@ def generate_consensus(input_file, output_file, use_racon = False, debug = False
     del consensus_generator 
 
 
-def generate_consensus_sbnd(input_file, output_file, use_racon = False, debug = False):
+def generate_consensus_sbnd(input_file, output_file, use_racon = False, debug = False, max_memory_minimap2 = 1):
 
     if debug: logger.setLevel(logging.DEBUG)
 
     # generate contig for single breakend
-    consensus_generator_sbnd = Consensus_generator(output_file, use_racon, debug)
+    consensus_generator_sbnd = Consensus_generator(output_file, use_racon, debug, max_memory_minimap2)
     with open(input_file, 'r') as hin:
         for line in hin:
             tkey, treadid, tsize, tseq = line.rstrip('\n').split('\t')

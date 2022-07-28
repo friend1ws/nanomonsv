@@ -130,6 +130,9 @@ def create_parser():
     get.add_argument("--sort_option", metavar = "-S 1G", type = str, default = "-S 1G", 
                      help = "Options for Linux sort command (default: '-S 1G')")
 
+    get.add_argument("--max_memory_minimap2", metavar = 1, type = int, default = 1, 
+                     help = "Maximum memory size (Gbyte) for minimap2 (default: 1)")
+
     get.add_argument("--debug", default = False, action = 'store_true', help = "keep intermediate files (default: False)")
 
     get.set_defaults(func = get_main)
