@@ -77,9 +77,7 @@ This control panel is made by aligning 30 Nanopore sequencing data to the GRCh38
 pip install nanomonsv (--user)
 ```
 
-Installation with conda
-
-Perhaps the simplest way to start using medaka is through conda; nanomonsv is available via the bioconda channel:
+You can also install nanomonsv via conda (bioconda channel).
 ```
 conda create -n nanomonsv -c conda-forge -c bioconda nanomonsv
 ```
@@ -114,6 +112,8 @@ The Oxford Nanopore Sequencing data used in the bioRxiv paper is available throu
 The results of nanomonsv for the above data are available [here](https://github.com/friend1ws/nanomonsv/tree/master/misc/example).
 When you perform nanomonsv to the above data and have experienced errors, please report to us.
 Also, please kindly cite the [bioRxiv paper](https://www.biorxiv.org/content/10.1101/2020.07.22.214262v1) when you use these data.
+
+See tutorial [wiki page](https://github.com/friend1ws/nanomonsv/wiki/Tutorial) for an example workflow on analyzing COLO829 sample.
 
 ## Commands
 
