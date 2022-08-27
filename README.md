@@ -59,12 +59,7 @@ This strategy is expected to exclude many false positives as well as improve com
 
 We have prepared the command to create control panels from the user's own sequencing data.
 In addition, for users who do not have sufficient sequencing data that can serve as a control panel (or just do not have time for processing), 
-we prepared a control panel that has been created using the 30 Nanopore sequencing data from the [Human Pangenome Reference Consortium](https://humanpangenome.org/),
-which you can download by the following command:
-
-```
-wget https://ncc-gap-pub.s3.ap-northeast-1.amazonaws.com/nanomonsv/control_panel/hprc_year1_data_freeze_nanopore_minimap2_2_24_merge_control.tar.gz
-```
+we prepared a control panel that has been created using the 30 Nanopore sequencing data from the [Human Pangenome Reference Consortium](https://humanpangenome.org/) at [zenodo](https://zenodo.org/record/7017953).
 
 This control panel is made by aligning 30 Nanopore sequencing data to the GRCh38 reference genome (obtained from [here](https://console.cloud.google.com/storage/browser/genomics-public-data/resources/broad/hg38/v0;tab=objects)) with minimap2 version 2.24. 
 **When you use these control panels and publish, do not forget to credit to [HPRC](https://github.com/human-pangenomics/HG002_Data_Freeze_v1.0#citations)!**
