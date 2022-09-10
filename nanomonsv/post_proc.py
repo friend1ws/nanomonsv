@@ -31,13 +31,14 @@ class Sv(object):
 class Sv_filterer(object):
 
     def __init__(self, output_file, reference_fasta, is_control, 
-        min_tumor_VAF = 0.05, bp_dist_margin = 30, validate_seg_len = 100):
+        min_tumor_VAF = 0.05, min_indel_size = 50, bp_dist_margin = 30, validate_seg_len = 100):
         self.sv_list = []
         self.hout = open(output_file, 'w')
         self.bp_dist_margin = bp_dist_margin
         self.is_control = is_control
         self.reference_h = pysam.FastaFile(reference_fasta)
         self.min_tumor_VAF = min_tumor_VAF
+        self.min_indel_size = min_indel_size
         self.bp_dist_margin = bp_dist_margin
         self.validate_seg_len = validate_seg_len
         self.header = None
@@ -51,7 +52,7 @@ class Sv_filterer(object):
     def filter_close_both_breakpoints(self, sv1, sv2, filter_item = "Duplicate_with_close_SV"):
 
         # only apply when the first or the second sv is not insertion
-        if len(sv1.inseq) >= 100 or len(sv2.inseq) >= 100: return 
+        if len(sv1.inseq) >= self.min_indel_size or len(sv2.inseq) >= self.min_indel_size: return 
 
         if sv1.chr1 == sv2.chr1 and sv1.chr2 == sv2.chr2 and sv1.dir1 == sv2.dir1 and sv1.dir2 == sv2.dir2 and \
             abs(sv1.pos1 - sv2.pos1) < self.bp_dist_margin and abs(sv1.pos2 - sv2.pos2) < self.bp_dist_margin:
@@ -84,7 +85,7 @@ class Sv_filterer(object):
     def filter_sv_insertion_match(self, sv, ins, filter_item = "Duplicate_with_insertion"):
     
         # only apply when the first sv is not insertion and the second sv is insertion type
-        if len(sv.inseq) >= 100 or len(ins.inseq) < 100: return 
+        if len(sv.inseq) >= self.min_indel_size or len(ins.inseq) < self.min_indel_size: return 
 
         if not (sv.chr1 == ins.chr1 and abs(sv.pos1 - ins.pos1) <= self.bp_dist_margin) and \
             not (sv.chr2 == ins.chr2 and abs(sv.pos2 - ins.pos2) <= self.bp_dist_margin):
@@ -136,7 +137,7 @@ class Sv_filterer(object):
     def filter_dup_insertion(self, ins1, ins2, filter_item = "Duplicate_with_close_insertion"):
 
         # only apply when the first and the second sv is insertion type
-        if len(ins1.inseq) < 100 or len(ins2.inseq) < 100: return None
+        if len(ins1.inseq) < self.min_indel_size or len(ins2.inseq) < self.min_indel_size: return None
 
         bp_match = (ins1.chr1 == ins2.chr1 and abs(ins1.pos1 - ins2.pos1) <= 2 * self.bp_dist_margin) and \
             (ins1.chr2 == ins2.chr2 and abs(ins1.pos2 - ins2.pos2) <= 2 * self.bp_dist_margin)
@@ -158,11 +159,11 @@ class Sv_filterer(object):
             return
 
 
-    def filter_small_sv(self, sv, size_thres = 100, filter_item = "Too_small_size"):
+    def filter_small_sv(self, sv, filter_item = "Too_small_size"):
 
         if sv.chr1 == sv.chr2 and sv.dir1 == '+' and sv.dir2 == '-':
             sv_size = sv.pos2 - sv.pos1 + len(sv.inseq) - 1
-            if sv_size < size_thres:
+            if sv_size < self.min_indel_size:
                 sv.filter.append(filter_item)
                 return
 
@@ -199,15 +200,15 @@ class Sv_filterer(object):
         # logger.info("filter_sv_insertion_match")
         for sv1, sv2 in itertools.combinations(self.sv_list, 2):
             if len(sv1.filter) > 0 or len(sv2.filter) > 0: continue
-            if len(sv1.inseq) < 100 and len(sv2.inseq) >= 100: 
+            if len(sv1.inseq) < self.min_indel_size and len(sv2.inseq) >= self.min_indel_size: 
                 self.filter_sv_insertion_match(sv1, sv2)
-            elif len(sv2.inseq) < 100 and len(sv1.inseq) >= 100:
+            elif len(sv2.inseq) < self.min_indel_size and len(sv1.inseq) >= self.min_indel_size:
                 self.filter_sv_insertion_match(sv2, sv1)
 
         # logger.info("filter_dup_insertion")
         for ins1, ins2 in itertools.combinations(self.sv_list, 2):
             if len(ins1.filter) > 0 or len(ins2.filter) > 0: continue
-            if len(ins1.inseq) >= 100 and len(ins2.inseq) >= 100:
+            if len(ins1.inseq) >= self.min_indel_size and len(ins2.inseq) >= self.min_indel_size:
                 self.filter_dup_insertion(ins1, ins2)
 
 
@@ -234,7 +235,7 @@ class Sv_filterer(object):
             print(f"{print_sv_line}\t{filter_print}", file = self.hout)
 
     
-def integrate_realignment_result(tumor_file, control_file, output_file, reference_fasta,
+def integrate_realignment_result(tumor_file, control_file, output_file, reference_fasta, min_indel_size = 50,
     min_tumor_variant_read_num = 3, min_tumor_VAF = 0.05, max_control_variant_read_num = 1, max_control_VAF = 0.03):
 
     is_control = True if control_file is not None else False
@@ -246,7 +247,7 @@ def integrate_realignment_result(tumor_file, control_file, output_file, referenc
                 svkey = (F[0], int(F[1]), F[2], F[3], int(F[4]), F[5], F[6], F[7])
                 svkey2control_info[svkey] = (int(F[8]), int(F[9]))
 
-    sv_filterer = Sv_filterer(output_file, reference_fasta, is_control, min_tumor_VAF)
+    sv_filterer = Sv_filterer(output_file, reference_fasta, is_control, min_tumor_VAF, min_indel_size)
     with open(tumor_file, 'r') as hin:
         for line in hin:
             F = line.rstrip('\n').split('\t')
@@ -295,7 +296,7 @@ def proc_sread_info_file(tumor_sread_info_file, sv_result_file, output_file, val
             score2, cstart2, cend2, sstart2, send2, strand2 = int(F[15]), int(F[16]), int(F[17]), int(F[18]), int(F[19]), F[20]
 
             tinseq = F[6]
-            readid = F[7]
+            readid = F[8]
                 
             if score1 >= score2:
                 sstrand = strand1

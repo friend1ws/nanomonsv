@@ -5,7 +5,7 @@
 
 ## Introduction
 
-nanomonsv is a software for detecting somatic structural variations from paired (tumor and matched control) cancer genome sequence data. nanomonsv is presented in the following preprint. **When you use nanomonsv or any resource of this repository, please kindly site this preprint**.
+nanomonsv is a software for detecting somatic structural variations　 from paired (tumor and matched control) cancer genome sequence data. nanomonsv is presented in the following preprint. **When you use nanomonsv or any resource of this repository, please kindly site this preprint**.
 
 Precise characterization of somatic structural variations and mobile element insertions from paired long-read sequencing data with nanomonsv, Shiraishi et al., bioRxiv, 2020, [[link]](https://www.biorxiv.org/content/10.1101/2020.07.22.214262v1)
 
@@ -38,8 +38,9 @@ assuming those are installed, and the paths are already added to the running env
 > ##### For use of SSW Library
 > Since version 0.2.0, nanomonsv can be executed without SSW Library. When users want to use SSW Library, create the libssw.so and add the path to the LD_LIBRARY_PATH environment variable. Please refer the **How to use the Python wrapper ssw_lib.py** section in the [SSW Library](https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library) repository page.
 
-> ##### For use of racon
-> Since version 0.3.0, we support racon for the step where generating consensus sequence and get single-base resolution breakpoints. racon may become the default instead of mafft in the future.
+###### For use of racon
+Since version 0.3.0, we support racon for the step where generating consensus sequence and get single-base resolution breakpoints. racon may become the default instead of mafft in the future.
+
 
 ### For advanced use (`insert_classify` command)
 `bwa`, `minimap2`, `bedtools` and `RepeatMasker` are required to be installed and these pathese are added to the running environment.
@@ -50,12 +51,32 @@ assuming those are installed, and the paths are already added to the running env
 nanomonsv accept the BAM file aligned by `minimap2`. 
 
 
+### Control panel
+Starting with version 0.5.0, the use of the control panel is supported. 
+In this software, supporting reads for SVs are collected for multiple samples other than the target sample, 
+and such reads are removed as common noise (or those derived from common SVs) in the `get` stage. 
+This strategy is expected to exclude many false positives as well as improve computational cost.
+
+We have prepared the command to create control panels from the user's own sequencing data.
+In addition, for users who do not have sufficient sequencing data that can serve as a control panel (or just do not have time for processing), 
+we prepared a control panel that has been created using the 30 Nanopore sequencing data from the [Human Pangenome Reference Consortium](https://humanpangenome.org/), which is available at [zenodo](https://zenodo.org/record/7017953).
+
+This control panel is made by aligning 30 Nanopore sequencing data to the GRCh38 reference genome (obtained from [here](https://console.cloud.google.com/storage/browser/genomics-public-data/resources/broad/hg38/v0;tab=objects)) with minimap2 version 2.24. 
+**When you use these control panels and publish, do not forget to credit to [HPRC](https://github.com/human-pangenomics/HG002_Data_Freeze_v1.0#citations)!**
+
+
 ## Quickstart
 
 1. Install all the prerequisite software and install nanomonsv.
 ```
 pip install nanomonsv (--user)
 ```
+
+You can also install nanomonsv via conda (bioconda channel).
+```
+conda create -n nanomonsv -c conda-forge -c bioconda nanomonsv
+```
+Occasionally the conda releases lag behind the source code and PyPI releases.
 
 2. Prepare the reference genome for the test data (here, we show the path to Genomic Data Commons reference genome).
 ```
@@ -74,7 +95,7 @@ nanomonsv parse tests/resource/bam/test_ctrl.bam output/test_ctrl
 nanomonsv get output/test_tumor tests/resource/bam/test_tumor.bam GRCh38.d1.vd1.fa --control_prefix output/test_ctrl --control_bam tests/resource/bam/test_ctrl.bam
 ```
 
-You will see the result file named as `test_tumor.nanomonsv.result.txt`.
+You will see the result file named `test_tumor.nanomonsv.result.txt`.
 
 ## Realistic example sequencing data
 
@@ -84,8 +105,10 @@ The Oxford Nanopore Sequencing data used in the bioRxiv paper is available throu
 - HCC1954: [tumor](https://www.ncbi.nlm.nih.gov/sra/DRX248306[accn]), [control](https://www.ncbi.nlm.nih.gov/sra/DRX248307[accn])
 
 The results of nanomonsv for the above data are available [here](https://github.com/friend1ws/nanomonsv/tree/master/misc/example).
-When you perfrom nanomonsv to the above data and have experienced errors, please report to us.
+When you perform nanomonsv to the above data and have experienced errors, please report to us.
 Also, please kindly cite the [bioRxiv paper](https://www.biorxiv.org/content/10.1101/2020.07.22.214262v1) when you use these data.
+
+See tutorial [wiki page](https://github.com/friend1ws/nanomonsv/wiki/Tutorial) for an example workflow on analyzing COLO829 sample.
 
 ## Commands
 
@@ -104,7 +127,7 @@ nanomonsv parse [-h] [--debug]
 
 See the help (`nanomonsv parse -h`) for other options.
 
-After successful completion, you will find supporting reads stratified by deletions, insertions, and rearrangements
+After successful completion, you will find supporting reads stratified by deletions, insertions, and rearrangements: 
 ({output_prefix}.deletion.sorted.bed.gz, {output_prefix}.insertion.sorted.bed.gz, {output_prefix}.rearrangement.sorted.bedpe.gz, and {output_prefix}.bp_info.sorted.bed.gz and their indexes (.tbi files). 
 
 
@@ -123,7 +146,8 @@ nanomonsv get [-h] [--control_prefix CONTROL_PREFIX]
               [--median_mapQ_thres MEDIAN_MAPQ_THRES]
               [--max_overhang_size_thres MAX_OVERHANG_SIZE_THRES]
               [--var_read_min_mapq VAR_READ_MIN_MAPQ] [--use_ssw_lib] [--use_racon]
-              [--debug]
+              [--threads THREADS] [--processes PROCESSES] 
+              [--sort_option SORT_OPTION] [--max_memory_minimap2] [--debug]
               tumor_prefix tumor_bam reference.fa
  ```
  - **tumor_prefix**: Prefix to the tumor data set in the parse step
@@ -132,17 +156,20 @@ nanomonsv get [-h] [--control_prefix CONTROL_PREFIX]
  
 This software can generate a list of SVs without specifying the matched control.
 But we have not tested the performance of the approach just using tumor sample, and strongly recommend using the matched control data.
-Even when only tumor sample is available, we still recommend using non-matched control sample (collected from other person's tissue).
+Even when only tumor sample is available, we still recommend using dummy control sample (collected from other person's tissue).
 - **control_prefix**: Prefix to the matched control data set in the parse step
 - **control_bam**: Path to the matched control BAM file
+
+When you use the control panel (recommended!), use the following argument.
+- **control_panel_prefix**: Prefix of non-matched control panel data processed in merge_control step.
 
 After successful execution, you will be able to find the result file names as {tumor_prefix}.nanomonsv.result.txt.
 See the help (`nanomonsv get -h`) for other options. 
 
 When you want to change the engine of Smith-Waterman algorithm to SSW Library, specify `--use_ssw_lib` option,
-though we do not generally recomend this.
+though we do not generally recommend this.
 
-Also, we basically recommend to use `--use_racon` option. This will slightly improve the identification of single-base resolution breakpoint, 
+Also, we basically recommend using `--use_racon` option. This will slightly improve the identification of single-base resolution breakpoint, 
 and polishing of inserted sequences. 
 
 Also, we have prepared the script (misc/post_fileter.py) for filtering the result.
@@ -166,6 +193,19 @@ From the version 0.4.0, we will also provide the VCF format result files.
 * **Checked_Read_Num_Control**: Total number of reads in the normal used for the validation alignment step
 * **Supporting_Read_Num_Control**: Total number of variant reads in the matched control determined in the validation alignment step
 * **Is_Filter**: Filter status. PASS if this SV has passed all the filters
+
+
+### merge_control
+
+This command merges non-matched control panel supporting reads obtained by performing `parse` command.
+
+```
+nanomonsv merge_control [-h] prefix_list_file output_prefix
+```
+
+- **prefix_list_file**: The list of output_prefix generated at the above `parse` stage. 
+- **output_prefix**: Prefix to the merged control supporting reads. 
+
 
 ### insert_classify
 

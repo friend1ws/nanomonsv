@@ -2,6 +2,7 @@
 
 import os, subprocess, shutil
 from .parse import *
+from .merge_control import *
 from .cluster import *
 from .cluster_sbnd import *
 from .gather_support_read_seq import *
@@ -44,7 +45,7 @@ def parse_main(args):
     ####################
     # deletion processing
     hout = open(args.output_prefix + ".tmp.deletion.sorted.bed", 'w')
-    subprocess.check_call(["sort", "-k1,1", "-k2,2n", "-k3,3n", args.output_prefix + ".tmp.deletion_info.txt"], stdout = hout)
+    subprocess.check_call(["sort", "-k1,1", "-k2,2n", "-k3,3n", "-k5,5n", args.output_prefix + ".tmp.deletion_info.txt"], stdout = hout)
     hout.close()
 
     hout = open(args.output_prefix + ".deletion.sorted.bed.gz", 'w')
@@ -57,7 +58,7 @@ def parse_main(args):
     ####################
     # insertion processing
     hout = open(args.output_prefix + ".tmp.insertion.sorted.bed", 'w')
-    subprocess.check_call(["sort", "-k1,1", "-k2,2n", "-k3,3n", args.output_prefix + ".tmp.insertion_info.txt"], stdout = hout)
+    subprocess.check_call(["sort", "-k1,1", "-k2,2n", "-k3,3n", "-k5,5n", args.output_prefix + ".tmp.insertion_info.txt"], stdout = hout)
     hout.close()
     
     hout = open(args.output_prefix + ".insertion.sorted.bed.gz", 'w') 
@@ -115,6 +116,68 @@ def parse_main(args):
         subprocess.check_call(["rm", "-rf", args.output_prefix + ".bp_info.sorted.bed"])
 
 
+def merge_control_main(args):
+
+    merge_control_from_parse_files(args.prefix_list_file, args.output_prefix)
+
+
+def call_slow_request(args, index):
+    ret_code = 1
+    err_message = ""
+    try:
+        logger.info("Generate consensus sequences (%d)" % (index))
+        generate_consensus(args.tumor_prefix + ".support_read_seq.%d.txt" % (index),
+            args.tumor_prefix + ".consensus_seq.%d.txt" % (index),
+            use_racon = args.use_racon, debug = args.debug)
+        generate_consensus_sbnd(args.tumor_prefix + ".support_read_seq.sbnd.%d.txt" % (index),
+            args.tumor_prefix + ".consensus_seq.sbnd.%d.txt" % (index),
+            use_racon = args.use_racon, debug = args.debug, max_memory_minimap2 = args.max_memory_minimap2)
+
+        logger.info("Locating single-base resolution break points for candidate SVs (%d)" % (index))
+        locate_bp(args.tumor_prefix + ".consensus_seq.%d.txt" % (index),
+            args.tumor_prefix + ".refined_bp.%d.txt" % (index),
+            args.reference_fasta, args.debug)
+        locate_bp_sbnd(args.tumor_prefix + ".consensus_seq.sbnd.%d.txt" % (index),
+            args.tumor_prefix + ".refined_bp.sbnd.%d.txt" % (index),
+            args.reference_fasta, args.debug)
+
+        logger.info("Counting the number of supprting read for the tumor by realignment of SV candidate segments (%d)" % (index))
+        count_sread_by_alignment(
+            args.tumor_prefix + ".refined_bp.%d.txt" % (index), 
+            args.tumor_bam, 
+            args.tumor_prefix + ".realignment.tumor.sread_count.%d.txt" % (index), 
+            args.tumor_prefix + ".realignment.tumor.sread_info.%d.txt" % (index), 
+            args.reference_fasta,
+            sbnd_file = args.tumor_prefix + ".refined_bp.sbnd.%d.txt" % (index), 
+            output_count_file_sbnd = args.tumor_prefix + ".realignment.tumor.sread_count.sbnd.%d.txt" % (index),
+            output_alignment_info_file_sbnd = args.tumor_prefix + ".realignment.tumor.sread_info.sbnd.%d.txt" % (index),
+            check_read_max_num = args.check_read_max_num, 
+            var_read_min_mapq = args.var_read_min_mapq, use_ssw_lib = args.use_ssw_lib, 
+            sort_option = args.sort_option, debug = args.debug
+        )
+     
+        if args.control_bam is not None:
+            logger.info("Counting the number of supprting read for the control by realignment of SV candidate segments (%d)" % (index))
+            count_sread_by_alignment(
+                args.tumor_prefix + ".refined_bp.%d.txt" % (index), 
+                args.control_bam, 
+                args.tumor_prefix + ".realignment.control.sread_count.%d.txt" % (index), 
+                args.tumor_prefix + ".realignment.control.sread_info.%d.txt" % (index), 
+                args.reference_fasta,
+                sbnd_file = args.tumor_prefix + ".refined_bp.sbnd.%d.txt" % (index), 
+                output_count_file_sbnd = args.tumor_prefix + ".realignment.control.sread_count.sbnd.%d.txt" % (index),
+                output_alignment_info_file_sbnd = args.tumor_prefix + ".realignment.control.sread_info.sbnd.%d.txt" % (index),
+                check_read_max_num = args.check_read_max_num, 
+                var_read_min_mapq = args.var_read_min_mapq, use_ssw_lib = args.use_ssw_lib, 
+                sort_option = args.sort_option, debug = args.debug
+            )
+        ret_code = 0
+    except Exception as e:
+        err_message = str(e)
+    
+    logger.info("End Process (%d): ret_code=%d" % (index, ret_code))
+    return (ret_code, err_message)
+
 def get_main(args):
 
     # check if the executables exist
@@ -129,7 +192,16 @@ def get_main(args):
         if not args.use_racon:
             logger.error("single_bnd option has to be used with use_racon option")
             sys.exit(1)
-       
+
+    parallel_num = 1
+    if args.threads > 1:
+        if args.processes > 1:
+            logger.error("threads option has to be used with processes option")
+            sys.exit(1)
+        parallel_num = args.threads
+    elif args.processes > 1:
+        parallel_num = args.processes
+
     # check existences
     is_exists_bam(args.tumor_bam)
     is_exists(args.reference_fasta)
@@ -138,6 +210,7 @@ def get_main(args):
     # check parsed files existences
     is_exists_parsed_files(args.tumor_prefix)
     if args.control_prefix is not None: is_exists_parsed_files(args.control_prefix)
+    if args.control_panel_prefix is not None: is_exists_parsed_files(args.control_panel_prefix)
  
     # BAM format check
     bam_format_check(args.tumor_bam)
@@ -155,6 +228,18 @@ def get_main(args):
         # if args.single_bnd is not None:
         control_bp_bed = args.control_prefix + ".bp_info.sorted.bed.gz"
 
+
+    control_panel_rearrangement_bedpe = None
+    control_panel_deletion_bed = None
+    control_panel_insertion_bed = None
+    control_panel_bp_bed = None
+    if args.control_panel_prefix is not None:
+        control_panel_rearrangement_bedpe = args.control_panel_prefix + ".rearrangement.sorted.bedpe.gz"
+        control_panel_deletion_bed = args.control_panel_prefix + ".deletion.sorted.bed.gz"
+        control_panel_insertion_bed = args.control_panel_prefix + ".insertion.sorted.bed.gz"
+        # if args.single_bnd is not None:
+        control_panel_bp_bed = args.control_panel_prefix + ".bp_info.sorted.bed.gz"
+
     bp_bed = None
     if args.use_racon:
         bp_bed = args.tumor_prefix + ".bp_info.sorted.bed.gz"
@@ -163,32 +248,40 @@ def get_main(args):
     cluster_supporting_reads(args.tumor_prefix + ".rearrangement.sorted.bedpe.gz", 
         args.tumor_prefix + ".rearrangement.sorted.clustered.bedpe",
         "rearrangement", control_junction_bedpe = control_rearrangement_bedpe,
+        control_panel_junction_bedpe = control_panel_rearrangement_bedpe,
         read_num_thres = args.min_tumor_variant_read_num, cluster_margin_size = args.cluster_margin_size, 
         median_mapQ_thres = args.median_mapQ_thres, max_overhang_size_thres = args.max_overhang_size_thres,
-        maximum_local_variant_num = 1000, debug = args.debug)
+        maximum_local_variant_num = 1000, max_control_read_num = args.max_control_variant_read_num, 
+        max_panel_read_num = args.max_panel_read_num, max_panel_sample_num = args.max_panel_sample_num, debug = args.debug)
 
     logger.info("Clustering insertion type supporting reads for putative SVs")
     cluster_supporting_reads(args.tumor_prefix + ".insertion.sorted.bed.gz",
         args.tumor_prefix + ".insertion.sorted.clustered.bedpe",
-        "insertion", control_junction_bedpe = control_insertion_bed, bp_bed = bp_bed,
+        "insertion", control_junction_bedpe = control_insertion_bed, 
+        control_panel_junction_bedpe = control_panel_insertion_bed, bp_bed = bp_bed,
         read_num_thres = args.min_tumor_variant_read_num, cluster_margin_size = args.cluster_margin_size, 
         median_mapQ_thres = args.median_mapQ_thres, max_overhang_size_thres = args.max_overhang_size_thres,
-        debug = args.debug)
+        min_indel_size = int(0.7 * args.min_indel_size), max_control_read_num = args.max_control_variant_read_num, 
+        max_panel_read_num = args.max_panel_read_num, max_panel_sample_num = args.max_panel_sample_num, debug = args.debug)
 
     logger.info("Clustering deletion type supporting reads for putative SVs")
     cluster_supporting_reads(args.tumor_prefix + ".deletion.sorted.bed.gz",
         args.tumor_prefix + ".deletion.sorted.clustered.bedpe",
-        "deletion", control_junction_bedpe = control_deletion_bed, bp_bed = bp_bed,
+        "deletion", control_junction_bedpe = control_deletion_bed, 
+        control_panel_junction_bedpe = control_panel_deletion_bed, bp_bed = bp_bed,
         read_num_thres = args.min_tumor_variant_read_num, cluster_margin_size = args.cluster_margin_size, 
         median_mapQ_thres = args.median_mapQ_thres, max_overhang_size_thres = args.max_overhang_size_thres,
-        debug = args.debug)
+        min_indel_size = int(0.7 * args.min_indel_size), max_control_read_num = args.max_control_variant_read_num, 
+        max_panel_read_num = args.max_panel_read_num, max_panel_sample_num = args.max_panel_sample_num, debug = args.debug)
 
     if args.single_bnd:
         logger.info("Clustering single breakend type supporting reads for putative SVs")
         cluster_supporting_reads_sbnd(args.tumor_prefix + ".bp_info.sorted.bed.gz",
             args.tumor_prefix + ".singlebreakend.sorted.clustered.bed", control_bed = control_bp_bed,
+            control_panel_bed = control_panel_bp_bed, 
             read_num_thres = args.min_tumor_variant_read_num, cluster_margin_size = args.cluster_margin_size,
-            median_mapQ_thres = args.median_mapQ_thres, debug = args.debug)
+            median_mapQ_thres = args.median_mapQ_thres, max_control_read_num = args.max_control_variant_read_num,
+            max_panel_read_num = args.max_panel_read_num, max_panel_sample_num = args.max_panel_sample_num, debug = args.debug)
     else:
         with open(args.tumor_prefix + ".singlebreakend.sorted.clustered.bed", 'w'):
             pass
@@ -200,43 +293,104 @@ def get_main(args):
         args.tumor_prefix + ".support_read_seq.txt",
         args.tumor_bam, single_breakend_file = args.tumor_prefix + ".singlebreakend.sorted.clustered.bed",
         output_file_sbind = args.tumor_prefix + ".support_read_seq.sbnd.txt" )
-
-    logger.info("Generate consensus sequences")
-    generate_consensus(args.tumor_prefix + ".support_read_seq.txt",
-        args.tumor_prefix + ".consensus_seq.txt",
-        use_racon = args.use_racon, debug = args.debug)
-    generate_consensus_sbnd(args.tumor_prefix + ".support_read_seq.sbnd.txt",
-        args.tumor_prefix + ".consensus_seq.sbnd.txt",
-        use_racon = args.use_racon, debug = args.debug)
     
-    logger.info("Locating single-base resolution break points for candidate SVs")
-    locate_bp(args.tumor_prefix + ".consensus_seq.txt",
-        args.tumor_prefix + ".refined_bp.txt",
-        args.reference_fasta, args.debug)
-    locate_bp_sbnd(args.tumor_prefix + ".consensus_seq.sbnd.txt",
-        args.tumor_prefix + ".refined_bp.sbnd.txt",
-        args.reference_fasta, args.debug)
+    logger.info("Preparation for parallel execution")
+    fw_support_read_seqs = []
+    fw_support_read_seq_sbnds = []
+    for i in range(parallel_num):
+        fw_support_read_seqs.append(open(args.tumor_prefix + ".support_read_seq.%d.txt" % (i), "w"))
+        fw_support_read_seq_sbnds.append(open(args.tumor_prefix + ".support_read_seq.sbnd.%d.txt" % (i), "w"))
 
-    logger.info("Counting the number of supprting read for the tumor by realignment of SV candidate segments")
-    count_sread_by_alignment(args.tumor_prefix + ".refined_bp.txt", args.tumor_bam, 
-        args.tumor_prefix + ".realignment.tumor.sread_count.txt", args.tumor_prefix + ".realignment.tumor.sread_info.txt", args.reference_fasta,
-        sbnd_file = args.tumor_prefix + ".refined_bp.sbnd.txt", output_count_file_sbnd = args.tumor_prefix + ".realignment.tumor.sread_count.sbnd.txt",
-        output_alignment_info_file_sbnd = args.tumor_prefix + ".realignment.tumor.sread_info.sbnd.txt",
-        check_read_max_num = args.check_read_max_num, var_read_min_mapq = args.var_read_min_mapq, use_ssw_lib = args.use_ssw_lib, debug = args.debug)
- 
+    last_key = ""
+    last_tpos = -1
+    with open(args.tumor_prefix + ".support_read_seq.txt") as hin:
+        for row in hin:
+            if row.rstrip() == "": continue
+            key = row.split("\t")[0]
+            if last_key != key:
+                last_key = key
+                last_tpos += 1
+                if last_tpos == parallel_num:
+                    last_tpos = 0
+            fw_support_read_seqs[last_tpos].write(row)
+    
+    last_key = ""
+    last_tpos = -1
+    with open(args.tumor_prefix + ".support_read_seq.sbnd.txt") as hin:
+        for row in hin:
+            if row.rstrip() == "": continue
+            key = row.split("\t")[0]
+            if last_key != key:
+                last_key = key
+                last_tpos += 1
+                if last_tpos == parallel_num:
+                    last_tpos = 0
+            fw_support_read_seq_sbnds[last_tpos].write(row)
+
+    for i in range(parallel_num):
+        fw_support_read_seqs[i].close()
+        fw_support_read_seq_sbnds[i].close()
+
+    if parallel_num == 1:
+        call_slow_request(args, 0)
+    else:
+        import concurrent.futures
+
+        if args.processes > 1:
+            with concurrent.futures.ProcessPoolExecutor(max_workers=parallel_num) as executor:
+                features = [executor.submit(call_slow_request, args, i) for i in range(parallel_num)]
+                for feature in features:
+                    (ret_code, err_message) = feature.result()
+                    if ret_code != 0:
+                        raise Exception(err_message)
+        else:
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                features = [executor.submit(call_slow_request, args, i) for i in range(parallel_num)]
+                for feature in features:
+                    (ret_code, err_message) = feature.result()
+                    if ret_code != 0:
+                        raise Exception(err_message)
+
+    logger.info("Merge parallel execution")
+    def merge_txt(prefix):
+        with open(prefix + ".txt", 'w') as hout:
+            for i in range(parallel_num):
+                for l in open(prefix + ".%d.txt" % (i)):
+                    hout.write(l)
+    merge_txt(args.tumor_prefix + ".refined_bp.sbnd")
+    merge_txt(args.tumor_prefix + ".realignment.tumor.sread_count")
+    merge_txt(args.tumor_prefix + ".realignment.tumor.sread_info")
+    merge_txt(args.tumor_prefix + ".realignment.tumor.sread_count.sbnd")
+    merge_txt(args.tumor_prefix + ".realignment.tumor.sread_info.sbnd")
     if args.control_bam is not None:
-        logger.info("Counting the number of supprting read for the control by realignment of SV candidate segments")
-        count_sread_by_alignment(args.tumor_prefix + ".refined_bp.txt", args.control_bam, 
-            args.tumor_prefix + ".realignment.control.sread_count.txt", args.tumor_prefix + ".realignment.control.sread_info.txt", args.reference_fasta,
-            sbnd_file = args.tumor_prefix + ".refined_bp.sbnd.txt", output_count_file_sbnd = args.tumor_prefix + ".realignment.control.sread_count.sbnd.txt",
-            output_alignment_info_file_sbnd = args.tumor_prefix + ".realignment.control.sread_info.sbnd.txt",
-            check_read_max_num = args.check_read_max_num, var_read_min_mapq = args.var_read_min_mapq, use_ssw_lib = args.use_ssw_lib, debug = args.debug)
+        merge_txt(args.tumor_prefix + ".realignment.control.sread_count")
+        merge_txt(args.tumor_prefix + ".realignment.control.sread_info")
+        merge_txt(args.tumor_prefix + ".realignment.control.sread_count.sbnd")
+        merge_txt(args.tumor_prefix + ".realignment.control.sread_info.sbnd")
+    if not args.debug:
+        for i in range(parallel_num):
+            os.remove(args.tumor_prefix + ".support_read_seq.%d.txt" % (i))
+            os.remove(args.tumor_prefix + ".support_read_seq.sbnd.%d.txt" % (i))
+            os.remove(args.tumor_prefix + ".consensus_seq.%d.txt" % (i))
+            os.remove(args.tumor_prefix + ".consensus_seq.sbnd.%d.txt" % (i))
+            os.remove(args.tumor_prefix + ".refined_bp.%d.txt" % (i))
+            os.remove(args.tumor_prefix + ".refined_bp.sbnd.%d.txt" % (i))
+            os.remove(args.tumor_prefix + ".realignment.tumor.sread_count.%d.txt" % (i))
+            os.remove(args.tumor_prefix + ".realignment.tumor.sread_count.sbnd.%d.txt" % (i))
+            os.remove(args.tumor_prefix + ".realignment.tumor.sread_info.%d.txt" % (i))
+            os.remove(args.tumor_prefix + ".realignment.tumor.sread_info.sbnd.%d.txt" % (i))
+            if args.control_bam is not None:
+                os.remove(args.tumor_prefix + ".realignment.control.sread_count.%d.txt" % (i))
+                os.remove(args.tumor_prefix + ".realignment.control.sread_count.sbnd.%d.txt" % (i))
+                os.remove(args.tumor_prefix + ".realignment.control.sread_info.%d.txt" % (i))
+                os.remove(args.tumor_prefix + ".realignment.control.sread_info.sbnd.%d.txt" % (i))
 
     logger.info("Final processing") 
     control_sread_count_file = args.tumor_prefix + ".realignment.control.sread_count.txt" if args.control_bam is not None else None
     integrate_realignment_result(args.tumor_prefix + ".realignment.tumor.sread_count.txt", control_sread_count_file,
-        args.tumor_prefix + ".nanomonsv.result.txt", args.reference_fasta,
-        args.min_tumor_variant_read_num, args.min_tumor_VAF, args.max_control_variant_read_num, args.max_control_VAF)
+        args.tumor_prefix + ".nanomonsv.result.txt", args.reference_fasta, min_indel_size = args.min_indel_size,
+        min_tumor_variant_read_num = args.min_tumor_variant_read_num, min_tumor_VAF = args.min_tumor_VAF, 
+        max_control_variant_read_num = args.max_control_variant_read_num, max_control_VAF = args.max_control_VAF)
 
     genomesv2vcf_convert(args.tumor_prefix + ".nanomonsv.result.txt", args.tumor_prefix + ".nanomonsv.result.vcf", 
         args.reference_fasta)
@@ -257,9 +411,9 @@ def get_main(args):
         os.remove(args.tumor_prefix + ".singlebreakend.sorted.clustered.bed")
         os.remove(args.tumor_prefix + ".support_read_seq.txt")
         os.remove(args.tumor_prefix + ".support_read_seq.sbnd.txt")
-        os.remove(args.tumor_prefix + ".consensus_seq.txt")
-        os.remove(args.tumor_prefix + ".consensus_seq.sbnd.txt")
-        os.remove(args.tumor_prefix + ".refined_bp.txt")
+        #os.remove(args.tumor_prefix + ".consensus_seq.txt")
+        #os.remove(args.tumor_prefix + ".consensus_seq.sbnd.txt")
+        #os.remove(args.tumor_prefix + ".refined_bp.txt")
         os.remove(args.tumor_prefix + ".refined_bp.sbnd.txt")
         os.remove(args.tumor_prefix + ".realignment.tumor.sread_count.txt")
         os.remove(args.tumor_prefix + ".realignment.tumor.sread_count.sbnd.txt")
@@ -284,13 +438,15 @@ def validate_main(args):
     logger.info("Counting the number of supprting read for the tumor by realignment of SV candidate segments")
     count_sread_by_alignment(args.sv_list_file, args.tumor_bam,
         args.output + ".realignment.tumor.sread_count.txt", args.output + ".realignment.tumor.sread_info.txt",
-        args.reference_fasta, var_read_min_mapq = args.var_read_min_mapq, use_ssw_lib = args.use_ssw_lib, debug = args.debug)
+        args.reference_fasta, var_read_min_mapq = args.var_read_min_mapq, use_ssw_lib = args.use_ssw_lib, 
+        sort_option = args.sort_option, debug = args.debug)
 
     if args.control_bam is not None:
         logger.info("Counting the number of supprting read for the control by realignment of SV candidate segments")
         count_sread_by_alignment(args.sv_list_file, args.control_bam,
             args.output + ".realignment.control.sread_count.txt", args.output + ".realignment.control.sread_info.txt",
-            args.reference_fasta, var_read_min_mapq = args.var_read_min_mapq, use_ssw_lib = args.use_ssw_lib, debug = args.debug)
+            args.reference_fasta, var_read_min_mapq = args.var_read_min_mapq, use_ssw_lib = args.use_ssw_lib, 
+            sort_option = args.sort_option, debug = args.debug)
 
     logger.info("Final processing")
     control_sread_count_file = args.output + ".realignment.control.sread_count.txt" if args.control_bam is not None else None
