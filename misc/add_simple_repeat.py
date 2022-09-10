@@ -1,15 +1,10 @@
 #! /usr/bin/env python3
 
-import csv, itertools
-import pysam, parasail
-
-from nanomonsv.my_seq import reverse_complement
-from nanomonsv.logger import get_logger
-
-logger = get_logger(__name__)
+import sys, csv
+import pysam
 
 
-def filter_indel_in_simple_repeat(tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq, simple_repeat_dist_margin = 30):
+def filter_indel_in_simple_repeat(tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq, simple_repeat_tb, simple_repeat_dist_margin = 30):
 
     if tchr1 == tchr2 and tdir1 == '+' and tdir2 == '-':
         sv_size = tpos2 - tpos1 + len(tinseq) - 1
@@ -19,7 +14,7 @@ def filter_indel_in_simple_repeat(tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tins
             records = simple_repeat_tb.fetch(tchr1, max(tpos1 - simple_repeat_dist_margin + 1, 0), 
                 tpos1 + simple_repeat_dist_margin)
         except Exception as inst:
-            logger.warning("%s: %s" % (type(inst), inst.args))
+            print(f'{type(inst)}: {inst.args}', file = sys.stderr)
             tabix_error_flag = True
 
         if tabix_error_flag == False:
@@ -32,33 +27,38 @@ def filter_indel_in_simple_repeat(tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tins
         return False
 
 
-
-
 def post_filter_main(args):
 
-    with open(args.sv_list_file, 'r') as hin:
+    simple_repeat_tb = pysam.TabixFile(args.simple_repeat_bed) if args.simple_repeat_bed is not None else None
+    
+    with open(args.sv_list_file, 'r') as hin, open(args.output_file, 'w') as hout:
         dreader = csv.DictReader(hin, delimiter = '\t')
         header = dreader.fieldnames
+        print('\t'.join(header), file = hout)
 
         for F in dreader:
             tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq = F["Chr_1"], int(F["Pos_1"]), F["Dir_1"], F["Chr_2"], int(F["Pos_2"]), F["Dir_2"], F["Inserted_Seq"]
 
-            simple_repeat_flag = filter_indel_in_simple_repeat(tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq)
-
-            if F["Is_Filter"] == "PASS": 
-                F["Is_Filter"] = "Simple_repeat"
+            if args.simple_repeat_bed is not None:
+                simple_repeat_flag = filter_indel_in_simple_repeat(tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq, simple_repeat_tb)
             else:
-                F["Is_Filter"] = F["Is_Filter"] + ';' + "Simple_repeat"
+                simple_repeat_flag = False
 
-            print('\t'.join(F.values()))
+            if simple_repeat_flag:
+                if F["Is_Filter"] == "PASS": 
+                    F["Is_Filter"] = "Simple_repeat"
+                else:
+                    F["Is_Filter"] = F["Is_Filter"] + ';' + "Simple_repeat"
+
+            print('\t'.join(F.values()), file = hout)
  
 
 if __name__ == "__main__":
 
     import argparse
 
-    parser = argparse.ArgumentParser(prog = "nanomonsv_post_filter",
-        description = "Post filtering script for the result of nanomonsv")
+    parser = argparse.ArgumentParser(prog = "nanomonsv_simple_repeat_annot",
+        description = "Add simple repeat annotation to the result of nanomonsv")
 
     parser.add_argument("sv_list_file", type = str,
                         help = "Path to the nanomonsv result file")
@@ -66,7 +66,7 @@ if __name__ == "__main__":
     parser.add_argument("output_file", type = str,
                         help = "Path to the output file")
 
-    parser.add_argument("--simple_repeat_bed", metavar = "simpleRepeat.bed.gz", type = str, default = None,
+    parser.add_argument("simple_repeat_bed", metavar = "simpleRepeat.bed.gz", type = str, default = None,
                         help = "Path to the tabix indexed simple repeat bed file")
 
     args = parser.parse_args()
