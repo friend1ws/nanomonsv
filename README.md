@@ -175,6 +175,7 @@ and polishing of inserted sequences.
 Also, we have prepared the script (misc/post_fileter.py) for filtering the result.
 Please see the [wiki page](https://github.com/friend1ws/nanomonsv/wiki/How-to-filter-nanomonsv-result).
 For output files of the version 0.4.0 and later, some filtering has already been performed (see the [wiki page](https://github.com/friend1ws/nanomonsv/wiki/How-to-understand-nanomonsv-result-filtering)). 
+However, we strongly recommed to perform additional processing; removing indels within simple repeat regions (see the [wiki page](https://github.com/friend1ws/nanomonsv/wiki/An-example-on-removing-indels-within-simple-repeat)).
 
 From the version 0.4.0, we will also provide the VCF format result files.
 
