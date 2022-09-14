@@ -141,7 +141,7 @@ def call_slow_request(args, index):
             args.tumor_prefix + ".refined_bp.sbnd.%d.txt" % (index),
             args.reference_fasta, args.debug)
 
-        logger.info("Counting the number of supprting read for the tumor by realignment of SV candidate segments (%d)" % (index))
+        logger.info("Counting the number of supporting read for the tumor by realignment of SV candidate segments (%d)" % (index))
         count_sread_by_alignment(
             args.tumor_prefix + ".refined_bp.%d.txt" % (index), 
             args.tumor_bam, 
@@ -157,7 +157,7 @@ def call_slow_request(args, index):
         )
      
         if args.control_bam is not None:
-            logger.info("Counting the number of supprting read for the control by realignment of SV candidate segments (%d)" % (index))
+            logger.info("Counting the number of supporting read for the control by realignment of SV candidate segments (%d)" % (index))
             count_sread_by_alignment(
                 args.tumor_prefix + ".refined_bp.%d.txt" % (index), 
                 args.control_bam, 
@@ -435,14 +435,14 @@ def validate_main(args):
     if args.use_ssw_lib: libssw_check()
 
     
-    logger.info("Counting the number of supprting read for the tumor by realignment of SV candidate segments")
+    logger.info("Counting the number of supporting read for the tumor by realignment of SV candidate segments")
     count_sread_by_alignment(args.sv_list_file, args.tumor_bam,
         args.output + ".realignment.tumor.sread_count.txt", args.output + ".realignment.tumor.sread_info.txt",
         args.reference_fasta, var_read_min_mapq = args.var_read_min_mapq, use_ssw_lib = args.use_ssw_lib, 
         sort_option = args.sort_option, debug = args.debug)
 
     if args.control_bam is not None:
-        logger.info("Counting the number of supprting read for the control by realignment of SV candidate segments")
+        logger.info("Counting the number of supporting read for the control by realignment of SV candidate segments")
         count_sread_by_alignment(args.sv_list_file, args.control_bam,
             args.output + ".realignment.control.sread_count.txt", args.output + ".realignment.control.sread_info.txt",
             args.reference_fasta, var_read_min_mapq = args.var_read_min_mapq, use_ssw_lib = args.use_ssw_lib, 
