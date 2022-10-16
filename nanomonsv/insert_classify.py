@@ -302,14 +302,14 @@ def check_tsd_polyAT(input_file, seq_list, reference, output_file):
             tsd_cand1 = seq[:20]
             local_seq1 = get_seq(reference, tchr, int(tpos2), int(tpos2) + len(tsd_cand1))
             alignment1 = sw.align(tsd_cand1, local_seq1)
-            if alignment1.q_pos <= 2 and alignment1.matches >= 5 and alignment1.identity >= 0.8: 
+            if alignment1.q_pos <= 2 and alignment1.r_pos <= 2 and alignment1.matches >= 5 and alignment1.identity >= 0.8: 
                 tsd1 = alignment1.query[(alignment1.q_pos):(alignment1.q_pos + alignment1.matches)]  
 
 
             tsd_cand2 = reverse_complement(seq[-20:])
             local_seq2 = reverse_complement(get_seq(reference, tchr, int(tpos1) - len(tsd_cand2), int(tpos1)))
             alignment2 = sw.align(tsd_cand2, local_seq2)
-            if alignment2.q_pos <= 2 and alignment2.matches >= 5 and alignment2.identity >= 0.8: 
+            if alignment2.q_pos <= 2 and alignment2.r_pos <= 2 and alignment2.matches >= 5 and alignment2.identity >= 0.8: 
                 tsd2 = reverse_complement(alignment2.query[(alignment2.q_pos):(alignment2.q_pos + alignment2.matches)])
 
             if tsd1 is not None and tsd2 is None: 
@@ -325,7 +325,8 @@ def check_tsd_polyAT(input_file, seq_list, reference, output_file):
             if is_polyT: polyAT = "polyT"
             if is_polyA: polyAT = "polyA"
 
-            print(sid + '\t' + str(polyAT) + '\t' + str(tsd) + '\t' + tsd_cand1 + '\t' + local_seq1 + '\t' + tsd_cand2 + '\t' + local_seq2, file = hout) 
+            # print(sid + '\t' + str(polyAT) + '\t' + str(tsd) + '\t' + tsd_cand1 + '\t' + local_seq1 + '\t' + tsd_cand2 + '\t' + local_seq2, file = hout) 
+            print(f'{sid}\t{polyAT}\t{tsd}\t{tsd_cand1}\t{local_seq1}\t{alignment1.q_pos}\t{alignment1.r_pos}\t{alignment1.matches}\t{alignment1.identity}\t{tsd_cand2}\t{local_seq2}\t{alignment2.q_pos}\t{alignment2.r_pos}\t{alignment2.matches}\t{alignment2.identity}', file = hout)
 
 
 

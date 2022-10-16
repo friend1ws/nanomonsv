@@ -223,7 +223,8 @@ class LocalAlignment(object):
                 else:
                     val = (0, 'x', 0)
 
-                if val[0] >= max_val:
+                # if val[0] >= max_val:
+                if val[0] > max_val: # prefer matches with small coordinate (modified by Y.S. on 2022/10/17)
                     max_val = val[0]
                     max_row = row
                     max_col = col
