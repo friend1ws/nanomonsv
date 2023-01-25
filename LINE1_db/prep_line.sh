@@ -53,12 +53,14 @@ python mod_label.py 1000genomes.line1.hg38.bed.tmp > 1000genomes.line1.hg38.bed
 # gnomAD SV file
 if [ ! -f gnomad_v2.1_sv.controls_only.sites.vcf.gz ]
 then
-    wget https://storage.googleapis.com/gnomad-public/papers/2019-sv/gnomad_v2.1_sv.controls_only.sites.vcf.gz
+    # wget https://storage.googleapis.com/gnomad-public/papers/2019-sv/gnomad_v2.1_sv.controls_only.sites.vcf.gz
+    wget https://storage.googleapis.com/gcp-public-data--gnomad/papers/2019-sv/gnomad_v2.1_sv.controls_only.sites.vcf.gz
 fi
 
 if [ ! -f gnomad_v2.1_sv.controls_only.sites.vcf.gz.tbi ]
 then
-    wget https://storage.googleapis.com/gnomad-public/papers/2019-sv/gnomad_v2.1_sv.controls_only.sites.vcf.gz.tbi
+    # wget https://storage.googleapis.com/gnomad-public/papers/2019-sv/gnomad_v2.1_sv.controls_only.sites.vcf.gz.tbi
+    wget https://storage.googleapis.com/gcp-public-data--gnomad/papers/2019-sv/gnomad_v2.1_sv.controls_only.sites.vcf.gz.tbi
 fi
 
 bcftools filter -i 'ALT == "<INS:ME:LINE1>" && INFO/SVLEN >= 5800' gnomad_v2.1_sv.controls_only.sites.vcf.gz | cut -f 1-8 > gnomad.line1.hg19.vcf
