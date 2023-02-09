@@ -9,7 +9,9 @@ nanomonsv is a software for detecting somatic structural variations from paired 
 
 Precise characterization of somatic complex structural variations from paired long-read sequencing data with nanomonsv, Shiraishi et al., bioRxiv, 2020, [[link]](https://www.biorxiv.org/content/10.1101/2020.07.22.214262v3).
 
-The current version of nanomonsv includes two detection modules, Canonical SV module, and Single breakend SV module. Canonical SV module can identify somatic SVs that can be captured by short-read technologies with higher precision and recall than existing methods. Furthermore, [Single breakend SV module](https://github.com/friend1ws/nanomonsv/wiki/Single-breakend-SV) enables the detection of complex SVs that can only be identified by long-reads, such as SVs involving highly-repetitive centromeric sequences, and LINE1- and virus-mediated rearrangements. 
+The current version of nanomonsv includes two detection modules, Canonical SV module, and [Single breakend SV module](https://github.com/friend1ws/nanomonsv/wiki/Single-breakend-SV). Canonical SV module can identify somatic SVs that can be captured by short-read technologies with higher precision and recall than existing methods. Furthermore, Single breakend SV module enables the detection of complex SVs that can only be identified by long-reads, such as SVs involving highly-repetitive centromeric sequences, and LINE1- and virus-mediated rearrangements. 
+
+Please see the [wiki page](Single breakend SV module) for Single breakend SV module.
 
 ## Dependency
 
@@ -148,7 +150,7 @@ nanomonsv get [-h] [--control_prefix CONTROL_PREFIX]
               [--median_mapQ_thres MEDIAN_MAPQ_THRES]
               [--max_overhang_size_thres MAX_OVERHANG_SIZE_THRES]
               [--var_read_min_mapq VAR_READ_MIN_MAPQ] [--use_ssw_lib] [--use_racon]
-              [--threads THREADS] [--processes PROCESSES] 
+              [--single_bnd] [--threads THREADS] [--processes PROCESSES] 
               [--sort_option SORT_OPTION] [--max_memory_minimap2] [--debug]
               tumor_prefix tumor_bam reference.fa
  ```
@@ -173,6 +175,9 @@ though we do not generally recommend this.
 
 Also, we basically recommend using `--use_racon` option. This will slightly improve the identification of single-base resolution breakpoint, 
 and polishing of inserted sequences. 
+
+For detection of single breakend SVs, please use `--single_bnd` option as well as `--use_racon`. 
+Please wee [wiki page](https://github.com/friend1ws/nanomonsv/wiki/Single-breakend-SV).
 
 Also, we have prepared the script (misc/post_fileter.py) for filtering the result.
 Please see the [wiki page](https://github.com/friend1ws/nanomonsv/wiki/How-to-filter-nanomonsv-result).
