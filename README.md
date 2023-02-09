@@ -11,7 +11,7 @@ Precise characterization of somatic complex structural variations from paired lo
 
 The current version of nanomonsv includes two detection modules, Canonical SV module, and [Single breakend SV module](https://github.com/friend1ws/nanomonsv/wiki/Single-breakend-SV). Canonical SV module can identify somatic SVs that can be captured by short-read technologies with higher precision and recall than existing methods. Furthermore, Single breakend SV module enables the detection of complex SVs that can only be identified by long-reads, such as SVs involving highly-repetitive centromeric sequences, and LINE1- and virus-mediated rearrangements. 
 
-Please see the [wiki page]([Single breakend SV module](https://github.com/friend1ws/nanomonsv/wiki/Single-breakend-SV)) for Single breakend SV module.
+Please see the [wiki page](https://github.com/friend1ws/nanomonsv/wiki/Single-breakend-SV) for Single breakend SV module.
 
 ## Dependency
 
