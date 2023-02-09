@@ -9,8 +9,8 @@ format_bp <- function(x) {
 args <- commandArgs(trailingOnly = TRUE)
 
 nanomonsv_prefix <- args[1]
-genome_file <- paste(nanomonsv_prefix, ".bwa.txt", sep = "")
-repeat_file <- paste(nanomonsv_prefix, ".rmsk.txt", sep = "")
+genome_file <- paste(nanomonsv_prefix, ".nanomonsv.bwa.txt", sep = "")
+repeat_file <- paste(nanomonsv_prefix, ".nanomonsv.rmsk.txt", sep = "")
 output_dir <- args[2]
 
 if (!dir.exists(output_dir)) {
