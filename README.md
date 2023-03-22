@@ -167,6 +167,8 @@ Even when only tumor sample is available, we still recommend using dummy control
 When you use the control panel (recommended!), use the following argument.
 - **control_panel_prefix**: Prefix of non-matched control panel data processed in merge_control step.
 
+You can also use **--process** to use multi-processing mode. Currently, we do not recommend using **--thread** option.
+
 After successful execution, you will be able to find the result file names as {tumor_prefix}.nanomonsv.result.txt.
 See the help (`nanomonsv get -h`) for other options. 
 
