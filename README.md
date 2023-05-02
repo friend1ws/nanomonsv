@@ -22,7 +22,7 @@ Please see the [wiki page](https://github.com/friend1ws/nanomonsv/wiki/Single-br
 [htslib](http://www.htslib.org/), [mafft](https://mafft.cbrc.jp/alignment/software/), [racon](https://github.com/isovic/racon)(optional from ver. 0.3.0. However, we recommend to use this option. Add --use_racon option when you perfrom get command.)
 
 ### Python
-Pytnon (tested with >=3.6), pysam, numpy, parasail
+Python (tested with >=3.6), pysam, numpy, parasail
 
 > [SSW Library](https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library) (This became optional since version 0.2.0. We have changed the main engine of Smith-Waterman algorithm to parasail.)
 
@@ -36,7 +36,7 @@ Pytnon (tested with >=3.6), pysam, numpy, parasail
 
 #### Install software and add them to the PATH
 
-nanomonsv uses, `tabix`, `bgzip` (which ar part of HTSlib projects) and `mafft` inside the program,
+nanomonsv uses, `tabix`, `bgzip` (which are part of HTSlib projects) and `mafft` inside the program,
 assuming those are installed, and the paths are already added to the running environment.
 
 > ##### For use of SSW Library
@@ -47,7 +47,7 @@ Since version 0.3.0, we support racon for the step where generating consensus se
 
 
 ### For advanced use (`insert_classify` command)
-`bwa`, `minimap2`, `bedtools` and `RepeatMasker` are required to be installed and these pathese are added to the running environment.
+`bwa`, `minimap2`, `bedtools` and `RepeatMasker` are required to be installed and these paths are added to the running environment.
 
 
 ### Input file
@@ -179,7 +179,7 @@ Also, we basically recommend using `--use_racon` option. This will slightly impr
 and polishing of inserted sequences. 
 
 For detection of single breakend SVs, please use `--single_bnd` option as well as `--use_racon`. 
-Please wee [wiki page](https://github.com/friend1ws/nanomonsv/wiki/Single-breakend-SV).
+Please see [wiki page](https://github.com/friend1ws/nanomonsv/wiki/Single-breakend-SV).
 
 Also, we have prepared the script (misc/post_fileter.py) for filtering the result.
 Please see the [wiki page](https://github.com/friend1ws/nanomonsv/wiki/How-to-filter-nanomonsv-result).
