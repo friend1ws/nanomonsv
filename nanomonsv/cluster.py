@@ -263,9 +263,10 @@ class Sv_clusterer(object):
         control_panel_flag = False
         if self.control_tb is not None:
 
+            control_read_num = 0
             tabix_error_flag2 = False
             try:
-                records = self.control_tb.fetch(cl.chr1, max(0, cl.start1 - 50), cl.end2 + 50)
+                records = self.control_tb.fetch(cl.chr1, max(0, cl.start1 - 10), cl.end2 + 10)
             except Exception as e: 
                 logger.debug(f'{e}')
                 tabix_error_flag2 = True
@@ -279,11 +280,17 @@ class Sv_clusterer(object):
                         cl.end2 + self.control_check_margin >= int(rec[1]) and \
                         int(rec[4]) >= median_size * 0.5:
                     """
+                    
+                    """
                     if cl.chr1 == rec[0] and cl.start1 <= int(rec[1]) <= cl.end1 and \
                         cl.start2 <= int(rec[2]) <= cl.end2 and \
                         median_size * 0.75 <= int(rec[4]) <= median_size * 1.25:
+                    """
+                    if int(rec[4]) >= median_size * 0.5:
+                        control_read_num = control_read_num + 1
 
-                        control_flag = True
+            if control_read_num > self.max_control_read_num or float(control_read_num) / len(cl.readids) >= 0.2:
+                control_flag = True
 
 
         if self.control_panel_tb is not None:
