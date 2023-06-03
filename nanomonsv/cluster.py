@@ -222,7 +222,7 @@ class Sv_clusterer(object):
         return(is_filter)
 
     
-    def filter_indel_cluster(self, cl):
+    def filter_indel_cluster(self, cl, matched_control_margin = 0):
 
         is_filter = False
         # add breakpoint info
@@ -272,7 +272,7 @@ class Sv_clusterer(object):
             control_read_num = 0
             tabix_error_flag2 = False
             try:
-                records = self.control_tb.fetch(cl.chr1, max(0, cl.start1 - 10), cl.end2 + 10)
+                records = self.control_tb.fetch(cl.chr1, max(0, cl.start1 - matched_control_margin), cl.end2 + matched_control_margin)
             except Exception as e: 
                 logger.debug(f'{e}')
                 tabix_error_flag2 = True
@@ -358,7 +358,8 @@ class Sv_clusterer(object):
 
                 elif self.svtype in ["insertion", "deletion"]:
 
-                    if self.filter_indel_cluster(cl): continue
+                    matched_control_margin_choice = 100 if self.svtype == "insertion" else 10
+                    if self.filter_indel_cluster(cl, matched_control_margin = matched_control_margin_choice): continue
                     print_line_readids = ';'.join(cl.readids)
                     print_line_size = ';'.join([str(x) for x in cl.size])
                     print_line_info1 = ';'.join(cl.info1)

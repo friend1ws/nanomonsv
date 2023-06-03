@@ -87,6 +87,14 @@ class Sbnd_clusterer(object):
         median_mapQ = statistics.median([int(x.split(',')[5]) for x in cl.info])
         if median_mapQ < self.median_mapQ_thres: is_filter = True
 
+        bp_size_vec = []
+        for x in cl.info:
+            xx = x.split(',')
+            if xx[0] == xx[1]: bp_size_vec.append(int(xx[0]))
+            if xx[1] == xx[2]: bp_size_vec.append(int(xx[3]) - int(xx[2]))
+
+        if statistics.medin(bp_size_vec) < 1000: is_filter = True
+
         if is_filter == True: return(True)
 
         control_flag = False
