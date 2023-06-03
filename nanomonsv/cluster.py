@@ -254,10 +254,16 @@ class Sv_clusterer(object):
         non_secondary_readnum = len([x.split(',')[10] for x in cl.info1 if x.split(',')[10] == "False"])
         if non_secondary_readnum < self.read_num_thres: is_filter = True
 
+        median_size = statistics.median([int(x) for x in cl.size if x not in ['-', '+']])
+
+        # for indels whose size is below 300, there should be sufficient non-soft-clipping support reads
+        if median_size < 300 and len([int(x) for x in cl.size if x not in ['-', '+']]) < self.read_num_thres: 
+            is_filter = True
+        
         if is_filter == True: return(True)
 
 
-        median_size = statistics.median([int(x) for x in cl.size if x not in ['-', '+']]) 
+
 
         control_flag = False
         control_panel_flag = False
