@@ -352,11 +352,22 @@ def get_main(args):
                         raise Exception(err_message)
 
     logger.info("Merge parallel execution")
+
+    """
     def merge_txt(prefix):
         with open(prefix + ".txt", 'w') as hout:
             for i in range(parallel_num):
                 for l in open(prefix + ".%d.txt" % (i)):
                     hout.write(l)
+    """
+
+    def merge_txt(prefix):
+        with open(prefix + ".txt", 'w') as hout:
+            for i in range(parallel_num):
+                with open(prefix + ".%d.txt" % (i), 'r') as hin:
+                    for l in hin:
+                        hout.write(l)
+
     merge_txt(args.tumor_prefix + ".refined_bp.sbnd")
     merge_txt(args.tumor_prefix + ".realignment.tumor.sread_count")
     merge_txt(args.tumor_prefix + ".realignment.tumor.sread_info")
