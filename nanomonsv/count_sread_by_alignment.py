@@ -320,7 +320,7 @@ class Alignment_counter(object):
             (alignment_info_var_1[rname][0] >= alignment_info_ref_1[rname][0] + self.var_ref_margin_thres and \
             alignment_info_var_1[rname][0] >= alignment_info_ref_2[rname][0] + self.var_ref_margin_thres) or \
             (alignment_info_var_2[rname][0] >= alignment_info_ref_1[rname][0] + self.var_ref_margin_thres and \
-             alignment_info_var_2[rname][0] >= alignment_info_ref_2[rname][0] + self.var_ref_margin_thres)]
+             alignment_info_var_2[rname][0] >= alignment_info_ref_1[rname][0] + self.var_ref_margin_thres)]
 
         # filtering by mapping qualities
         supporting_reads = [rname for rname in supporting_reads if \
