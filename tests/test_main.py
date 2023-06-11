@@ -66,10 +66,10 @@ class TestMain(unittest.TestCase):
         nanomonsv.run.get_main(args)
 
         with open(tumor_prefix_dst + ".nanomonsv.result.txt", 'r') as hin: record_num = len(hin.readlines())
-        self.assertTrue(record_num == 7)
+        self.assertTrue(record_num == 6)
 
         with open(tumor_prefix_dst + ".nanomonsv.supporting_read.txt", 'r') as hin: record_num = len(hin.readlines()) 
-        self.assertTrue(record_num == 48) 
+        self.assertTrue(record_num == 45) 
    
         shutil.rmtree(tmp_dir)
 

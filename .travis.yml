@@ -4,6 +4,7 @@ python:
   - "3.7"
   - "3.8"
   - "3.9"
+  - "3.10"
 before_script:
 
   - wget https://github.com/samtools/htslib/releases/download/1.10/htslib-1.10.tar.bz2
@@ -23,9 +24,9 @@ before_script:
   - python -m pip install -U setuptools 
   - python -m pip install -U importlib-metadata
   - python -m pip install requests
-  - python -m pip install numpy==1.16.6
-  - python -m pip install pysam==0.19.0
-  - python -m pip install parasail==1.2
+  - python -m pip install numpy
+  - python -m pip install pysam
+  - python -m pip install parasail
 
 script:
   - python -m pip install .

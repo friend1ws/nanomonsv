@@ -4,12 +4,12 @@ import numpy as np
 
 def sw_jump(contig, region1_seq, region2_seq, match_score = 1, mismatch_penalty = 2, gap_cost = 2, jump_cost = 2):
 
-    H1 = np.zeros((len(contig) + 1, len(region1_seq) + 1), np.int)
-    H1_path = np.zeros((len(contig) + 1, len(region1_seq) + 1), np.int)
-    H2 = np.zeros((len(contig) + 1, len(region2_seq) + 1), np.int)
-    H2_path = np.zeros((len(contig) + 1, len(region2_seq) + 1), np.int)
-    H2_origin_i = np.zeros((len(contig) + 1, len(region2_seq) + 1), np.int)
-    H2_origin_j = np.zeros((len(contig) + 1, len(region2_seq) + 1), np.int)
+    H1 = np.zeros((len(contig) + 1, len(region1_seq) + 1), np.int32)
+    H1_path = np.zeros((len(contig) + 1, len(region1_seq) + 1), np.int32)
+    H2 = np.zeros((len(contig) + 1, len(region2_seq) + 1), np.int32)
+    H2_path = np.zeros((len(contig) + 1, len(region2_seq) + 1), np.int32)
+    H2_origin_i = np.zeros((len(contig) + 1, len(region2_seq) + 1), np.int32)
+    H2_origin_j = np.zeros((len(contig) + 1, len(region2_seq) + 1), np.int32)
     # jump_ind = np.zeros((len(contig) + 1), np.int)
 
     

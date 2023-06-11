@@ -332,7 +332,9 @@ def get_main(args):
         fw_support_read_seq_sbnds[i].close()
 
     if parallel_num == 1:
-        call_slow_request(args, 0)
+        ret_code, err_message = call_slow_request(args, 0)
+        if ret_code != 0:
+            raise Exception(err_message)
     else:
         import concurrent.futures
 
