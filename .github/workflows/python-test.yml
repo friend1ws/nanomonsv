@@ -31,6 +31,7 @@ jobs:
         pip install -U setuptools 
         pip install -U importlib-metadata
         pip install requests
+        pip install pytest
         pip install numpy
         pip install pysam
         pip install parasail
