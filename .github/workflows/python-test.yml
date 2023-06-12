@@ -35,6 +35,7 @@ jobs:
         pip install pysam
         pip install parasail
     - name: Pytest
-      pytest
+      run: |
+        pytest
 
 
