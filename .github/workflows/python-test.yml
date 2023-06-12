@@ -1,0 +1,39 @@
+name: Repository test
+
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: python-version: ["3.7", "3.8", "3.9", "3.10"]
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install Linux dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential wget
+    - name: Download and install HTSLib
+      run: |
+        wget https://github.com/samtools/htslib/releases/download/1.17/htslib-1.17.tar.bz2
+        tar jxvf htslib-1.17.tar.bz2
+        cd htslib-1.17 && ./configure && make && sudo make install && cd ../
+        wget http://ftp.debian.org/debian/pool/main/m/mafft/mafft_7.407-2_amd64.deb
+        sudo dpkg -i mafft_7.407-2_amd64.deb
+    - name: Install python dependencies
+      run: |
+        pip install -U setuptools 
+        pip install -U importlib-metadata
+        pip install requests
+        pip install numpy
+        pip install pysam
+        pip install parasail
+    - name: Pytest
+      pytest
+
+
