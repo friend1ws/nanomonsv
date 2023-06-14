@@ -55,7 +55,7 @@ RUN wget https://github.com/lh3/minimap2/releases/download/v2.24/minimap2-2.24.t
 
 ENV PATH $PATH:/minimap2-2.24
 
-RUN git  clone https://github.com/friend1ws/nanomonsv.git && \
+RUN git clone https://github.com/friend1ws/nanomonsv.git && \
     cd nanomonsv && \
     python3 -m pip install . 
 
