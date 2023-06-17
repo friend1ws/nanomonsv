@@ -197,6 +197,7 @@ class Alignment_counter(object):
         os.makedirs(self.tmp_dir, exist_ok = True)
 
 
+
     def __del__(self):
 
         self.hout_count.close()
@@ -212,6 +213,14 @@ class Alignment_counter(object):
         tkeys[-2] = '' if tkeys[-2] == '---' else tkeys[-1]
         tkeys[-2] = str(len(tkeys[-2]))
         self.temp_key2 = ','.join(tkeys)
+
+        self.is_short_del_dup = False
+        if tkeys[6] == "---": tkeys[6] = ''
+        if tkeys[0] == tkeys[3] and tkeys[2] == '+' and tkeys[5] == '-' and int(tkeys[4]) - int(tkeys[1]) + len(tkeys[6]) < 100:
+            self.is_short_del_dup = True
+        elif tkeys[0] == tkeys[3] and tkeys[2] == '-' and tkeys[5] == '+' and int(tkeys[4]) - int(tkeys[1]) + len(tkeys[6]) < 100:
+            self.is_short_del_dup = True
+
         self.readid2mapq = {}
         self.temp_long_read_seq_file_h = open(self.tmp_dir + '/' + self.temp_key2 + ".long_read_seq.fa", 'w')
         if is_sbnd:
@@ -288,21 +297,24 @@ class Alignment_counter(object):
             print('>' + self.temp_key2 + '\n' + self.variant_segment_1, file = hout)
         with open(self.tmp_dir + '/' + self.temp_key2 + ".variant_seg_2.fa", 'w') as hout:
             print('>' + self.temp_key2 + '\n' + self.variant_segment_2, file = hout)
-        with open(self.tmp_dir + '/' + self.temp_key2 + ".reference_seg_1.fa", 'w') as hout:
-            print('>' + self.temp_key2 + '\n' + self.reference_segment_1, file = hout)
-        with open(self.tmp_dir + '/' + self.temp_key2 + ".reference_seg_2.fa", 'w') as hout:
-            print('>' + self.temp_key2 + '\n' + self.reference_segment_2, file = hout)
 
         alignment_info_var_1 = ssw_check(self.tmp_dir + '/' + self.temp_key2 + ".variant_seg_1.fa",
             self.tmp_dir + '/' + self.temp_key2 + ".long_read_seq.fa", self.use_ssw_lib)
-        alignment_info_var_2 = ssw_check(self.tmp_dir + '/' + self.temp_key2 + ".variant_seg_2.fa", 
-            self.tmp_dir + '/' + self.temp_key2 + ".long_read_seq.fa", self.use_ssw_lib) 
+        alignment_info_var_2 = ssw_check(self.tmp_dir + '/' + self.temp_key2 + ".variant_seg_2.fa",
+            self.tmp_dir + '/' + self.temp_key2 + ".long_read_seq.fa", self.use_ssw_lib)
 
-        # if is_short_del_dup(self.temp_key):
-        alignment_info_ref_1 = ssw_check(self.tmp_dir + '/' + self.temp_key2 + ".reference_seg_1.fa",
-            self.tmp_dir + '/' + self.temp_key2 + ".long_read_seq.fa", self.use_ssw_lib)
-        alignment_info_ref_2 = ssw_check(self.tmp_dir + '/' + self.temp_key2 + ".reference_seg_2.fa",
-            self.tmp_dir + '/' + self.temp_key2 + ".long_read_seq.fa", self.use_ssw_lib)
+
+        if self.is_short_del_dup:
+            with open(self.tmp_dir + '/' + self.temp_key2 + ".reference_seg_1.fa", 'w') as hout:
+                print('>' + self.temp_key2 + '\n' + self.reference_segment_1, file = hout)
+            with open(self.tmp_dir + '/' + self.temp_key2 + ".reference_seg_2.fa", 'w') as hout:
+                print('>' + self.temp_key2 + '\n' + self.reference_segment_2, file = hout)
+
+            alignment_info_ref_1 = ssw_check(self.tmp_dir + '/' + self.temp_key2 + ".reference_seg_1.fa",
+                self.tmp_dir + '/' + self.temp_key2 + ".long_read_seq.fa", self.use_ssw_lib)
+            alignment_info_ref_2 = ssw_check(self.tmp_dir + '/' + self.temp_key2 + ".reference_seg_2.fa",
+                self.tmp_dir + '/' + self.temp_key2 + ".long_read_seq.fa", self.use_ssw_lib)
+
 
         all_rnames = list(set(list(alignment_info_var_1.keys()) + list(alignment_info_var_2.keys())))
 
@@ -315,12 +327,12 @@ class Alignment_counter(object):
             alignment_info_var_2[rname][2] > self.end_pos_thres * len(self.variant_segment_2))]
 
         # for short deletion or insertion
-        # if is_short_del_dup(self.temp_key):
-        supporting_reads = [rname for rname in supporting_reads if \
-            (alignment_info_var_1[rname][0] >= alignment_info_ref_1[rname][0] + self.var_ref_margin_thres and \
-            alignment_info_var_1[rname][0] >= alignment_info_ref_2[rname][0] + self.var_ref_margin_thres) or \
-            (alignment_info_var_2[rname][0] >= alignment_info_ref_1[rname][0] + self.var_ref_margin_thres and \
-             alignment_info_var_2[rname][0] >= alignment_info_ref_1[rname][0] + self.var_ref_margin_thres)]
+        if self.is_short_del_dup:
+            supporting_reads = [rname for rname in supporting_reads if \
+                (alignment_info_var_1[rname][0] >= alignment_info_ref_1[rname][0] + self.var_ref_margin_thres and \
+                alignment_info_var_1[rname][0] >= alignment_info_ref_2[rname][0] + self.var_ref_margin_thres) or \
+                (alignment_info_var_2[rname][0] >= alignment_info_ref_1[rname][0] + self.var_ref_margin_thres and \
+                alignment_info_var_2[rname][0] >= alignment_info_ref_1[rname][0] + self.var_ref_margin_thres)]
 
         # filtering by mapping qualities
         supporting_reads = [rname for rname in supporting_reads if \
@@ -333,7 +345,10 @@ class Alignment_counter(object):
         
         sread_info = { rname: alignment_info_var_1[rname] + alignment_info_var_2[rname] for rname in supporting_reads}
         for rname in supporting_reads:
-            sinfo = '\t'.join([str(x) for x in alignment_info_var_1[rname] + alignment_info_var_2[rname] + alignment_info_ref_1[rname] + alignment_info_ref_2[rname]])
+            if self.is_short_del_dup:
+                sinfo = '\t'.join([str(x) for x in alignment_info_var_1[rname] + alignment_info_var_2[rname] + alignment_info_ref_1[rname] + alignment_info_ref_2[rname]])
+            else:
+                sinfo = '\t'.join([str(x) for x in alignment_info_var_1[rname] + alignment_info_var_2[rname] + ["None"] * 12])
             print(f"{tchr1}\t{tpos1}\t{tdir1}\t{tchr2}\t{tpos2}\t{tdir2}\t{tinseq}\t{tid}\t{rname}\t{sinfo}", file = self.hout_ainfo)
 
 
