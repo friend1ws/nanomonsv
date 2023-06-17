@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 
-import sys, os, subprocess, shutil, random
+import sys, os, subprocess, shutil, random, copy
 import pysam
 import parasail
 
@@ -214,6 +214,8 @@ class Alignment_counter(object):
         tkeys[-2] = str(len(tkeys[-2]))
         self.temp_key2 = ','.join(tkeys)
 
+        self.is_inseq = True if tkeys[-2] != '' else False
+
         self.is_short_del_dup = False
         if tkeys[6] == "---": tkeys[6] = ''
         if tkeys[0] == tkeys[3] and tkeys[2] == '+' and tkeys[5] == '-' and int(tkeys[4]) - int(tkeys[1]) + len(tkeys[6]) < 100:
@@ -300,13 +302,18 @@ class Alignment_counter(object):
 
         alignment_info_var_1 = ssw_check(self.tmp_dir + '/' + self.temp_key2 + ".variant_seg_1.fa",
             self.tmp_dir + '/' + self.temp_key2 + ".long_read_seq.fa", self.use_ssw_lib)
-        alignment_info_var_2 = ssw_check(self.tmp_dir + '/' + self.temp_key2 + ".variant_seg_2.fa",
-            self.tmp_dir + '/' + self.temp_key2 + ".long_read_seq.fa", self.use_ssw_lib)
+
+        if self.is_inseq:
+            alignment_info_var_2 = ssw_check(self.tmp_dir + '/' + self.temp_key2 + ".variant_seg_2.fa",
+                self.tmp_dir + '/' + self.temp_key2 + ".long_read_seq.fa", self.use_ssw_lib)
+        else:
+            alignment_info_var_2 = copy.copy(alignment_info_var_1)
 
 
         if self.is_short_del_dup:
             with open(self.tmp_dir + '/' + self.temp_key2 + ".reference_seg_1.fa", 'w') as hout:
                 print('>' + self.temp_key2 + '\n' + self.reference_segment_1, file = hout)
+
             with open(self.tmp_dir + '/' + self.temp_key2 + ".reference_seg_2.fa", 'w') as hout:
                 print('>' + self.temp_key2 + '\n' + self.reference_segment_2, file = hout)
 
