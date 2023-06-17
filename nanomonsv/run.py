@@ -125,58 +125,64 @@ def call_slow_request(args, index):
     ret_code = 1
     err_message = ""
     try:
-        logger.info("Generate consensus sequences (%d)" % (index))
-        generate_consensus(args.tumor_prefix + ".support_read_seq.%d.txt" % (index),
-            args.tumor_prefix + ".consensus_seq.%d.txt" % (index),
-            use_racon = args.use_racon, debug = args.debug)
-        generate_consensus_sbnd(args.tumor_prefix + ".support_read_seq.sbnd.%d.txt" % (index),
-            args.tumor_prefix + ".consensus_seq.sbnd.%d.txt" % (index),
-            use_racon = args.use_racon, debug = args.debug, max_memory_minimap2 = args.max_memory_minimap2)
-
-        logger.info("Locating single-base resolution break points for candidate SVs (%d)" % (index))
-        locate_bp(args.tumor_prefix + ".consensus_seq.%d.txt" % (index),
-            args.tumor_prefix + ".refined_bp.%d.txt" % (index),
-            args.reference_fasta, args.debug)
-        locate_bp_sbnd(args.tumor_prefix + ".consensus_seq.sbnd.%d.txt" % (index),
-            args.tumor_prefix + ".refined_bp.sbnd.%d.txt" % (index),
-            args.reference_fasta, args.debug)
-
-        logger.info("Counting the number of supporting read for the tumor by realignment of SV candidate segments (%d)" % (index))
-        count_sread_by_alignment(
-            args.tumor_prefix + ".refined_bp.%d.txt" % (index), 
-            args.tumor_bam, 
-            args.tumor_prefix + ".realignment.tumor.sread_count.%d.txt" % (index), 
-            args.tumor_prefix + ".realignment.tumor.sread_info.%d.txt" % (index), 
-            args.reference_fasta,
-            sbnd_file = args.tumor_prefix + ".refined_bp.sbnd.%d.txt" % (index), 
-            output_count_file_sbnd = args.tumor_prefix + ".realignment.tumor.sread_count.sbnd.%d.txt" % (index),
-            output_alignment_info_file_sbnd = args.tumor_prefix + ".realignment.tumor.sread_info.sbnd.%d.txt" % (index),
-            check_read_max_num = args.check_read_max_num, 
-            var_read_min_mapq = args.var_read_min_mapq, use_ssw_lib = args.use_ssw_lib, 
-            sort_option = args.sort_option, debug = args.debug
-        )
-     
-        if args.control_bam is not None:
-            logger.info("Counting the number of supporting read for the control by realignment of SV candidate segments (%d)" % (index))
-            count_sread_by_alignment(
-                args.tumor_prefix + ".refined_bp.%d.txt" % (index), 
-                args.control_bam, 
-                args.tumor_prefix + ".realignment.control.sread_count.%d.txt" % (index), 
-                args.tumor_prefix + ".realignment.control.sread_info.%d.txt" % (index), 
-                args.reference_fasta,
-                sbnd_file = args.tumor_prefix + ".refined_bp.sbnd.%d.txt" % (index), 
-                output_count_file_sbnd = args.tumor_prefix + ".realignment.control.sread_count.sbnd.%d.txt" % (index),
-                output_alignment_info_file_sbnd = args.tumor_prefix + ".realignment.control.sread_info.sbnd.%d.txt" % (index),
-                check_read_max_num = args.check_read_max_num, 
-                var_read_min_mapq = args.var_read_min_mapq, use_ssw_lib = args.use_ssw_lib, 
-                sort_option = args.sort_option, debug = args.debug
-            )
+        call_slow_request_main(args, index)
         ret_code = 0
     except Exception as e:
         err_message = str(e)
     
     logger.info("End Process (%d): ret_code=%d" % (index, ret_code))
     return (ret_code, err_message)
+
+
+def call_slow_request_main(args, index):
+
+    logger.info("Generate consensus sequences (%d)" % (index))
+    generate_consensus(args.tumor_prefix + ".support_read_seq.%d.txt" % (index),
+        args.tumor_prefix + ".consensus_seq.%d.txt" % (index),
+        use_racon = args.use_racon, debug = args.debug)
+    generate_consensus_sbnd(args.tumor_prefix + ".support_read_seq.sbnd.%d.txt" % (index),
+        args.tumor_prefix + ".consensus_seq.sbnd.%d.txt" % (index),
+        use_racon = args.use_racon, debug = args.debug, max_memory_minimap2 = args.max_memory_minimap2)
+
+    logger.info("Locating single-base resolution break points for candidate SVs (%d)" % (index))
+    locate_bp(args.tumor_prefix + ".consensus_seq.%d.txt" % (index),
+        args.tumor_prefix + ".refined_bp.%d.txt" % (index),
+        args.reference_fasta, args.debug)
+    locate_bp_sbnd(args.tumor_prefix + ".consensus_seq.sbnd.%d.txt" % (index),
+        args.tumor_prefix + ".refined_bp.sbnd.%d.txt" % (index),
+        args.reference_fasta, args.debug)
+
+    logger.info("Counting the number of supporting read for the tumor by realignment of SV candidate segments (%d)" % (index))
+    count_sread_by_alignment(
+        args.tumor_prefix + ".refined_bp.%d.txt" % (index), 
+        args.tumor_bam, 
+        args.tumor_prefix + ".realignment.tumor.sread_count.%d.txt" % (index), 
+        args.tumor_prefix + ".realignment.tumor.sread_info.%d.txt" % (index), 
+        args.reference_fasta,
+        sbnd_file = args.tumor_prefix + ".refined_bp.sbnd.%d.txt" % (index), 
+        output_count_file_sbnd = args.tumor_prefix + ".realignment.tumor.sread_count.sbnd.%d.txt" % (index),
+        output_alignment_info_file_sbnd = args.tumor_prefix + ".realignment.tumor.sread_info.sbnd.%d.txt" % (index),
+        check_read_max_num = args.check_read_max_num, 
+        var_read_min_mapq = args.var_read_min_mapq, use_ssw_lib = args.use_ssw_lib, 
+        sort_option = args.sort_option, debug = args.debug
+    )
+     
+    if args.control_bam is not None:
+        logger.info("Counting the number of supporting read for the control by realignment of SV candidate segments (%d)" % (index))
+        count_sread_by_alignment(
+            args.tumor_prefix + ".refined_bp.%d.txt" % (index), 
+            args.control_bam, 
+            args.tumor_prefix + ".realignment.control.sread_count.%d.txt" % (index), 
+            args.tumor_prefix + ".realignment.control.sread_info.%d.txt" % (index), 
+            args.reference_fasta,
+            sbnd_file = args.tumor_prefix + ".refined_bp.sbnd.%d.txt" % (index), 
+            output_count_file_sbnd = args.tumor_prefix + ".realignment.control.sread_count.sbnd.%d.txt" % (index),
+            output_alignment_info_file_sbnd = args.tumor_prefix + ".realignment.control.sread_info.sbnd.%d.txt" % (index),
+            check_read_max_num = args.check_read_max_num, 
+            var_read_min_mapq = args.var_read_min_mapq, use_ssw_lib = args.use_ssw_lib, 
+            sort_option = args.sort_option, debug = args.debug
+        )
+
 
 def get_main(args):
 
@@ -332,9 +338,7 @@ def get_main(args):
         fw_support_read_seq_sbnds[i].close()
 
     if parallel_num == 1:
-        ret_code, err_message = call_slow_request(args, 0)
-        if ret_code != 0:
-            raise Exception(err_message)
+        call_slow_request_main(args, 0)
     else:
         import concurrent.futures
 
