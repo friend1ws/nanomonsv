@@ -216,12 +216,13 @@ class Alignment_counter(object):
 
         self.is_inseq = True if tkeys[-2] != '' else False
 
-        self.is_short_del_dup = False
-        if tkeys[6] == "---": tkeys[6] = ''
-        if tkeys[0] == tkeys[3] and tkeys[2] == '+' and tkeys[5] == '-' and int(tkeys[4]) - int(tkeys[1]) + len(tkeys[6]) < 100:
-            self.is_short_del_dup = True
-        elif tkeys[0] == tkeys[3] and tkeys[2] == '-' and tkeys[5] == '+' and int(tkeys[4]) - int(tkeys[1]) + len(tkeys[6]) < 100:
-            self.is_short_del_dup = True
+        if is_sbnd == False:
+            self.is_short_del_dup = False
+            if tkeys[6] == "---": tkeys[6] = ''
+            if tkeys[0] == tkeys[3] and tkeys[2] == '+' and tkeys[5] == '-' and int(tkeys[4]) - int(tkeys[1]) + len(tkeys[6]) < 100:
+                self.is_short_del_dup = True
+            elif tkeys[0] == tkeys[3] and tkeys[2] == '-' and tkeys[5] == '+' and int(tkeys[4]) - int(tkeys[1]) + len(tkeys[6]) < 100:
+                self.is_short_del_dup = True
 
         self.readid2mapq = {}
         self.temp_long_read_seq_file_h = open(self.tmp_dir + '/' + self.temp_key2 + ".long_read_seq.fa", 'w')
