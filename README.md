@@ -1,7 +1,7 @@
 # nanomonsv
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![Build Status](https://travis-ci.com/friend1ws/nanomonsv.svg?branch=master)](https://travis-ci.com/friend1ws/nanomonsv.svg?branch=master&status=started)
+[![Repository test](https://github.com/friend1ws/nanomonsv/actions/workflows/python-test.yml/badge.svg)](https://github.com/friend1ws/nanomonsv/actions/workflows/python-test.yml)
 
 ## Introduction
 
