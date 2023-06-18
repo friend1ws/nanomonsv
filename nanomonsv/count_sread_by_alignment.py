@@ -219,9 +219,9 @@ class Alignment_counter(object):
         if is_sbnd == False:
             self.is_short_del_dup = False
             if tkeys[6] == "---": tkeys[6] = ''
-            if tkeys[0] == tkeys[3] and tkeys[2] == '+' and tkeys[5] == '-' and int(tkeys[4]) - int(tkeys[1]) + len(tkeys[6]) < 100:
+            if tkeys[0] == tkeys[3] and tkeys[2] == '+' and tkeys[5] == '-' and int(tkeys[4]) - int(tkeys[1]) + len(tkeys[6]) < 300:
                 self.is_short_del_dup = True
-            elif tkeys[0] == tkeys[3] and tkeys[2] == '-' and tkeys[5] == '+' and int(tkeys[4]) - int(tkeys[1]) + len(tkeys[6]) < 100:
+            elif tkeys[0] == tkeys[3] and tkeys[2] == '-' and tkeys[5] == '+' and int(tkeys[4]) - int(tkeys[1]) + len(tkeys[6]) < 300:
                 self.is_short_del_dup = True
 
         self.readid2mapq = {}
