@@ -169,8 +169,8 @@ def ssw_check(query, target, use_ssw = False):
 class Alignment_counter(object):
 
     def __init__(self, output_count_file, output_alignment_info_file, reference_fasta,
-        var_read_min_mapq, use_ssw_lib, debug, validate_sequence_length = 200,  
-        score_ratio_thres = 1.2, start_pos_thres = 0.1, end_pos_thres = 0.9, var_ref_margin_thres = 20):
+        var_read_min_mapq, score_ratio_thres, use_ssw_lib, debug, validate_sequence_length = 200,  
+        start_pos_thres = 0.1, end_pos_thres = 0.9, var_ref_margin_thres = 20):
 
         self.temp_key = None
         self.temp_key2 = None # here, the insertion sequence is converted to its length. this is to shorten file names.
@@ -402,7 +402,7 @@ class Alignment_counter(object):
 
 def count_sread_by_alignment(sv_file, bam_file, output_count_file, output_alignment_info_file, reference_fasta, 
     sbnd_file = None, output_count_file_sbnd = None, output_alignment_info_file_sbnd = None,
-    check_read_max_num = 500, var_read_min_mapq = 0, use_ssw_lib = False, sort_option = None, debug = False):
+    check_read_max_num = 500, var_read_min_mapq = 0, score_ratio_thres = 1.2, use_ssw_lib = False, sort_option = None, debug = False):
 
     gather_local_read_for_realignment(sv_file, bam_file, output_count_file + ".tmp.local_read_for_realignment",
         sbnd_file = sbnd_file, 
@@ -411,7 +411,7 @@ def count_sread_by_alignment(sv_file, bam_file, output_count_file, output_alignm
         sort_option = sort_option)
 
     alignment_counter = Alignment_counter(output_count_file, output_alignment_info_file, reference_fasta,
-        var_read_min_mapq, use_ssw_lib, debug)
+        var_read_min_mapq, score_ratio_thres, use_ssw_lib, debug)
 
     with open(output_count_file + ".tmp.local_read_for_realignment", 'r') as hin:
         for line in hin:
@@ -433,7 +433,7 @@ def count_sread_by_alignment(sv_file, bam_file, output_count_file, output_alignm
     if sbnd_file is None: return
 
     alignment_counter_sbnd = Alignment_counter(output_count_file_sbnd, output_alignment_info_file_sbnd, reference_fasta,
-        var_read_min_mapq, use_ssw_lib, debug)
+        var_read_min_mapq, score_ratio_thres, use_ssw_lib, debug)
 
     with open(output_count_file_sbnd + ".tmp.local_read_for_realignment", 'r') as hin:
         for line in hin:

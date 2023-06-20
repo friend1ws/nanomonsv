@@ -163,7 +163,7 @@ def call_slow_request_main(args, index):
         output_count_file_sbnd = args.tumor_prefix + ".realignment.tumor.sread_count.sbnd.%d.txt" % (index),
         output_alignment_info_file_sbnd = args.tumor_prefix + ".realignment.tumor.sread_info.sbnd.%d.txt" % (index),
         check_read_max_num = args.check_read_max_num, 
-        var_read_min_mapq = args.var_read_min_mapq, use_ssw_lib = args.use_ssw_lib, 
+        var_read_min_mapq = args.var_read_min_mapq, score_ratio_thres = args.validation_score_ratio_thres, use_ssw_lib = args.use_ssw_lib, 
         sort_option = args.sort_option, debug = args.debug
     )
      
@@ -179,7 +179,7 @@ def call_slow_request_main(args, index):
             output_count_file_sbnd = args.tumor_prefix + ".realignment.control.sread_count.sbnd.%d.txt" % (index),
             output_alignment_info_file_sbnd = args.tumor_prefix + ".realignment.control.sread_info.sbnd.%d.txt" % (index),
             check_read_max_num = args.check_read_max_num, 
-            var_read_min_mapq = args.var_read_min_mapq, use_ssw_lib = args.use_ssw_lib, 
+            var_read_min_mapq = args.var_read_min_mapq, score_ratio_thres = args.validation_score_ratio_thres, use_ssw_lib = args.use_ssw_lib, 
             sort_option = args.sort_option, debug = args.debug
         )
 
@@ -202,11 +202,26 @@ def get_main(args):
     parallel_num = 1
     if args.threads > 1:
         if args.processes > 1:
-            logger.error("threads option has to be used with processes option")
+            logger.error("--threads option sholud not be used with processes option")
             sys.exit(1)
+        logger.warning("--threads option is not recommended. Please consider using --processes option")
         parallel_num = args.threads
     elif args.processes > 1:
         parallel_num = args.processes
+
+    # parameter preset 
+    if sum([int(x == True) for x in [args.qv10, args.qv15, args.qv20, args.qv25]]) > 1:
+        logger.error("Parameter preset (qv10, qv15, qv20, qv25) should be set only once")
+        sys.exit(1)
+
+    if args.qv10:
+        args.validation_score_ratio_thres = 1.2
+    elif args.qv15:
+        args.validation_score_ratio_thres = 1.4
+    elif args.qv20: 
+        args.validation_score_ratio_thres = 1.6
+    elif args.qv25:
+        args.validation_score_ratio_thres = 1.8
 
     # check existences
     is_exists_bam(args.tumor_bam)
