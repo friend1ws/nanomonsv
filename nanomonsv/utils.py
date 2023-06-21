@@ -72,7 +72,7 @@ def get_alignment_object(alignment_file, reference_fasta):
     if file_extension == ".bam":
         return pysam.AlignmentFile(alignment_file, "rb")
     elif file_extension == ".cram":
-        pysam.AlignmentFile(alignment_file, "rc", reference_filename = reference_fasta)
+        return pysam.AlignmentFile(alignment_file, "rc", reference_filename = reference_fasta)
     else:
         raise ValueError(f"Invalid file extension: {file_extension}. Expected .bam or .cram")
 
