@@ -58,7 +58,7 @@ class TestMain(unittest.TestCase):
         tumor_prefix_src = cur_dir + "/data/test_tumor/test_tumor"
 
         nanomonsv_get_args = ["get", tumor_prefix_dst, tumor_bam, ref_genome, 
-                              "--control_prefix", ctrl_prefix, "--control_bam", ctrl_bam]
+                              "--control_prefix", ctrl_prefix, "--control_alignment_file", ctrl_bam]
 
         print("nanomonsv " + ' '.join(nanomonsv_get_args))
 

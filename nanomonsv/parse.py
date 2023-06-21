@@ -1,12 +1,13 @@
 #! /usr/bin/env python3
 
-import sys, subprocess, itertools
+import sys, os, subprocess, itertools
 import pysam
 
 from .logger import get_logger
+from .utils import get_alignment_object 
 logger = get_logger(__name__)
 
-def parse_alignment_info(input_bam, deletion_output_file, insertion_output_file, rearrangement_output_file,
+def parse_alignment_info(input_alignment_file, reference_fasta, deletion_output_file, insertion_output_file, rearrangement_output_file,
     breakpoint_output_file, min_ins_size = 20, min_del_size = 30, min_clipping_size_for_bp = 200):
 
     """Parse BAM file to obtain putative SV supporting reads and their associated info."""
@@ -16,9 +17,9 @@ def parse_alignment_info(input_bam, deletion_output_file, insertion_output_file,
     hout_r = open(rearrangement_output_file, 'w') 
     hout_b = open(breakpoint_output_file, 'w')
 
-    bamfile = pysam.AlignmentFile(input_bam, "rb")
+    alignment_h = get_alignment_object(input_alignment_file, reference_fasta)
     
-    for read in bamfile.fetch():
+    for read in alignment_h.fetch():
 
         # if read.is_secondary: continue
 
@@ -181,7 +182,7 @@ def parse_alignment_info(input_bam, deletion_output_file, insertion_output_file,
     hout_i.close()
     hout_r.close()
     hout_b.close()
-    bamfile.close()
+    alignment_h.close()
 
 
 def extract_bedpe_junction(input_file, output_file, split_alignment_check_margin1 = 50, split_alignment_check_margin2 = 50, minimum_ambiguity = 20):

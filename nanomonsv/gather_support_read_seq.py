@@ -5,6 +5,7 @@ import pysam
 
 from .logger import get_logger
 from .my_seq import reverse_complement
+from .utils import get_alignment_object
 
 logger = get_logger(__name__)
 
@@ -87,12 +88,13 @@ def set_readid2alignment_sbnd(readid2alignment_sbnd, input_file, alignment_margi
             cid = cid + 1
 
 
-def gather_support_read_seq(rearrangement_file, insertion_file, deletion_file, output_file, tumor_bam, 
+def gather_support_read_seq(rearrangement_file, insertion_file, deletion_file, output_file, tumor_alignment_file, reference_fasta, 
     single_breakend_file = None, output_file_sbind = None, alignment_margin = 300):
 
     is_sbnd = True if single_breakend_file is not None else False
 
-    bamfile = pysam.AlignmentFile(tumor_bam, "rb")
+    
+    alignment_h = get_alignment_object(tumor_alignment_file, reference_fasta)
 
     readid2alignment = {}
     set_readid2alignment(readid2alignment, rearrangement_file, 'r', alignment_margin)
@@ -106,7 +108,7 @@ def gather_support_read_seq(rearrangement_file, insertion_file, deletion_file, o
         set_readid2alignment_sbnd(readid2alignment_sbnd, single_breakend_file, alignment_margin)
         hout_sbnd = open(output_file + ".sbnd.tmp.unsorted", 'w')
 
-    for read in bamfile.fetch():
+    for read in alignment_h.fetch():
 
         if read.is_secondary or read.is_supplementary: continue
 
@@ -137,6 +139,7 @@ def gather_support_read_seq(rearrangement_file, insertion_file, deletion_file, o
                 print('\t'.join([akey, read.query_name, asize, part_seq]), file = hout_sbnd)
 
 
+    alignment_h.close()
     hout.close()
     if is_sbnd: hout_sbnd.close()
 

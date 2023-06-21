@@ -15,7 +15,7 @@ from .vcf_convert import *
 from .insert_classify import *
 from .utils import *
 from .logger import get_logger
-
+from .utils import *
 
 logger = get_logger(__name__)
 
@@ -26,10 +26,10 @@ def parse_main(args):
     is_tool("bgzip")
 
     # check input file existences
-    is_exists_bam(args.bam_file)
+    is_exists_bam(args.alignment_file)
 
     # BAM format check
-    bam_format_check(args.bam_file)
+    bam_cram_format_check(args.alignment_file, args.reference_fasta)
 
     # make directory for the output prefix
     output_dir = os.path.dirname(args.output_prefix)
@@ -37,10 +37,9 @@ def parse_main(args):
         os.makedirs(output_dir)
 
     ####################
-    parse_alignment_info(args.bam_file, args.output_prefix + ".tmp.deletion_info.txt", 
-                                        args.output_prefix + ".tmp.insertion_info.txt", 
-                                        args.output_prefix + ".tmp.rearrangement_info.txt",
-                                        args.output_prefix + ".tmp.bp_info.txt")
+    parse_alignment_info(args.alignment_file, args.reference_fasta, 
+        args.output_prefix + ".tmp.deletion_info.txt", args.output_prefix + ".tmp.insertion_info.txt", 
+        args.output_prefix + ".tmp.rearrangement_info.txt", args.output_prefix + ".tmp.bp_info.txt")
 
     ####################
     # deletion processing
@@ -155,7 +154,7 @@ def call_slow_request_main(args, index):
     logger.info("Counting the number of supporting read for the tumor by realignment of SV candidate segments (%d)" % (index))
     count_sread_by_alignment(
         args.tumor_prefix + ".refined_bp.%d.txt" % (index), 
-        args.tumor_bam, 
+        args.tumor_alignment_file, 
         args.tumor_prefix + ".realignment.tumor.sread_count.%d.txt" % (index), 
         args.tumor_prefix + ".realignment.tumor.sread_info.%d.txt" % (index), 
         args.reference_fasta,
@@ -167,11 +166,11 @@ def call_slow_request_main(args, index):
         sort_option = args.sort_option, debug = args.debug
     )
      
-    if args.control_bam is not None:
+    if args.control_alignment_file is not None:
         logger.info("Counting the number of supporting read for the control by realignment of SV candidate segments (%d)" % (index))
         count_sread_by_alignment(
             args.tumor_prefix + ".refined_bp.%d.txt" % (index), 
-            args.control_bam, 
+            args.control_alignment_file, 
             args.tumor_prefix + ".realignment.control.sread_count.%d.txt" % (index), 
             args.tumor_prefix + ".realignment.control.sread_info.%d.txt" % (index), 
             args.reference_fasta,
@@ -224,9 +223,9 @@ def get_main(args):
         args.validation_score_ratio_thres = 1.8
 
     # check existences
-    is_exists_bam(args.tumor_bam)
+    is_exists_bam(args.tumor_alignment_file)
     is_exists(args.reference_fasta)
-    if args.control_bam is not None: is_exists_bam(args.control_bam)
+    if args.control_alignment_file is not None: is_exists_bam(args.control_alignment_file)
    
     # check parsed files existences
     is_exists_parsed_files(args.tumor_prefix)
@@ -234,9 +233,9 @@ def get_main(args):
     if args.control_panel_prefix is not None: is_exists_parsed_files(args.control_panel_prefix)
  
     # BAM format check
-    bam_format_check(args.tumor_bam)
+    bam_cram_format_check(args.tumor_alignment_file, args.reference_fasta)
     fasta_format_check(args.reference_fasta)
-    if args.control_bam is not None: bam_format_check(args.control_bam)
+    if args.control_alignment_file is not None: bam_cram_format_check(args.control_alignment_file, args.reference_fasta)
 
     control_rearrangement_bedpe = None
     control_deletion_bed = None
@@ -312,7 +311,7 @@ def get_main(args):
         args.tumor_prefix + ".insertion.sorted.clustered.bedpe",
         args.tumor_prefix + ".deletion.sorted.clustered.bedpe",
         args.tumor_prefix + ".support_read_seq.txt",
-        args.tumor_bam, single_breakend_file = args.tumor_prefix + ".singlebreakend.sorted.clustered.bed",
+        args.tumor_alignment_file, args.reference_fasta, single_breakend_file = args.tumor_prefix + ".singlebreakend.sorted.clustered.bed",
         output_file_sbind = args.tumor_prefix + ".support_read_seq.sbnd.txt" )
     
     logger.info("Preparation for parallel execution")
@@ -394,7 +393,7 @@ def get_main(args):
     merge_txt(args.tumor_prefix + ".realignment.tumor.sread_info")
     merge_txt(args.tumor_prefix + ".realignment.tumor.sread_count.sbnd")
     merge_txt(args.tumor_prefix + ".realignment.tumor.sread_info.sbnd")
-    if args.control_bam is not None:
+    if args.control_alignment_file is not None:
         merge_txt(args.tumor_prefix + ".realignment.control.sread_count")
         merge_txt(args.tumor_prefix + ".realignment.control.sread_info")
         merge_txt(args.tumor_prefix + ".realignment.control.sread_count.sbnd")
@@ -411,14 +410,14 @@ def get_main(args):
             os.remove(args.tumor_prefix + ".realignment.tumor.sread_count.sbnd.%d.txt" % (i))
             os.remove(args.tumor_prefix + ".realignment.tumor.sread_info.%d.txt" % (i))
             os.remove(args.tumor_prefix + ".realignment.tumor.sread_info.sbnd.%d.txt" % (i))
-            if args.control_bam is not None:
+            if args.control_alignment_file is not None:
                 os.remove(args.tumor_prefix + ".realignment.control.sread_count.%d.txt" % (i))
                 os.remove(args.tumor_prefix + ".realignment.control.sread_count.sbnd.%d.txt" % (i))
                 os.remove(args.tumor_prefix + ".realignment.control.sread_info.%d.txt" % (i))
                 os.remove(args.tumor_prefix + ".realignment.control.sread_info.sbnd.%d.txt" % (i))
 
     logger.info("Final processing") 
-    control_sread_count_file = args.tumor_prefix + ".realignment.control.sread_count.txt" if args.control_bam is not None else None
+    control_sread_count_file = args.tumor_prefix + ".realignment.control.sread_count.txt" if args.control_alignment_file is not None else None
     integrate_realignment_result(args.tumor_prefix + ".realignment.tumor.sread_count.txt", control_sread_count_file,
         args.tumor_prefix + ".nanomonsv.result.txt", args.reference_fasta, min_indel_size = args.min_indel_size,
         min_tumor_variant_read_num = args.min_tumor_variant_read_num, min_tumor_VAF = args.min_tumor_VAF, 
@@ -431,7 +430,7 @@ def get_main(args):
         args.tumor_prefix + ".nanomonsv.result.txt",
         args.tumor_prefix + ".nanomonsv.supporting_read.txt")
 
-    control_sread_count_file_sbnd = args.tumor_prefix + ".realignment.control.sread_count.sbnd.txt" if args.control_bam is not None else None
+    control_sread_count_file_sbnd = args.tumor_prefix + ".realignment.control.sread_count.sbnd.txt" if args.control_alignment_file is not None else None
     integrate_realignment_result_sbnd(args.tumor_prefix + ".realignment.tumor.sread_count.sbnd.txt", control_sread_count_file_sbnd,
         args.tumor_prefix + ".nanomonsv.sbnd.result.txt",
         args.tumor_prefix + ".nanomonsv.result.txt", args.tumor_prefix + ".refined_bp.sbnd.txt")
@@ -451,7 +450,7 @@ def get_main(args):
         os.remove(args.tumor_prefix + ".realignment.tumor.sread_count.sbnd.txt")
         os.remove(args.tumor_prefix + ".realignment.tumor.sread_info.txt")  
         os.remove(args.tumor_prefix + ".realignment.tumor.sread_info.sbnd.txt")
-        if args.control_bam is not None:
+        if args.control_alignment_file is not None:
             os.remove(args.tumor_prefix + ".realignment.control.sread_count.txt")
             os.remove(args.tumor_prefix + ".realignment.control.sread_count.sbnd.txt")
             os.remove(args.tumor_prefix + ".realignment.control.sread_info.txt")
@@ -468,20 +467,20 @@ def validate_main(args):
 
     
     logger.info("Counting the number of supporting read for the tumor by realignment of SV candidate segments")
-    count_sread_by_alignment(args.sv_list_file, args.tumor_bam,
+    count_sread_by_alignment(args.sv_list_file, args.tumor_alignment_file,
         args.output + ".realignment.tumor.sread_count.txt", args.output + ".realignment.tumor.sread_info.txt",
         args.reference_fasta, var_read_min_mapq = args.var_read_min_mapq, use_ssw_lib = args.use_ssw_lib, 
         sort_option = args.sort_option, debug = args.debug)
 
-    if args.control_bam is not None:
+    if args.control_alignment_file is not None:
         logger.info("Counting the number of supporting read for the control by realignment of SV candidate segments")
-        count_sread_by_alignment(args.sv_list_file, args.control_bam,
+        count_sread_by_alignment(args.sv_list_file, args.control_alignment_file,
             args.output + ".realignment.control.sread_count.txt", args.output + ".realignment.control.sread_info.txt",
             args.reference_fasta, var_read_min_mapq = args.var_read_min_mapq, use_ssw_lib = args.use_ssw_lib, 
             sort_option = args.sort_option, debug = args.debug)
 
     logger.info("Final processing")
-    control_sread_count_file = args.output + ".realignment.control.sread_count.txt" if args.control_bam is not None else None
+    control_sread_count_file = args.output + ".realignment.control.sread_count.txt" if args.control_alignment_file is not None else None
     integrate_realignment_result(args.output + ".realignment.tumor.sread_count.txt", control_sread_count_file, args.output,
         args.reference_fasta, 0, 0, float("inf"), float("inf"))
 

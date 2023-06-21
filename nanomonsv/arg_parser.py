@@ -19,11 +19,14 @@ def create_parser():
                                 help = "Parse supporting reads for candidate structural variations")
 
 
-    parse.add_argument("bam_file", default = None, type = str,
-                     help = "Path to input BAM file")
+    parse.add_argument("alignment_file", default = None, type = str,
+                     help = "Path to input BAM or CRAM file")
 
     parse.add_argument("output_prefix", type = str,
                        help = "Prefix of output files")
+
+    parse.add_argument("--reference_fasta", metavar = "reference.fa", default = None, type = str,
+                     help = "the path to the reference genome sequence")
 
     parse.add_argument("--debug", default = False, action = 'store_true', help = "keep intermediate files")
 
@@ -58,8 +61,8 @@ def create_parser():
     get.add_argument("tumor_prefix", type = str,
                       help = "Prefix of tumor data processed in parse step")
        
-    get.add_argument("tumor_bam", default = None, type = str,
-                      help = "Path to tumor BAM file")
+    get.add_argument("tumor_alignment_file", default = None, type = str,
+                      help = "Path to tumor alignment (BAM or CRAM) file")
  
     get.add_argument("reference_fasta", metavar = "reference.fa", default = None, type = str,
                      help = "the path to the reference genome sequence")
@@ -67,8 +70,8 @@ def create_parser():
     get.add_argument("--control_prefix", type = str, # required = True,
                      help = "Prefix of matched control data processed in parse step")
 
-    get.add_argument("--control_bam", type = str, # required = True,
-                     help = "Path to control BAM file")
+    get.add_argument("--control_alignment_file", type = str, # required = True,
+                     help = "Path to control alignment (BAM or CRAM) file")
 
     get.add_argument("--control_panel_prefix", type = str, 
                      help = "Prefix of non-matched control panel data processed in merge_control step")

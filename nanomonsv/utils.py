@@ -64,12 +64,25 @@ def is_exists_parsed_files(input_prefix):
         sys.exit(1)
 
 
-def bam_format_check(bam_file):
+def get_alignment_object(alignment_file, reference_fasta):
+
+    _, file_extension = os.path.splitext(alignment_file)
+    file_extension = file_extension.lower()
+
+    if file_extension == ".bam":
+        return pysam.AlignmentFile(alignment_file, "rb")
+    elif file_extension == ".cram":
+        pysam.AlignmentFile(alignment_file, "rc", reference_filename = reference_fasta)
+    else:
+        raise ValueError(f"Invalid file extension: {file_extension}. Expected .bam or .cram")
+
+
+def bam_cram_format_check(alignment_file, reference_fasta):
 
     try:
-        bam_t = pysam.AlignmentFile(bam_file)
+        bam_t = get_alignment_object(alignment_file, reference_fasta)
     except:
-        logger.error("BAM format error: %s" % bam_file)
+        logger.error("Alignment file (BAM or CRAM) format error: %s" % alignment_file)
         sys.exit(1)
 
 def fasta_format_check(fasta_file):
