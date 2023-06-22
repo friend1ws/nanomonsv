@@ -215,11 +215,16 @@ class Consensus_generator(object):
 
         if self.temp_support_read_file_h is not None: self.temp_support_read_file_h.close()
 
-        with open(self.tmp_dir + '/' + self.temp_key + "_ava_minimap2.paf", 'w') as hout:
-            subprocess.check_call(["minimap2", "-x", "ava-ont", 
-                self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa",
-                self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa"],
-                stderr = subprocess.DEVNULL, stdout = hout, preexec_fn = self.preexec_fn)
+        try:
+            with open(self.tmp_dir + '/' + self.temp_key + "_ava_minimap2.paf", 'w') as hout:
+                subprocess.check_call(["minimap2", "-x", "ava-ont", 
+                    self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa",
+                    self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa"],
+                    stderr = subprocess.DEVNULL, stdout = hout, preexec_fn = self.preexec_fn)
+        except Exception as e:
+            logger.warning(f'{e}')
+            return
+
 
         readid2inclusion_count = {}
         with open(self.tmp_dir + '/' + self.temp_key + "_ava_minimap2.paf") as hin:
@@ -251,10 +256,14 @@ class Consensus_generator(object):
                     logger.warning(f"Something inconsistent happend when choosing template reads for {self.temp_key}")
                     return
 
-        with open(self.tmp_dir + '/' + self.temp_key + "_ova_minimap2.paf", 'w') as hout:
-            subprocess.check_call(["minimap2", "-x", "map-ont", self.tmp_dir + '/' + self.temp_key + "_ref.fa",
-                self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa"], 
-                stderr = subprocess.DEVNULL, stdout = hout, preexec_fn = self.preexec_fn)
+        try:
+            with open(self.tmp_dir + '/' + self.temp_key + "_ova_minimap2.paf", 'w') as hout:
+                subprocess.check_call(["minimap2", "-x", "map-ont", self.tmp_dir + '/' + self.temp_key + "_ref.fa",
+                    self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa"], 
+                    stderr = subprocess.DEVNULL, stdout = hout, preexec_fn = self.preexec_fn)
+        except Exception as e:
+            logger.warning(f'{e}')
+            return
 
         paf_rec_count = 0
         with open(self.tmp_dir + '/' + self.temp_key + "_ova_minimap2.paf", 'r') as hin:
@@ -287,10 +296,14 @@ class Consensus_generator(object):
         with open(self.tmp_dir + '/' + self.temp_key + "_ref_2nd.fa", 'w') as hout:
             print(f">{self.temp_key}_1st_polished_seq\n{consensus}", file = hout)
 
-        with open(self.tmp_dir + '/' + self.temp_key + "_ova_minimap2_2nd.paf", 'w') as hout:
-            subprocess.check_call(["minimap2", "-x", "map-ont", self.tmp_dir + '/' + self.temp_key + "_ref_2nd.fa",
-                self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa"],
-                stderr = subprocess.DEVNULL, stdout = hout, preexec_fn = self.preexec_fn)
+        try:
+            with open(self.tmp_dir + '/' + self.temp_key + "_ova_minimap2_2nd.paf", 'w') as hout:
+                subprocess.check_call(["minimap2", "-x", "map-ont", self.tmp_dir + '/' + self.temp_key + "_ref_2nd.fa",
+                    self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa"],
+                    stderr = subprocess.DEVNULL, stdout = hout, preexec_fn = self.preexec_fn)
+        except Exception as e:
+            logger.warning(f'{e}')
+            return
 
         paf_rec_count = 0
         with open(self.tmp_dir + '/' + self.temp_key + "_ova_minimap2_2nd.paf", 'r') as hin:
