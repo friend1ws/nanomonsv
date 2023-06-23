@@ -61,7 +61,7 @@ def create_parser():
     get.add_argument("tumor_prefix", type = str,
                       help = "Prefix of tumor data processed in parse step")
        
-    get.add_argument("tumor_alignment_file", default = None, type = str,
+    get.add_argument("tumor_bam", default = None, type = str,
                       help = "Path to tumor alignment (BAM or CRAM) file")
  
     get.add_argument("reference_fasta", metavar = "reference.fa", default = None, type = str,
@@ -70,7 +70,7 @@ def create_parser():
     get.add_argument("--control_prefix", type = str, # required = True,
                      help = "Prefix of matched control data processed in parse step")
 
-    get.add_argument("--control_alignment_file", type = str, # required = True,
+    get.add_argument("--control_bam", type = str, # required = True,
                      help = "Path to control alignment (BAM or CRAM) file")
 
     get.add_argument("--control_panel_prefix", type = str, 
@@ -145,11 +145,11 @@ def create_parser():
     get.add_argument("--processes", default = 1, type = int,
                      help = "Number of parallel processes to use (default: 1)")
 
-    get.add_argument("--sort_option", metavar = "-S 1G", type = str, default = "-S 1G", 
+    get.add_argument("--sort_option", type = str, default = "-S 1G", 
                      help = "Options for Linux sort command (default: '-S 1G')")
 
-    get.add_argument("--max_memory_minimap2", metavar = 1, type = int, default = 1, 
-                     help = "Maximum memory size (Gbyte) for minimap2 (default: 1)")
+    get.add_argument("--max_memory_minimap2", type = int, default = 2, 
+                     help = "Maximum memory size (Gbyte) for minimap2 (default: 2)")
 
     get.add_argument("--debug", default = False, action = 'store_true', help = "keep intermediate files (default: False)")
 
