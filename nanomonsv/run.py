@@ -162,7 +162,7 @@ def call_slow_request_main(args, index):
         output_count_file_sbnd = args.tumor_prefix + ".realignment.tumor.sread_count.sbnd.%d.txt" % (index),
         output_alignment_info_file_sbnd = args.tumor_prefix + ".realignment.tumor.sread_info.sbnd.%d.txt" % (index),
         check_read_max_num = args.check_read_max_num, 
-        var_read_min_mapq = args.var_read_min_mapq, score_ratio_thres = args.validation_score_ratio_thres, use_ssw_lib = args.use_ssw_lib, 
+        var_read_min_mapq = args.var_read_min_mapq, score_ratio_thres = args.validation_score_ratio_thres, use_ssw_lib = False, 
         sort_option = args.sort_option, debug = args.debug
     )
      
@@ -178,7 +178,7 @@ def call_slow_request_main(args, index):
             output_count_file_sbnd = args.tumor_prefix + ".realignment.control.sread_count.sbnd.%d.txt" % (index),
             output_alignment_info_file_sbnd = args.tumor_prefix + ".realignment.control.sread_info.sbnd.%d.txt" % (index),
             check_read_max_num = args.check_read_max_num, 
-            var_read_min_mapq = args.var_read_min_mapq, score_ratio_thres = args.validation_score_ratio_thres, use_ssw_lib = args.use_ssw_lib, 
+            var_read_min_mapq = args.var_read_min_mapq, score_ratio_thres = args.validation_score_ratio_thres, use_ssw_lib = False, 
             sort_option = args.sort_option, debug = args.debug
         )
 
@@ -190,7 +190,7 @@ def get_main(args):
         is_tool("racon")
     else:
         is_tool("mafft")
-    if args.use_ssw_lib: libssw_check()
+    if False: libssw_check()
 
     if args.single_bnd: 
         is_tool("minimap2")
@@ -199,13 +199,14 @@ def get_main(args):
             sys.exit(1)
 
     parallel_num = 1
-    if args.threads > 1:
-        if args.processes > 1:
-            logger.error("--threads option sholud not be used with processes option")
-            sys.exit(1)
-        logger.warning("--threads option is not recommended. Please consider using --processes option")
-        parallel_num = args.threads
-    elif args.processes > 1:
+    # if args.threads > 1:
+    #     if args.processes > 1:
+    #         logger.error("--threads option sholud not be used with processes option")
+    #         sys.exit(1)
+    #     logger.warning("--threads option is not recommended. Please consider using --processes option")
+    #     parallel_num = args.threads
+    # elif args.processes > 1:
+    if args.processes > 1:
         parallel_num = args.processes
 
     # parameter preset 
@@ -463,20 +464,20 @@ def get_main(args):
 def validate_main(args):
    
     # executable check
-    if args.use_ssw_lib: libssw_check()
-
+    # if False: libssw_check()
+    
     
     logger.info("Counting the number of supporting read for the tumor by realignment of SV candidate segments")
     count_sread_by_alignment(args.sv_list_file, args.tumor_bam,
         args.output + ".realignment.tumor.sread_count.txt", args.output + ".realignment.tumor.sread_info.txt",
-        args.reference_fasta, var_read_min_mapq = args.var_read_min_mapq, use_ssw_lib = args.use_ssw_lib, 
+        args.reference_fasta, var_read_min_mapq = args.var_read_min_mapq, use_ssw_lib = False, 
         sort_option = args.sort_option, debug = args.debug)
 
     if args.control_bam is not None:
         logger.info("Counting the number of supporting read for the control by realignment of SV candidate segments")
         count_sread_by_alignment(args.sv_list_file, args.control_bam,
             args.output + ".realignment.control.sread_count.txt", args.output + ".realignment.control.sread_info.txt",
-            args.reference_fasta, var_read_min_mapq = args.var_read_min_mapq, use_ssw_lib = args.use_ssw_lib, 
+            args.reference_fasta, var_read_min_mapq = args.var_read_min_mapq, use_ssw_lib = False, 
             sort_option = args.sort_option, debug = args.debug)
 
     logger.info("Final processing")
@@ -498,7 +499,7 @@ def validate_main(args):
                             args.reference_fasta,
                             args.control_bam, 
                             args.var_read_min_mapq,
-                            args.use_ssw_lib, args.debug)
+                            False, args.debug)
 
     is_control = True if args.control_bam is not None else False
 
