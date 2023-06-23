@@ -5,9 +5,9 @@
 
 ## Introduction
 
-nanomonsv is a software for detecting somatic structural variations from paired (tumor and matched control) cancer genome sequence data. nanomonsv is presented in the following preprint. **When you use nanomonsv or any resource of this repository, please kindly site this preprint**.
+nanomonsv is a software for detecting somatic structural variations from paired (tumor and matched control) cancer genome sequence data. nanomonsv is presented in the following paper. **When you use nanomonsv or any resource of this repository, please kindly site this paper**.
 
-Precise characterization of somatic complex structural variations from paired long-read sequencing data with nanomonsv, Shiraishi et al., bioRxiv, 2020, [[link]](https://www.biorxiv.org/content/10.1101/2020.07.22.214262v3).
+Precise characterization of somatic complex structural variations from tumor/control paired long-read sequencing data with nanomonsv, Shiraishi et al., Nucleic Acids Research, 2023, [[link]](https://academic.oup.com/nar/advance-article/doi/10.1093/nar/gkad526/7201946).
 
 The current version of nanomonsv includes two detection modules, Canonical SV module, and [Single breakend SV module](https://github.com/friend1ws/nanomonsv/wiki/Single-breakend-SV). Canonical SV module can identify somatic SVs that can be captured by short-read technologies with higher precision and recall than existing methods. Furthermore, Single breakend SV module enables the detection of complex SVs that can only be identified by long-reads, such as SVs involving highly-repetitive centromeric sequences, and LINE1- and virus-mediated rearrangements. 
 
