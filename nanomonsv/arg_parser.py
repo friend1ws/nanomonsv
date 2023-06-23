@@ -139,8 +139,8 @@ def create_parser():
     # get.add_argument("--control_read_num_thres", default = 0, type = int,
     #                  help = "Filter if the number of supporting reads for the control sample is larger than this value")
 
-    get.add_argument("--threads", default = 1, type = int,
-                     help = "Number of parallel threads to use (not recommended) (default: 1)")
+    # get.add_argument("--threads", default = 1, type = int,
+    #                  help = "Number of parallel threads to use (not recommended) (default: 1)")
 
     get.add_argument("--processes", default = 1, type = int,
                      help = "Number of parallel processes to use (default: 1)")
