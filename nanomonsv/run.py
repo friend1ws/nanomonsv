@@ -465,7 +465,31 @@ def validate_main(args):
    
     # executable check
     # if False: libssw_check()
-    
+
+    # parameter preset 
+    if sum([int(x == True) for x in [args.qv10, args.qv15, args.qv20, args.qv25]]) > 1:
+        logger.error("Parameter preset (qv10, qv15, qv20, qv25) should be set only once")
+        sys.exit(1)
+
+    if args.qv10:
+        args.validation_score_ratio_thres = 1.2
+    elif args.qv15:
+        args.validation_score_ratio_thres = 1.4
+    elif args.qv20: 
+        args.validation_score_ratio_thres = 1.6
+    elif args.qv25:
+        args.validation_score_ratio_thres = 1.8
+
+    # check existences
+    is_exists_bam(args.tumor_bam)
+    is_exists(args.reference_fasta)
+    if args.control_bam is not None: is_exists_bam(args.control_bam)
+
+    # BAM format check
+    bam_cram_format_check(args.tumor_bam, args.reference_fasta)
+    fasta_format_check(args.reference_fasta)
+    if args.control_bam is not None: bam_cram_format_check(args.control_bam, args.reference_fasta)
+
     
     logger.info("Counting the number of supporting read for the tumor by realignment of SV candidate segments")
     count_sread_by_alignment(args.sv_list_file, args.tumor_bam,
@@ -483,7 +507,8 @@ def validate_main(args):
     logger.info("Final processing")
     control_sread_count_file = args.output + ".realignment.control.sread_count.txt" if args.control_bam is not None else None
     integrate_realignment_result(args.output + ".realignment.tumor.sread_count.txt", control_sread_count_file, args.output,
-        args.reference_fasta, 0, 0, float("inf"), float("inf"))
+        args.reference_fasta, min_indel_size = 0, min_tumor_variant_read_num = 0, min_tumor_VAF = 0,
+        max_control_variant_read_num = float("inf"), max_control_VAF = float("inf"))
 
     if not args.debug:
         os.remove(args.output + ".realignment.tumor.sread_count.txt")
@@ -491,28 +516,6 @@ def validate_main(args):
         os.remove(args.output + ".realignment.control.sread_count.txt")
         os.remove(args.output + ".realignment.control.sread_info.txt")
     ####################
-    """
-    long_read_validate_main(args.sv_list_file,
-                            args.tumor_bam,
-                            args.output + ".validated.txt",
-                            args.output + ".validated.tumor_sread.txt",
-                            args.reference_fasta,
-                            args.control_bam, 
-                            args.var_read_min_mapq,
-                            False, args.debug)
-
-    is_control = True if args.control_bam is not None else False
-
-    filt_final(args.output + ".validated.txt",
-               args.output + ".validated.tumor_sread.txt",
-               args.output, 
-               args.output + ".supporting_read.txt",
-               0, 0, float("inf"), float("inf"), True, is_control)
-
-    if not args.debug:
-        subprocess.check_call(["rm", "-rf", args.output + ".validated.txt"])
-        subprocess.check_call(["rm", "-rf", args.output + ".validated.tumor_sread.txt"])
-    """
     
 
 def insert_classify_main(args):
