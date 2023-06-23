@@ -179,8 +179,8 @@ def create_parser():
     validate.add_argument("--var_read_min_mapq", default = 40, type = int,
                           help = "Threshould for mapping quality in validate step")
 
-    validate.add_argument("--use_ssw_lib", default = False, action = 'store_true',
-                          help = "Use SSW Library. This is for backward comaptibility, and may be removed in the future")
+    # validate.add_argument("--use_ssw_lib", default = False, action = 'store_true',
+    #                       help = "Use SSW Library. This is for backward comaptibility, and may be removed in the future")
 
     validate.add_argument("--sort_option", metavar = "-S 1G", type = str, default = "-S 1G", 
                      help = "options for sort command")
