@@ -74,8 +74,8 @@ def parse_main(args):
     hout.close()
 
     extract_bedpe_junction(args.output_prefix + ".tmp.rearrangement_info.name_sorted.txt", 
-                           args.output_prefix + ".tmp.rearrangement.bedpe") # ,
-                           # args.split_alignment_check_margin, args.minimum_breakpoint_ambiguity)
+                           args.output_prefix + ".tmp.rearrangement.bedpe",
+                           args.split_alignment_check_margin, args.split_alignment_check_margin, args.minimum_breakpoint_ambiguity)
 
     hout = open(args.output_prefix + ".tmp.rearrangement.sorted.bedpe", 'w')
     subprocess.check_call(["sort", "-k1,1", "-k2,2n", "-k3,3n", "-k4,4", "-k5,5n", "-k6,6n", 
