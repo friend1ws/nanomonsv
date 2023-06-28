@@ -1,0 +1,15 @@
+mkdir -p tests/data/test_tumor_n1
+zcat tests/data/test_tumor/test_tumor.bp_info.sorted.bed.gz | head -n 1 > tests/data/test_tumor_n1/test_tumor.bp_info.sorted.bed
+zcat tests/data/test_tumor/test_tumor.insertion.sorted.bed.gz | head -n 1 > tests/data/test_tumor_n1/test_tumor.insertion.sorted.bed
+zcat tests/data/test_tumor/test_tumor.deletion.sorted.bed.gz | head -n 1 > tests/data/test_tumor_n1/test_tumor.deletion.sorted.bed
+zcat tests/data/test_tumor/test_tumor.rearrangement.sorted.bedpe.gz | head -n 1 > tests/data/test_tumor_n1/test_tumor.rearrangement.sorted.bedpe
+
+bgzip tests/data/test_tumor_n1/test_tumor.insertion.sorted.bed
+bgzip tests/data/test_tumor_n1/test_tumor.deletion.sorted.bed
+bgzip tests/data/test_tumor_n1/test_tumor.rearrangement.sorted.bedpe
+bgzip tests/data/test_tumor_n1/test_tumor.bp_info.sorted.bed
+
+tabix -f -p bed tests/data/test_tumor_n1/test_tumor.rearrangement.sorted.bedpe.gz
+tabix -f -p bed tests/data/test_tumor_n1/test_tumor.bp_info.sorted.bed.gz
+tabix -f -p bed tests/data/test_tumor_n1/test_tumor.insertion.sorted.bed.gz
+tabix -f -p bed tests/data/test_tumor_n1/test_tumor.deletion.sorted.bed.gz
