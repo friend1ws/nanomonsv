@@ -107,7 +107,7 @@ The Oxford Nanopore Sequencing data used in the bioRxiv paper is available throu
 
 The results of nanomonsv for the above data are available [here](https://github.com/friend1ws/nanomonsv/tree/master/misc/example).
 When you perform nanomonsv to the above data and have experienced errors, please report to us.
-Also, please kindly cite the [bioRxiv paper](https://www.biorxiv.org/content/10.1101/2020.07.22.214262v1) when you use these data.
+Also, please kindly cite the [NAR paper](https://academic.oup.com/nar/advance-article/doi/10.1093/nar/gkad526/7201946) when you use these data.
 
 See tutorial [wiki page](https://github.com/friend1ws/nanomonsv/wiki/Tutorial) for an example workflow on analyzing COLO829 sample.
 
