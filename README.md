@@ -24,7 +24,6 @@ Please see the [wiki page](https://github.com/friend1ws/nanomonsv/wiki/Single-br
 ### Python
 Python (tested with >=3.6), pysam, numpy, parasail
 
-> [SSW Library](https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library) (This became optional since version 0.2.0. We have changed the main engine of Smith-Waterman algorithm to parasail.)
 
 
 ### For advanced use (`insert_classify` command)
@@ -39,8 +38,6 @@ Python (tested with >=3.6), pysam, numpy, parasail
 nanomonsv uses, `tabix`, `bgzip` (which are part of HTSlib projects) and `mafft` inside the program,
 assuming those are installed, and the paths are already added to the running environment.
 
-> ##### For use of SSW Library
-> Since version 0.2.0, nanomonsv can be executed without SSW Library. When users want to use SSW Library, create the libssw.so and add the path to the LD_LIBRARY_PATH environment variable. Please refer the **How to use the Python wrapper ssw_lib.py** section in the [SSW Library](https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library) repository page.
 
 ###### For use of racon
 Since version 0.3.0, we support racon for the step where generating consensus sequence and get single-base resolution breakpoints. racon may become the default instead of mafft in the future.
@@ -121,15 +118,16 @@ See tutorial [wiki page](https://github.com/friend1ws/nanomonsv/wiki/Tutorial) f
 This step parses all the supporting reads of putative somatic SVs.
 
 ```
-nanomonsv parse [-h] [--debug]
+nanomonsv parse [-h] [--reference_fasta reference.fa] [--debug]
                 [--split_alignment_check_margin SPLIT_ALIGNMENT_CHECK_MARGIN]
                 [--minimum_breakpoint_ambiguity MINIMUM_BREAKPOINT_AMBIGUITY]
-                bam_file output_prefix
+                alignment_file output_prefix
 ```
-- **bam_file**: Path to input indexed BAM file
+- **alignment_file**: Path to input indexed BAM or CRAM file
 - **output_prefix**: Output file prefix
 
 See the help (`nanomonsv parse -h`) for other options.
+From v0.7.0, nanomonsv can accept CRAM format files. For CRAM files, we recommend to add the PATH to the reference genome file by `--reference_fasta`.
 
 After successful completion, you will find supporting reads stratified by deletions, insertions, and rearrangements: 
 ({output_prefix}.deletion.sorted.bed.gz, {output_prefix}.insertion.sorted.bed.gz, {output_prefix}.rearrangement.sorted.bedpe.gz, and {output_prefix}.bp_info.sorted.bed.gz and their indexes (.tbi files). 
@@ -149,7 +147,8 @@ nanomonsv get [-h] [--control_prefix CONTROL_PREFIX]
               [--cluster_margin_size CLUSTER_MARGIN_SIZE]
               [--median_mapQ_thres MEDIAN_MAPQ_THRES]
               [--max_overhang_size_thres MAX_OVERHANG_SIZE_THRES]
-              [--var_read_min_mapq VAR_READ_MIN_MAPQ] [--use_ssw_lib] [--use_racon]
+              [--var_read_min_mapq VAR_READ_MIN_MAPQ]
+              [--qv10] [--qv15] [--qv20] [--qv25] [--use_racon]
               [--single_bnd] [--threads THREADS] [--processes PROCESSES] 
               [--sort_option SORT_OPTION] [--max_memory_minimap2] [--debug]
               tumor_prefix tumor_bam reference.fa
@@ -169,6 +168,12 @@ When you use the control panel (recommended!), use the following argument.
 
 You can also use **--process** to use multi-processing mode. Currently, we do not recommend using **--thread** option.
 
+From v0.7.0, we prepared preset parameter options:
+- **--qv10**: Parameter preset for sequencing data with a base quality of around 10. Recommended for ONT data called by Guppy before version 5
+- **--qv15**: Parameter preset for sequencing data with a base quality of around 15. Recommended for ONT data called by Guppy version 5, 6.
+- **--qv20**: Parameter preset for sequencing data with a base quality of around 20. Recommended for ONT data with Q20+ chemistry.
+- **--qv25**: Parameter preset for sequencing data with a base quality above 25. Recommended for PacBio Hifi data.
+  
 After successful execution, you will be able to find the result file names as {tumor_prefix}.nanomonsv.result.txt.
 See the help (`nanomonsv get -h`) for other options. 
 
