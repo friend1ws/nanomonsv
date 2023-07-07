@@ -211,20 +211,33 @@ def extract_bedpe_junction(input_file, output_file, split_alignment_check_margin
                 tchr2, tstart2, tend2, tmapQ2, tnumM2, tnumI2, tnumD2, tis_supp2, tis_2nd2 = query2target[qpos2]
                 
                 if qpos2[1] - qpos1[2] > 0:
-                    outward_ambiguity, inward_ambiguity = minimum_ambiguity, max(qpos2[1] - qpos1[2], minimum_ambiguity)
+                    outward_ambiguity, inward_ambiguity = max(qpos2[1] - qpos1[2], minimum_ambiguity), minimum_ambiguity
                 else:
-                    outward_ambiguity, inward_ambiguity = max(qpos1[2] - qpos2[1], minimum_ambiguity), minimum_ambiguity
+                    outward_ambiguity, inward_ambiguity = minimum_ambiguity, max(qpos1[2] - qpos2[1], minimum_ambiguity)
+                
+                
                 
                 bchr1, bchr2 = tchr1, tchr2
-                if qpos1[4] == '+': 
-                    bstart1, bend1, bstrand1 = max(int(tend1) - inward_ambiguity, 0), int(tend1) + outward_ambiguity, '+'
+                if qpos1[1] < qpos2[1]:
+                    if qpos1[4] == '+': 
+                        bstart1, bend1, bstrand1 = max(int(tend1) - inward_ambiguity, 0), int(tend1) + outward_ambiguity, '+'
+                    else:
+                        bstart1, bend1, bstrand1 = max(int(tstart1) - outward_ambiguity, 0), int(tstart1) + inward_ambiguity, '-'
+                    
+                    if qpos2[4] == '+': 
+                        bstart2, bend2, bstrand2 = max(int(tstart2) - outward_ambiguity, 0), int(tstart2) + inward_ambiguity, '-'
+                    else:
+                        bstart2, bend2, bstrand2 = max(int(tend2) - inward_ambiguity, 0), int(tend2) + outward_ambiguity, '+'
                 else:
-                    bstart1, bend1, bstrand1 = max(int(tstart1) - outward_ambiguity, 0), int(tstart1) + inward_ambiguity, '-'
-                
-                if qpos2[4] == '+': 
-                    bstart2, bend2, bstrand2 = max(int(tstart2) - outward_ambiguity, 0), int(tstart2) + inward_ambiguity, '-'
-                else:
-                    bstart2, bend2, bstrand2 = max(int(tend2) - inward_ambiguity, 0), int(tend2) + outward_ambiguity, '+'
+                    if qpos1[4] == '+': 
+                        bstart1, bend1, bstrand1 = max(int(tend1) - outward_ambiguity, 0), int(tend1) + inward_ambiguity, '-'
+                    else:
+                        bstart1, bend1, bstrand1 = max(int(tstart1) - inward_ambiguity, 0), int(tstart1) + outward_ambiguity, '+'
+                    
+                    if qpos2[4] == '+': 
+                        bstart2, bend2, bstrand2 = max(int(tstart2) - inward_ambiguity, 0), int(tstart2) + outward_ambiguity, '+'
+                    else:
+                        bstart2, bend2, bstrand2 = max(int(tend2) - outward_ambiguity, 0), int(tend2) + inward_ambiguity, '-'
                 
                 bread_name = qpos1[0]
                 
