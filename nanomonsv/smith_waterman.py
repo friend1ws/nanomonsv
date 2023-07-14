@@ -2,7 +2,7 @@
 
 import numpy as np
 
-def sw_jump(contig, region1_seq, region2_seq, match_score = 1, mismatch_penalty = 5, gap_cost = 5, jump_cost = 2):
+def sw_jump(contig, region1_seq, region2_seq, match_score = 1, mismatch_penalty = 2, gap_cost = 2, jump_cost = 2):
 
     H1 = np.zeros((len(contig) + 1, len(region1_seq) + 1), np.int32)
     H1_path = np.zeros((len(contig) + 1, len(region1_seq) + 1), np.int32)
