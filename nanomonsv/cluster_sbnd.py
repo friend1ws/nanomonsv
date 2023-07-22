@@ -165,7 +165,8 @@ class Sbnd_clusterer(object):
                 remove_cluster.append(cl)
 
                 if self.filter_single_breakend_cluster(cl): continue
-                print_line_readids = ';'.join(cl.readids)
+                # print_line_readids = ';'.join(cl.readids)
+                print_line_readids = repr(cl.readids)
                 print_line_info = ';'.join(cl.info)
         
                 print(f'{cl.chr}\t{cl.start}\t{cl.end}\t{print_line_readids}\t0\t{cl.dir}\t{print_line_info}',
