@@ -348,7 +348,8 @@ class Sv_clusterer(object):
                 if self.svtype == "rearrangement":
 
                     if self.filter_rearrangement_cluster(cl): continue
-                    print_line_readids = ';'.join(cl.readids)
+                    # print_line_readids = ';'.join(cl.readids)
+                    print_line_readids = repr(cl.readids)
                     print_line_info1 = ';'.join(cl.info1)
                     print_line_info2 = ';'.join(cl.info2)
         
@@ -360,7 +361,8 @@ class Sv_clusterer(object):
 
                     matched_control_margin_choice = 100 if self.svtype == "insertion" else 10
                     if self.filter_indel_cluster(cl, matched_control_margin = matched_control_margin_choice): continue
-                    print_line_readids = ';'.join(cl.readids)
+                    # print_line_readids = ';'.join(cl.readids)
+                    print_line_readids = repr(cl.readids)
                     print_line_size = ';'.join([str(x) for x in cl.size])
                     print_line_info1 = ';'.join(cl.info1)
 

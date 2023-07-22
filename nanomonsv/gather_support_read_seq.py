@@ -19,7 +19,8 @@ def set_readid2alignment(readid2alignment, input_file, mode, alignment_margin):
             F = line.rstrip('\n').split('\t')
             key = f"{F[0]},{F[1]},{F[2]},{F[8]},{F[3]},{F[4]},{F[5]},{F[9]},{mode},{cid}"
                 # ','.join([F[0], F[1], F[2], F[8], F[3], F[4], F[5], F[9], mode])
-            readids = F[6].split(';')
+            # readids = F[6].split(';')
+            readids = eval(F[6])
 
             if mode == "r":
                 info1 = F[10].split(';')
@@ -74,7 +75,9 @@ def set_readid2alignment_sbnd(readid2alignment_sbnd, input_file, alignment_margi
             tchr, tstart, tend, treadids, _, tstrand, tinfos = line.rstrip('\n').split('\t')
             tkey = f"{tchr},{tstart},{tend},{tstrand},b,{cid}" # ','.join([tchr, tstart, tend, tstrand])
            
-            readids = treadids.split(';')
+            # readids = treadids.split(';')
+            readids = eval(treadids)
+
             infos = tinfos.split(';') 
             for i in range(len(readids)):
                 ttinfo = infos[i].split(',')
