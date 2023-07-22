@@ -18,7 +18,7 @@ def sw_jump(contig, region1_seq, region2_seq, match_score = 1, mismatch_penalty 
             match = H1[i - 1, j - 1] + (match_score if contig[i - 1] == region1_seq[j - 1] else - mismatch_penalty)
             delete = H1[i - 1, j] - gap_cost
             insert = H1[i, j - 1] - gap_cost
-            tscores = (0, match, delete, insert)
+            tscores = (float("-inf"), match, delete, insert)
             H1[i, j] = max(tscores)
             H1_path[i,j] = tscores.index(max(tscores))
 
@@ -35,7 +35,7 @@ def sw_jump(contig, region1_seq, region2_seq, match_score = 1, mismatch_penalty 
             jump_diff = i - np.argmax(H1_max[:i])
             jump = jump - jump_cost * np.log(jump_diff)
  
-            tscores = (0, match, delete, insert, jump)
+            tscores = (float("-inf"), match, delete, insert, jump)
             H2[i, j] = max(tscores)
             H2_path[i, j] = tscores.index(max(tscores))
 
@@ -44,8 +44,16 @@ def sw_jump(contig, region1_seq, region2_seq, match_score = 1, mismatch_penalty 
                 H2_origin_j[i, j]  = H1_argmax[H2_origin_i[i, j]]
 
 
-    i_cur, j2_cur = np.unravel_index(H2.argmax(), H2.shape)
+    # i_cur, j2_cur = np.unravel_index(H2.argmax(), H2.shape)
     # a_string, b_string = a[i_end - 1], b[j_end - 1]
+    if np.max(H2[H2.shape[0] - 1, :]) >= np.max(H2[:, H2.shape[1] - 1]):
+        j2_cur = np.unravel_index(H2[H2.shape[0] - 1, :].argmax(), (1, H2.shape[1]))[1]
+        i_cur = H2.shape[0] - 1
+    else:
+        j2_cur = H2.shape[1] - 1 
+        i_cur = np.unravel_index(H2[:, H2.shape[1] - 1].argmax(), (H2.shape[0], 1))[0]
+
+
     contig_match, region1_seq_match, region2_seq_match = '', '', ''
     i_end, i2_end, j2_end = i_cur, i_cur, j2_cur # one-based position
 
