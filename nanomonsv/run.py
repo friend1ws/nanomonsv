@@ -146,7 +146,7 @@ def call_slow_request_main(args, index):
     logger.info("Locating single-base resolution break points for candidate SVs (%d)" % (index))
     locate_bp(args.tumor_prefix + ".consensus_seq.%d.txt" % (index),
         args.tumor_prefix + ".refined_bp.%d.txt" % (index),
-        args.reference_fasta, args.debug)
+        args.reference_fasta, args.sw_jump_params, args.debug)
     locate_bp_sbnd(args.tumor_prefix + ".consensus_seq.sbnd.%d.txt" % (index),
         args.tumor_prefix + ".refined_bp.sbnd.%d.txt" % (index),
         args.reference_fasta, args.debug)
@@ -216,12 +216,16 @@ def get_main(args):
 
     if args.qv10:
         args.validation_score_ratio_thres = 1.2
+        args.sw_jump_params = [1, 2, 2, 2]
     elif args.qv15:
         args.validation_score_ratio_thres = 1.4
+        args.sw_jump_params = [1, 3, 3, 2]
     elif args.qv20: 
         args.validation_score_ratio_thres = 1.6
+        args.sw_jump_params = [1, 4, 4, 2]
     elif args.qv25:
         args.validation_score_ratio_thres = 1.8
+        args.sw_jump_params = [1, 6, 6, 2]
 
     # check existences
     is_exists_bam(args.tumor_bam)

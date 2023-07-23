@@ -115,8 +115,11 @@ def create_parser():
     get.add_argument("--validation_score_ratio_thres", default = 1.2, type = float,
                      help = "Threshould for threshould for SV segment validation by alignment")
 
-    get.add_argument("--use_ssw_lib", default = False, action = 'store_true',
-                     help = "Use SSW Library. This is for backward comaptibility, and may be removed in the future (default: False)")
+    get.add_argument("--sw_jump_params", nargs = 4, default = [1, 3, 3, 2], type = int,
+                     help = "Parameters (match score, mismatch penalty, gap penalty, insertion penalty) for one-time smith-waterman algorithm (default: [1, 3, 3, 2]")
+
+    # get.add_argument("--use_ssw_lib", default = False, action = 'store_true',
+    #                  help = "Use SSW Library. This is for backward comaptibility, and may be removed in the future (default: False)")
 
     get.add_argument("--qv10", default = False, action = 'store_true',
                      help = "Parameter preset for sequencing data with a base quality of around 10. Recommended for ONT data called by Guppy before version 5")

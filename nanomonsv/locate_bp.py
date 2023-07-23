@@ -10,7 +10,8 @@ from .logger import get_logger
 logger = get_logger(__name__)
 
 
-def get_refined_bp(contig, fasta_file_ins, chr1, start1, end1, dir1, chr2, start2, end2, dir2, mode, h_log, rd_margin = 20, i_margin = 500):
+def get_refined_bp(contig, fasta_file_ins, chr1, start1, end1, dir1, chr2, start2, end2, dir2, mode, h_log, 
+                   sw_jump_params, rd_margin = 20, i_margin = 500):
 
     start1 = max(1, start1)
     start2 = max(1, start2)
@@ -32,7 +33,10 @@ def get_refined_bp(contig, fasta_file_ins, chr1, start1, end1, dir1, chr2, start
         if dir1 == '-': region1_seq = reverse_complement(region1_seq)
         if dir2 == '+': region2_seq = reverse_complement(region2_seq)
 
-        sret = smith_waterman.sw_jump(contig, region1_seq, region2_seq)
+        sret = smith_waterman.sw_jump(contig, region1_seq, region2_seq,
+                                      match_score = sw_jump_params[0], mismatch_penalty = sw_jump_params[1],
+                                      gap_cost = sw_jump_params[2], jump_cost = sw_jump_params[3])
+
         if sret is None: return(None)
         score, contig_align, region1_align, region2_align, contig_seq, region_seq = sret
 
@@ -59,7 +63,10 @@ def get_refined_bp(contig, fasta_file_ins, chr1, start1, end1, dir1, chr2, start
         contig_end = contig[-min(i_margin, len(contig)):]
 
         region_seq = fasta_file_ins.fetch(chr1, max(0, start1 - 100), end2 + 100)
-        sret = smith_waterman.sw_jump(region_seq, contig_start, contig_end)
+        sret = smith_waterman.sw_jump(region_seq, contig_start, contig_end,
+                                      match_score = sw_jump_params[0], mismatch_penalty = sw_jump_params[1], 
+                                      gap_cost = sw_jump_params[2], jump_cost = sw_jump_params[3])
+
         if sret is None: return(None)
         score, region_align, contig_start_align, contig_end_align, region_seq, contig_seq = sret
 
@@ -78,7 +85,7 @@ def get_refined_bp(contig, fasta_file_ins, chr1, start1, end1, dir1, chr2, start
 
         
  
-def locate_bp(consensus_file, output_file, reference_fasta, debug):
+def locate_bp(consensus_file, output_file, reference_fasta, sw_jump_params, debug):
 
     fasta_file_ins = pysam.FastaFile(reference_fasta)
 
@@ -90,7 +97,7 @@ def locate_bp(consensus_file, output_file, reference_fasta, debug):
             print(temp_key + '\n' + tconsensus, file = hout_log)
             chr1, start1, end1, dir1, chr2, start2, end2, dir2, mode, cid = temp_key.split(',')
             start1, end1, start2, end2 = int(start1), int(end1), int(start2), int(end2)       
-            bret = get_refined_bp(tconsensus, fasta_file_ins, chr1, start1, end1, dir1, chr2, start2, end2, dir2, mode, hout_log)
+            bret = get_refined_bp(tconsensus, fasta_file_ins, chr1, start1, end1, dir1, chr2, start2, end2, dir2, mode, hout_log, sw_jump_params)
             if bret is not None:  
                 bp_pos1, bp_pos2, inseq = bret 
                 print(bp_pos1, bp_pos2, inseq, file = hout_log)
