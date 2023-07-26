@@ -2,7 +2,7 @@
 
 import numpy as np
 
-def sw_jump(contig, region1_seq, region2_seq, match_score = 1, mismatch_penalty = 2, gap_cost = 2, jump_cost = 2):
+def sw_jump(contig, region1_seq, region2_seq, match_score = 1, mismatch_penalty = 2, gap_cost = 2, jump_cost = 2, no_jump_margin = 10, minimum_score = 30):
 
     H1 = np.zeros((len(contig) + 1, len(region1_seq) + 1), np.int32)
     H1_path = np.zeros((len(contig) + 1, len(region1_seq) + 1), np.int32)
@@ -31,9 +31,12 @@ def sw_jump(contig, region1_seq, region2_seq, match_score = 1, mismatch_penalty 
             delete = H2[i - 1, j] - gap_cost
             insert = H2[i, j - 1] - gap_cost
 
-            jump = np.max(H1_max[:i]) + (match_score if contig[i - 1] == region2_seq[j - 1] else - mismatch_penalty)
-            jump_diff = i - np.argmax(H1_max[:i])
-            jump = jump - jump_cost * np.log(jump_diff)
+            jump = float("-inf")
+            if i > no_jump_margin and i < H2.shape[0] - no_jump_margin:
+            
+                jump = np.max(H1_max[:i]) + (match_score if contig[i - 1] == region2_seq[j - 1] else - mismatch_penalty)
+                jump_diff = i - np.argmax(H1_max[:i])
+                jump = jump - jump_cost * np.log(jump_diff)
  
             tscores = (float("-inf"), match, delete, insert, jump)
             H2[i, j] = max(tscores)
@@ -90,7 +93,7 @@ def sw_jump(contig, region1_seq, region2_seq, match_score = 1, mismatch_penalty 
         elif H2_path[i_cur, j2_cur] == 0:
             break
 
-    if jump_count == 0:
+    if H2.max() < minimum_score or jump_count == 0:
         return(None)
 
     contig_match = ' ' + contig_match
