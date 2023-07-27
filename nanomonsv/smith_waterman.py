@@ -2,7 +2,7 @@
 
 import numpy as np
 
-def sw_jump(contig, region1_seq, region2_seq, match_score = 1, mismatch_penalty = 2, gap_cost = 2, jump_cost = 2, no_jump_margin = 10, minimum_score = 30):
+def sw_jump(contig, region1_seq, region2_seq, match_score = 1, mismatch_penalty = 2, gap_cost = 2, jump_cost = 2, minimum_score = 10):
 
     H1 = np.zeros((len(contig) + 1, len(region1_seq) + 1), np.int32)
     H1_path = np.zeros((len(contig) + 1, len(region1_seq) + 1), np.int32)
@@ -10,7 +10,7 @@ def sw_jump(contig, region1_seq, region2_seq, match_score = 1, mismatch_penalty 
     H2_path = np.zeros((len(contig) + 1, len(region2_seq) + 1), np.int32)
     H2_origin_i = np.zeros((len(contig) + 1, len(region2_seq) + 1), np.int32)
     H2_origin_j = np.zeros((len(contig) + 1, len(region2_seq) + 1), np.int32)
-    # jump_ind = np.zeros((len(contig) + 1), np.int)
+    H2_origin_score = np.zeros((len(contig) + 1, len(region2_seq) + 1), np.int32)
 
     
     for i in range(1, H1.shape[0]):
@@ -32,10 +32,11 @@ def sw_jump(contig, region1_seq, region2_seq, match_score = 1, mismatch_penalty 
             insert = H2[i, j - 1] - gap_cost
 
             jump = float("-inf")
-            if i > no_jump_margin and i < H2.shape[0] - no_jump_margin:
-            
-                jump = np.max(H1_max[:i]) + (match_score if contig[i - 1] == region2_seq[j - 1] else - mismatch_penalty)
-                jump_diff = i - np.argmax(H1_max[:i])
+            org_i = np.argmax(H1_max[:i])
+            if H1_max[org_i] >= minimum_score:
+
+                jump = H1_max[org_i] + (match_score if contig[i - 1] == region2_seq[j - 1] else - mismatch_penalty)
+                jump_diff = i - org_i
                 jump = jump - jump_cost * np.log(jump_diff)
  
             tscores = (float("-inf"), match, delete, insert, jump)
@@ -45,7 +46,7 @@ def sw_jump(contig, region1_seq, region2_seq, match_score = 1, mismatch_penalty 
             if H2_path[i, j] == 4:
                 H2_origin_i[i, j] = np.argmax(H1_max[:i])
                 H2_origin_j[i, j]  = H1_argmax[H2_origin_i[i, j]]
-
+                H2_origin_score[i, j] = H1_max[org_i]
 
     # i_cur, j2_cur = np.unravel_index(H2.argmax(), H2.shape)
     # a_string, b_string = a[i_end - 1], b[j_end - 1]
@@ -61,6 +62,7 @@ def sw_jump(contig, region1_seq, region2_seq, match_score = 1, mismatch_penalty 
     i_end, i2_end, j2_end = i_cur, i_cur, j2_cur # one-based position
 
     match_count, deletion_count, insertion_count, jump_count = 0, 0, 0, 0
+    H1_score = 0
     scores = []
 
     while i_cur > 0 and j2_cur > 0:
@@ -81,6 +83,7 @@ def sw_jump(contig, region1_seq, region2_seq, match_score = 1, mismatch_penalty 
             contig_match, region2_seq_match = contig[i_cur - 1] + contig_match, region2_seq[j2_cur - 1] + region2_seq_match
             i1_end = H2_origin_i[i_cur, j2_cur]
             j1_end = H2_origin_j[i_cur, j2_cur]
+            H1_score = H2_origin_score[i_cur, j2_cur]
             i2_start = i_cur
             j2_start = j2_cur # one-based alignment start of second fragment
             """
@@ -93,7 +96,7 @@ def sw_jump(contig, region1_seq, region2_seq, match_score = 1, mismatch_penalty 
         elif H2_path[i_cur, j2_cur] == 0:
             break
 
-    if H2.max() < minimum_score or jump_count == 0:
+    if H1_score < minimum_score or H2.max() - H1_score < minimum_score or jump_count == 0:
         return(None)
 
     contig_match = ' ' + contig_match
