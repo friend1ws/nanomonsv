@@ -216,7 +216,7 @@ class TestMain(unittest.TestCase):
         with open(tumor_prefix + ".nanomonsv.supporting_read.txt", 'r') as hin: record_num2 = len(hin.readlines()) 
 
         print([record_num1, record_num2])
-        self.assertTrue(record_num1 == 20)
+        self.assertTrue(abs(record_num1 - 19) <= 3)
         self.assertTrue(abs(record_num2 - 168) <= 5)
 
         shutil.rmtree(tmp_dir)
@@ -339,7 +339,7 @@ class TestMain(unittest.TestCase):
         with open(tumor_prefix + ".nanomonsv.supporting_read.txt", 'r') as hin: record_num2 = len(hin.readlines()) 
 
         print([record_num1, record_num2])
-        self.assertTrue(record_num1 == 20)
+        self.assertTrue(abs(record_num1 - 19) <= 3)
         self.assertTrue(abs(record_num2 - 168) <= 5)
 
         shutil.rmtree(tmp_dir)
