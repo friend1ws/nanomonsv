@@ -6,9 +6,8 @@ import pysam
 import parasail
 import resource
 
-from .logger import get_logger
+from .logger import get_logger as logger
 
-logger = get_logger(__name__)
 
 
 class Consensus_generator(object):
@@ -34,7 +33,7 @@ class Consensus_generator(object):
     def __del__(self):
         self.hout.close()
         if len(self.parasail_error) > 0:
-            logger.debug(f"Alignment by parasail failed in {self.parasail_error}")
+            logger().debug(f"Alignment by parasail failed in {self.parasail_error}")
 
         if not self.debug:
             shutil.rmtree(self.tmp_dir)
@@ -142,7 +141,7 @@ class Consensus_generator(object):
                     break
 
         if target_flag == False:
-            logger.debug(f"Template sequence could not be found for for {self.temp_key}")
+            logger().debug(f"Template sequence could not be found for for {self.temp_key}")
             return
 
         paf_rec_count = self.generate_paf_file(self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa",
@@ -150,7 +149,7 @@ class Consensus_generator(object):
             self.tmp_dir + '/' + self.temp_key + ".parasail.paf")
 
         if paf_rec_count < 3:
-            logger.debug(f"Not enough PAF records for the first round consensus generation for {self.temp_key}")
+            logger().debug(f"Not enough PAF records for the first round consensus generation for {self.temp_key}")
             return
 
         try:
@@ -161,7 +160,7 @@ class Consensus_generator(object):
                     self.tmp_dir + '/' + self.temp_key + ".tmp.seg.first.fa"],
                     stdout = hout, stderr = subprocess.DEVNULL)
         except Exception as e:
-            logger.warning(f'{e}')
+            logger().warning(f'{e}')
             return
 
         with open(self.tmp_dir + '/' + self.temp_key + ".racon1.fa", 'r') as hin, \
@@ -176,7 +175,7 @@ class Consensus_generator(object):
             self.tmp_dir + '/' + self.temp_key + ".parasail2.paf")
 
         if paf_rec_count < 3:
-            logger.debug(f"Not enough PAF records for the second round consensus generation for {self.temp_key}")
+            logger().debug(f"Not enough PAF records for the second round consensus generation for {self.temp_key}")
             return
 
         try:
@@ -187,7 +186,7 @@ class Consensus_generator(object):
                     self.tmp_dir + '/' + self.temp_key + ".racon1.mod.fa"],
                     stdout = hout, stderr = subprocess.DEVNULL)
         except Exception as e:
-            logger.warning(f'{e}')
+            logger().warning(f'{e}')
             return
 
         with open(self.tmp_dir + "/" + self.temp_key + ".racon2.fa") as hin:
@@ -222,7 +221,7 @@ class Consensus_generator(object):
                     self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa"],
                     stderr = subprocess.DEVNULL, stdout = hout, preexec_fn = self.preexec_fn)
         except Exception as e:
-            logger.warning(f'{e}')
+            logger().warning(f'{e}')
             return
 
 
@@ -253,7 +252,7 @@ class Consensus_generator(object):
                     break
                 seq_read_count = seq_read_count + 1
                 if tid == '' or seq_read_count > 10000:
-                    logger.warning(f"Something inconsistent happend when choosing template reads for {self.temp_key}")
+                    logger().warning(f"Something inconsistent happend when choosing template reads for {self.temp_key}")
                     return
 
         try:
@@ -262,7 +261,7 @@ class Consensus_generator(object):
                     self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa"],
                     stderr = subprocess.DEVNULL, stdout = hout, preexec_fn = self.preexec_fn)
         except Exception as e:
-            logger.warning(f'{e}')
+            logger().warning(f'{e}')
             return
 
         paf_rec_count = 0
@@ -271,7 +270,7 @@ class Consensus_generator(object):
                 paf_rec_count = paf_rec_count + 1
 
         if paf_rec_count < 3:
-            logger.debug(f"Not enough PAF records for the first round consensus generation for {self.temp_key}")
+            logger().debug(f"Not enough PAF records for the first round consensus generation for {self.temp_key}")
             return
 
         consensus = ''
@@ -282,7 +281,7 @@ class Consensus_generator(object):
                     self.tmp_dir + '/' + self.temp_key + "_ref.fa"],
                     stderr = subprocess.DEVNULL, stdout = hout)
         except Exception as e:
-            logger.warning(f'{e}')
+            logger().warning(f'{e}')
             return
 
         with open(self.tmp_dir + '/' + self.temp_key + "_ref_polished.fa", 'r') as hin:
@@ -302,7 +301,7 @@ class Consensus_generator(object):
                     self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa"],
                     stderr = subprocess.DEVNULL, stdout = hout, preexec_fn = self.preexec_fn)
         except Exception as e:
-            logger.warning(f'{e}')
+            logger().warning(f'{e}')
             return
 
         paf_rec_count = 0
@@ -311,7 +310,7 @@ class Consensus_generator(object):
                 paf_rec_count = paf_rec_count + 1
 
         if paf_rec_count < 3:
-            logger.debug(f"Not enough PAF records for the first round consensus generation for {self.temp_key}")
+            logger().debug(f"Not enough PAF records for the first round consensus generation for {self.temp_key}")
             return
 
         consensus = ''
@@ -322,7 +321,7 @@ class Consensus_generator(object):
                     self.tmp_dir + '/' + self.temp_key + "_ref_2nd.fa"],
                     stderr = subprocess.DEVNULL, stdout = hout)
         except Exception as e:
-            logger.warning(f'{e}')
+            logger().warning(f'{e}')
             return
 
         with open(self.tmp_dir + '/' + self.temp_key + "_ref_polished_2nd.fa", 'r') as hin:
@@ -336,7 +335,7 @@ class Consensus_generator(object):
 
 def generate_consensus(input_file, output_file, use_racon = False, debug = False, max_memory_minimap2 = 1):
 
-    if debug: logger.setLevel(logging.DEBUG)
+    if debug: logger().setLevel(logging.DEBUG)
 
     consensus_generator = Consensus_generator(output_file, use_racon, debug, max_memory_minimap2)
 
@@ -359,7 +358,7 @@ def generate_consensus(input_file, output_file, use_racon = False, debug = False
 
 def generate_consensus_sbnd(input_file, output_file, use_racon = False, debug = False, max_memory_minimap2 = 1):
 
-    if debug: logger.setLevel(logging.DEBUG)
+    if debug: logger().setLevel(logging.DEBUG)
 
     # generate contig for single breakend
     consensus_generator_sbnd = Consensus_generator(output_file, use_racon, debug, max_memory_minimap2)

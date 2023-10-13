@@ -1,9 +1,7 @@
 #! /usr/bin/env python3
 
 import sys, gzip, os, subprocess
-from .logger import get_logger
-
-logger = get_logger(__name__)
+from .logger import get_logger as logger
 
 
 def merge_bed_by_sv(bedpe_file, hout, prefix_label, is_bedpe = False):
@@ -85,16 +83,16 @@ def merge_control_from_parse_files(prefix_list_file, output_prefix):
             prefix = line.rstrip('\n')
 
             if not os.path.exists(prefix + ".rearrangement.sorted.bedpe.gz"):
-                logger.error(f'No file: {prefix}/.rearrangement.sorted.bedpe.gz')
+                logger().error(f'No file: {prefix}/.rearrangement.sorted.bedpe.gz')
                 sys.exit(1)
             if not os.path.exists(prefix + ".insertion.sorted.bed.gz"):
-                logger.error(f'No file: {prefix}/.insertion.sorted.bed.gz')
+                logger().error(f'No file: {prefix}/.insertion.sorted.bed.gz')
                 sys.exit(1)
             if not os.path.exists(prefix + ".deletion.sorted.bed.gz"):
-                logger.error(f'No file: {prefix}/.deletion.sorted.bed.gz')
+                logger().error(f'No file: {prefix}/.deletion.sorted.bed.gz')
                 sys.exit(1)
             if not os.path.exists(prefix + ".bp_info.sorted.bed.gz"):
-                logger.error(f'No file: {prefix}/.bp_info.sorted.bed.gz')
+                logger().error(f'No file: {prefix}/.bp_info.sorted.bed.gz')
                 sys.exit(1)
 
     hout_r = open(output_prefix + ".rearrangement.sorted.bedpe.gz.tmp1", 'w')

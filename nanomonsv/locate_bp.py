@@ -5,9 +5,7 @@ import pysam
 
 from . import smith_waterman
 from .my_seq import reverse_complement
-from .logger import get_logger
-
-logger = get_logger(__name__)
+from .logger import get_logger as logger
 
 
 def get_refined_bp(contig, fasta_file_ins, chr1, start1, end1, dir1, chr2, start2, end2, dir2, mode, h_log,
@@ -49,7 +47,7 @@ def get_refined_bp(contig, fasta_file_ins, chr1, start1, end1, dir1, chr2, start
             inseq = contig[(contig_align[1]):(contig_align[2] - 1)]
             if dir1 == '-': inseq = reverse_complement(inseq)
         else:
-            logger.warning("Alignment inconsistent!!")
+            logger().warning("Alignment inconsistent!!")
 
         print(score, contig_align, region1_align, region2_align, file = h_log)
         print(contig_seq, file = h_log)

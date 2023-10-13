@@ -3,9 +3,8 @@
 import sys, gzip, statistics, logging
 import pysam
 
-from nanomonsv.logger import get_logger
+from nanomonsv.logger import get_logger as logger
 
-logger = get_logger(__name__)
 
 class Sbnd_cluster(object):
 
@@ -105,7 +104,7 @@ class Sbnd_clusterer(object):
             try:
                 records = self.control_tb.fetch(cl.chr, max(0, cl.start - 10), cl.end + 10)
             except Exception as e:
-                logger.debug(f'{e}')
+                logger().debug(f'{e}')
                 tabix_error_flag = True
 
             if not tabix_error_flag:
@@ -128,7 +127,7 @@ class Sbnd_clusterer(object):
             try:
                 records = self.control_panel_tb.fetch(cl.chr, max(0, cl.start - 10), cl.end + 10)
             except Exception as e:
-                logger.debug(f'{e}')
+                logger().debug(f'{e}')
                 tabix_error_flag = True
 
             sample2readnum_panel = {}
@@ -181,7 +180,7 @@ def cluster_supporting_reads_sbnd(input_file, output_file, control_bed = None, c
     read_num_thres = 3, median_mapQ_thres = 20, max_control_read_num = 1,
     max_panel_read_num = 1, max_panel_sample_num = 1, debug = False):
 
-    if debug: logger.setLevel(logging.DEBUG)
+    if debug: logger().setLevel(logging.DEBUG)
 
 
     sbnd_clusterer = Sbnd_clusterer(output_file, control_bed = control_bed, control_panel_bed = control_panel_bed,

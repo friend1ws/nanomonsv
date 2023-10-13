@@ -2,7 +2,7 @@
 
 import sys, gzip, statistics
 import pysam
-from .logger import get_logger
+from .logger import get_logger as logger
 
 def cluster_rearrangement(input_file, output_file, cluster_margin_size = 100):
 
@@ -141,8 +141,6 @@ def filt_clustered_rearrangement2(input_file, output_file, control_junction_bedp
 
 def cluster_insertion_deletion(input_file, output_file, deletion_cluster_margin_size = 10, check_margin_size = 50, size_margin_ratio = 0.2, maximum_unique_pairs = 100, maximum_local_variant_num = 1000):
 
-    logger = get_logger(__name__)
-
     dcms = deletion_cluster_margin_size
     hout = open(output_file, 'w')
 
@@ -248,7 +246,7 @@ def cluster_insertion_deletion(input_file, output_file, deletion_cluster_margin_
             #     print('\t'.join([bchr, str(bstart), str(bend), breadids, bsize, '+', binfo]), file = hout)
 
     skipped_pls_list_line = ' '.join(skipped_pos_list)
-    logger.info(f"Because of too many local variants, clustering procedures were skipped around: {skipped_pls_list_line}")
+    logger().info(f"Because of too many local variants, clustering procedures were skipped around: {skipped_pls_list_line}")
 
     hout.close()
 

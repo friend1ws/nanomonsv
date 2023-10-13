@@ -4,9 +4,8 @@ import csv, itertools
 import pysam, parasail
 
 from nanomonsv.my_seq import reverse_complement
-from nanomonsv.logger import get_logger
+from nanomonsv.logger import get_logger as logger
 
-logger = get_logger(__name__)
 
 class Sv(object):
 
@@ -186,7 +185,7 @@ class Duplicate_remover(object):
                 records = self.simple_repeat_tb.fetch(sv.chr1, max(sv.pos1 - self.simple_repeat_dist_margin + 1, 0),
                     sv.pos1 + self.simple_repeat_dist_margin)
             except Exception as inst:
-                logger.warning("%s: %s" % (type(inst), inst.args))
+                logger().warning("%s: %s" % (type(inst), inst.args))
                 tabix_error_flag = True
 
             if tabix_error_flag == False:
@@ -199,11 +198,11 @@ class Duplicate_remover(object):
 
     def apply_filters(self):
 
-        # logger.info("filter_close_both_breakpoints")
+        # logger().info("filter_close_both_breakpoints")
         for sv1, sv2 in itertools.combinations(self.sv_list, 2):
             self.filter_close_both_breakpoints(sv1, sv2)
 
-        # logger.info("filter_sv_insertion_match")
+        # logger().info("filter_sv_insertion_match")
         for sv1, sv2 in itertools.combinations(self.sv_list, 2):
 
             if len(sv1.inseq) < 100 and len(sv2.inseq) >= 100:
@@ -211,7 +210,7 @@ class Duplicate_remover(object):
             elif len(sv2.inseq) < 100 and len(sv1.inseq) >= 100:
                 self.filter_sv_insertion_match(sv2, sv1)
 
-        # logger.info("filter_dup_insertion")
+        # logger().info("filter_dup_insertion")
         for ins1, ins2 in itertools.combinations(self.sv_list, 2):
 
             if len(ins1.inseq) >= 100 and len(ins2.inseq) >= 100:

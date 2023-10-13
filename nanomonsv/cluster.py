@@ -3,9 +3,8 @@
 import sys, gzip, statistics, logging
 import pysam
 
-from .logger import get_logger
+from .logger import get_logger as logger
 
-logger = get_logger(__name__)
 
 class Sv_cluster(object):
 
@@ -70,7 +69,7 @@ class Sv_clusterer(object):
     def __del__(self):
         if len(self.skipped_pos_list) > 0:
             skipped_pls_list_line = ' '.join(self.skipped_pos_list)
-            logger.debug(f"Because of too many local variants, clustering procedures were skipped around: {skipped_pls_list_line}")
+            logger().debug(f"Because of too many local variants, clustering procedures were skipped around: {skipped_pls_list_line}")
 
         self.hout.close()
         if self.control_tb is not None: self.control_tb.close()
@@ -153,7 +152,7 @@ class Sv_clusterer(object):
             try:
                 records = self.control_tb.fetch(cl.chr1, max(0, cl.start1 - 200), cl.end1 + 200)
             except Exception as e:
-                logger.debug(f'{e}')
+                logger().debug(f'{e}')
                 tabix_error_flag = True
 
             support_read_num = 0
@@ -183,7 +182,7 @@ class Sv_clusterer(object):
             try:
                 records = self.control_panel_tb.fetch(cl.chr1, max(0, cl.start1 - 200), cl.end1 + 200)
             except Exception as e:
-                logger.debug(f'{e}')
+                logger().debug(f'{e}')
                 tabix_error_flag = True
 
             sample2readnum_panel = {}
@@ -231,7 +230,7 @@ class Sv_clusterer(object):
             try:
                 records = self.bp_tb.fetch(cl.chr1, max(0, cl.start1), cl.end2)
             except Exception as e:
-                logger.debug(f'{e}')
+                logger().debug(f'{e}')
                 tabix_error_flag1 = True
 
             if not tabix_error_flag1:
@@ -274,7 +273,7 @@ class Sv_clusterer(object):
             try:
                 records = self.control_tb.fetch(cl.chr1, max(0, cl.start1 - matched_control_margin), cl.end2 + matched_control_margin)
             except Exception as e:
-                logger.debug(f'{e}')
+                logger().debug(f'{e}')
                 tabix_error_flag2 = True
 
             if not tabix_error_flag2:
@@ -305,7 +304,7 @@ class Sv_clusterer(object):
             try:
                 records = self.control_panel_tb.fetch(cl.chr1, max(0, cl.start1 - 50), cl.end2 + 50)
             except Exception as e:
-                logger.debug(f'{e}')
+                logger().debug(f'{e}')
                 tabix_error_flag2 = True
 
             sample2readnum_panel = {}
@@ -389,7 +388,7 @@ def cluster_supporting_reads(input_file, output_file, svtype, control_junction_b
     read_num_thres = 3, median_mapQ_thres = 20, max_overhang_size_thres = 100,
     max_control_read_num = 0, control_check_margin = 50, max_panel_read_num = 1, max_panel_sample_num = 1, debug = False):
 
-    if debug: logger.setLevel(logging.DEBUG)
+    if debug: logger().setLevel(logging.DEBUG)
 
     sv_clusterer = Sv_clusterer(svtype, output_file, control_junction_bedpe = control_junction_bedpe,
         control_panel_junction_bedpe = control_panel_junction_bedpe, bp_bed = bp_bed,
@@ -421,7 +420,7 @@ def cluster_supporting_reads(input_file, output_file, svtype, control_junction_b
 
             else:
                 pass
-                # logger.error("The svtype argument should be either of rearrangement, insertion or deletion.")
+                # logger().error("The svtype argument should be either of rearrangement, insertion or deletion.")
                 # sys.exit(1)
 
             if sv_clusterer.temp_chr != tchr1:

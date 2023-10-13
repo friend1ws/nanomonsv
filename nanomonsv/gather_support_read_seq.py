@@ -3,11 +3,9 @@
 import sys, os, subprocess, statistics
 import pysam
 
-from .logger import get_logger
+from .logger import get_logger as logger
 from .my_seq import reverse_complement
 from .utils import get_alignment_object
-
-logger = get_logger(__name__)
 
 
 def set_readid2alignment(readid2alignment, input_file, mode, alignment_margin):

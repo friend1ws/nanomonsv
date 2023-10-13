@@ -6,9 +6,7 @@ import pysam
 import parasail
 
 from . import smith_waterman
-from .logger import get_logger
-
-logger = get_logger(__name__)
+from .logger import get_logger as logger
 
 def reverse_complement(seq):
     complement = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A',
@@ -76,7 +74,7 @@ def generate_paf_file(query_fasta, target_fasta, output_file):
                         (qid, len(qseq), res.read_begin1, res.read_end1,
                         tid, len(tseq), res.ref_begin1, res.ref_end1), file = hout)
                 else:
-                    logger.warning(f'Error occured in the alignment of {qid} and {tid} via parasail')
+                    logger().warning(f'Error occured in the alignment of {qid} and {tid} via parasail')
 
 
 def generate_racon_consensus(temp_key, tmp_dir, readid2alignment):

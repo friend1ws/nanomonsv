@@ -4,8 +4,8 @@ import sys, os
 from subprocess import Popen, PIPE
 import pysam
 
-from .logger import get_logger
-logger = get_logger(__name__)
+from .logger import get_logger as logger
+
 
 def is_exists_bam(input_file):
 
@@ -18,7 +18,7 @@ def is_exists_bam(input_file):
 def is_exists(input_file):
 
     if not os.path.exists(input_file):
-        logger.error("Input not exists: %s" % input_file)
+        logger().error("Input not exists: %s" % input_file)
         sys.exit(1)
 
 
@@ -37,7 +37,7 @@ def is_exists_s3(bam_object):
     try:
         response = client.head_object(Bucket = tbucket, Key = tkey)
     except:
-        logger.error("Input not exists: %s: " % bam_object)
+        logger().error("Input not exists: %s: " % bam_object)
         sys.exit(1)
 
 
@@ -58,7 +58,7 @@ def is_exists_parsed_files(input_prefix):
         missing_files.append(input_prefix + ".rearrangement.sorted.bedpe.gz.tbi")
 
     if len(missing_files) > 0:
-        logger.error("One or more files via the nanomonsv parse stage do not exist. " + \
+        logger().error("One or more files via the nanomonsv parse stage do not exist. " + \
                      "Please check the prefix path. Also confirm whether nanomonsv parse ended properly. " +  \
                      "Missing files: " + ' '.join(missing_files))
         sys.exit(1)
@@ -82,7 +82,7 @@ def bam_cram_format_check(alignment_file, reference_fasta):
     try:
         bam_t = get_alignment_object(alignment_file, reference_fasta)
     except:
-        logger.error("Alignment file (BAM or CRAM) format error: %s" % alignment_file)
+        logger().error("Alignment file (BAM or CRAM) format error: %s" % alignment_file)
         sys.exit(1)
 
 def fasta_format_check(fasta_file):
@@ -90,7 +90,7 @@ def fasta_format_check(fasta_file):
     try:
         fasta_t = pysam.FastaFile(fasta_file)
     except:
-        logger.error("FASTA format error: %s" % fasta_file)
+        logger().error("FASTA format error: %s" % fasta_file)
         sys.exit(1)
 
 
@@ -98,7 +98,7 @@ def is_tool(executable):
 
     from shutil import which
     if which(executable) is None:
-        logger.error("Executable does not exist: " + executable)
+        logger().error("Executable does not exist: " + executable)
         sys.exit(1)
 
     return True
@@ -114,5 +114,5 @@ def libssw_check():
             sLibPath = ld_path # + "/libssw.so"
             break
     if sLibPath == "":
-        logger.error("Cannot find libssw.so in LD_LIBRARY_PATH")
+        logger().error("Cannot find libssw.so in LD_LIBRARY_PATH")
         sys.exit(1)

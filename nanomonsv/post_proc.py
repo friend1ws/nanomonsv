@@ -4,9 +4,8 @@ import csv, itertools
 import pysam, parasail
 
 from nanomonsv.my_seq import reverse_complement
-from nanomonsv.logger import get_logger
+from nanomonsv.logger import get_logger as logger
 
-logger = get_logger(__name__)
 
 class Sv(object):
 
@@ -192,12 +191,12 @@ class Sv_filterer(object):
         for sv in self.sv_list:
             self.filter_sv_with_decoy(sv)
 
-        # logger.info("filter_close_both_breakpoints")
+        # logger().info("filter_close_both_breakpoints")
         for sv1, sv2 in itertools.combinations(self.sv_list, 2):
             if len(sv1.filter) > 0 or len(sv2.filter) > 0: continue
             self.filter_close_both_breakpoints(sv1, sv2)
 
-        # logger.info("filter_sv_insertion_match")
+        # logger().info("filter_sv_insertion_match")
         for sv1, sv2 in itertools.combinations(self.sv_list, 2):
             if len(sv1.filter) > 0 or len(sv2.filter) > 0: continue
             if len(sv1.inseq) < self.min_indel_size and len(sv2.inseq) >= self.min_indel_size:
@@ -205,7 +204,7 @@ class Sv_filterer(object):
             elif len(sv2.inseq) < self.min_indel_size and len(sv1.inseq) >= self.min_indel_size:
                 self.filter_sv_insertion_match(sv2, sv1)
 
-        # logger.info("filter_dup_insertion")
+        # logger().info("filter_dup_insertion")
         for ins1, ins2 in itertools.combinations(self.sv_list, 2):
             if len(ins1.filter) > 0 or len(ins2.filter) > 0: continue
             if len(ins1.inseq) >= self.min_indel_size and len(ins2.inseq) >= self.min_indel_size:

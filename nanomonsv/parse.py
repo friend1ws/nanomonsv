@@ -3,9 +3,9 @@
 import sys, os, subprocess, itertools
 import pysam
 
-from .logger import get_logger
+from .logger import get_logger as logger
 from .utils import get_alignment_object
-logger = get_logger(__name__)
+
 
 def parse_alignment_info(input_alignment_file, reference_fasta, deletion_output_file, insertion_output_file, rearrangement_output_file,
     breakpoint_output_file, min_ins_size = 20, min_del_size = 30, min_clipping_size_for_bp = 200):
@@ -111,10 +111,10 @@ def parse_alignment_info(input_alignment_file, reference_fasta, deletion_output_
                     reference_pos_cur = reference_pos_cur + cigar[1]
 
         if query_strand == '+' and query_end != query_pos_cur:
-            logger.error("query end inconsistent!! %s: %d != %d" % (query_name, query_end, query_pos_cur))
+            logger().error("query end inconsistent!! %s: %d != %d" % (query_name, query_end, query_pos_cur))
             sys.exit(1)
         if query_strand == '-' and query_start != query_pos_cur + 1:
-            logger.error("query end inconsistent!! %s: %d != %d" % (query_name, query_end, query_pos_cur))
+            logger().error("query end inconsistent!! %s: %d != %d" % (query_name, query_end, query_pos_cur))
             sys.exit(1)
 
         """

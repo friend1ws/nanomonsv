@@ -230,4 +230,76 @@ def create_parser():
     insert_classify.set_defaults(func = insert_classify_main)
     ##########
 
+    ##########
+    # insertion refinement
+    insert_refine: argparse.ArgumentParser = subparsers.add_parser(
+        "insert_refine",
+        help = "Refine insertion breakpoint, length and sequence")
+
+    insert_refine.add_argument(
+        "--clustered_ins_file", default = None, type = str,
+        help="Path to file containing clustered insertion candidates to be "
+             "refined")
+
+    insert_refine.add_argument(
+        "--bam", default = None, type = str,
+        help = "Path to alignment (BAM or CRAM) file")
+
+    insert_refine.add_argument(
+        "--reference_fasta", default = None, type = str,
+        help = "the path to the reference genome sequence")
+
+    insert_refine.add_argument(
+        "--out_folder", type = str, help = "output folder")
+
+
+    insert_refine.add_argument(
+        "--validation_score_ratio_thres", default = 1.2, type = float,
+        help = "Threshould for threshould for SV segment validation by "
+               "alignment")
+
+    insert_refine.add_argument(
+        "--sw_jump_params", nargs = 4, default = [1, 3, 3, 2], type = int,
+        help = "Parameters (match score, mismatch penalty, gap penalty, "
+               "insertion penalty) for one-time smith-waterman algorithm "
+               "(default: [1, 3, 3, 2]")
+
+    insert_refine.add_argument(
+        "--qv10", default = False, action = 'store_true',
+        help = "Parameter preset for sequencing data with a base quality "
+               " of around 10. Recommended for ONT data called by Guppy "
+               " before version 5")
+
+    insert_refine.add_argument(
+        "--qv15", default = False, action = 'store_true',
+        help = "Parameter preset for sequencing data with a base quality "
+               " of around 15. Recommended for ONT data called by Guppy "
+               " version 5, 6.")
+
+    insert_refine.add_argument(
+        "--qv20", default = False, action = 'store_true',
+        help = "Parameter preset for sequencing data with a base quality "
+               " of around 20. Recommended for ONT data with Q20+ chemistry.")
+
+    insert_refine.add_argument(
+        "--qv25", default = False, action = 'store_true',
+        help = "Parameter preset for sequencing data with a base quality "
+               " above 25. Recommended for PacBio Hifi data.")
+
+    insert_refine.add_argument(
+        "--use_racon", default = False, action = 'store_true',
+        help = "Use racon for error correction of clustered putative "
+               "supporting reads (default: False)")
+
+    insert_refine.add_argument(
+        "--processes", default = 1, type = int,
+        help = "Number of parallel processes to use (default: 1)")
+
+    insert_refine.add_argument(
+        "--debug", default = False, action = 'store_true',
+        help = "keep intermediate files")
+
+    insert_refine.set_defaults(func = insert_refine_main)
+    #########
+
     return parser

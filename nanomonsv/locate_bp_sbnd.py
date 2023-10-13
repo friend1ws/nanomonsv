@@ -6,9 +6,7 @@ import parasail
 
 from .my_seq import reverse_complement
 
-from .logger import get_logger
-
-logger = get_logger(__name__)
+from .logger import get_logger as logger
 
 
 def get_refined_bp_sbnd(tconsensus, fasta_file_h, tchr, tstart, tend, tdir, hout_log, margin = 200):
@@ -28,7 +26,7 @@ def get_refined_bp_sbnd(tconsensus, fasta_file_h, tchr, tstart, tend, tdir, hout
     user_matrix = parasail.matrix_create("ACGT", 1, -2)
     res = parasail.ssw(qseq, tconsensus, 3, 1, user_matrix)
     if res is None:
-        logger.debug(f"Alignment for breakpoint localization failed for {tchr},{tstart},{tend},{tdir}")
+        logger().debug(f"Alignment for breakpoint localization failed for {tchr},{tstart},{tend},{tdir}")
         return None
 
 
