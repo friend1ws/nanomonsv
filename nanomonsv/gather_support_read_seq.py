@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 
-import sys, os, subprocess, statistics 
+import sys, os, subprocess, statistics
 import pysam
 
 from .logger import get_logger
@@ -9,7 +9,7 @@ from .utils import get_alignment_object
 
 logger = get_logger(__name__)
 
- 
+
 def set_readid2alignment(readid2alignment, input_file, mode, alignment_margin):
 
     # readid2alignment = {}
@@ -26,7 +26,7 @@ def set_readid2alignment(readid2alignment, input_file, mode, alignment_margin):
                 info1 = F[10].split(';')
                 info2 = F[11].split(';')
                 for i in range(len(readids)):
-                    tinfo1 = info1[i].split(',') 
+                    tinfo1 = info1[i].split(',')
                     tinfo2 = info2[i].split(',')
                     start1, end1, start2, end2 = int(tinfo1[0]), int(tinfo1[2]), int(tinfo2[0]), int(tinfo2[2])
                     if readids[i] not in readid2alignment: readid2alignment[readids[i]] = []
@@ -74,16 +74,16 @@ def set_readid2alignment_sbnd(readid2alignment_sbnd, input_file, alignment_margi
         for line in hin:
             tchr, tstart, tend, treadids, _, tstrand, tinfos = line.rstrip('\n').split('\t')
             tkey = f"{tchr},{tstart},{tend},{tstrand},b,{cid}" # ','.join([tchr, tstart, tend, tstrand])
-           
+
             # readids = treadids.split(';')
             readids = eval(treadids)
 
-            infos = tinfos.split(';') 
+            infos = tinfos.split(';')
             for i in range(len(readids)):
                 ttinfo = infos[i].split(',')
-                qpos, qlen, qstrand = int(ttinfo[1]), int(ttinfo[3]), ttinfo[4]             
+                qpos, qlen, qstrand = int(ttinfo[1]), int(ttinfo[3]), ttinfo[4]
                 if readids[i] not in readid2alignment_sbnd: readid2alignment_sbnd[readids[i]] = []
-                if tstrand == qstrand: 
+                if tstrand == qstrand:
                     readid2alignment_sbnd[readids[i]].append((tkey, max(1, qpos - alignment_margin), qlen, qstrand, '*'))
                 else:
                     readid2alignment_sbnd[readids[i]].append((tkey, 1, min(qpos + alignment_margin, qlen), qstrand, '*'))
@@ -91,19 +91,19 @@ def set_readid2alignment_sbnd(readid2alignment_sbnd, input_file, alignment_margi
             cid = cid + 1
 
 
-def gather_support_read_seq(rearrangement_file, insertion_file, deletion_file, output_file, tumor_alignment_file, reference_fasta, 
+def gather_support_read_seq(rearrangement_file, insertion_file, deletion_file, output_file, tumor_alignment_file, reference_fasta,
     single_breakend_file = None, output_file_sbind = None, alignment_margin = 300):
 
     is_sbnd = True if single_breakend_file is not None else False
 
-    
+
     alignment_h = get_alignment_object(tumor_alignment_file, reference_fasta)
 
     readid2alignment = {}
     set_readid2alignment(readid2alignment, rearrangement_file, 'r', alignment_margin)
     set_readid2alignment(readid2alignment, insertion_file, 'i', alignment_margin)
     set_readid2alignment(readid2alignment, deletion_file, 'd', alignment_margin)
-    
+
     hout = open(output_file + ".tmp.unsorted", 'w')
 
     if is_sbnd:
@@ -128,8 +128,8 @@ def gather_support_read_seq(rearrangement_file, insertion_file, deletion_file, o
                 print('\t'.join([akey, read.query_name, asize, part_seq]), file = hout)
 
 
-        if is_sbnd and read.query_name in readid2alignment_sbnd: 
-        
+        if is_sbnd and read.query_name in readid2alignment_sbnd:
+
             for talignment in readid2alignment_sbnd[read.query_name]:
 
                 akey, astart, aend, astrand, asize = talignment
@@ -154,5 +154,3 @@ def gather_support_read_seq(rearrangement_file, insertion_file, deletion_file, o
         with open(output_file_sbind, 'w') as hout:
             subprocess.check_call(["sort", "-k1,1", output_file + ".sbnd.tmp.unsorted"], stdout = hout)
         os.remove(output_file + ".sbnd.tmp.unsorted")
-
-

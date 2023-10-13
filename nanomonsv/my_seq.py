@@ -23,5 +23,3 @@ def reverse_complement(seq):
                   'B': 'V', 'V': 'B', 'D': 'H', 'H': 'D', 'N': 'N'}
 
     return("".join(complement.get(base, base) for base in reversed(seq)))
-
-

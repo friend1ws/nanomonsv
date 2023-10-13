@@ -47,15 +47,15 @@ class Sbnd_clusterer(object):
         if self.control_tb is not None: self.control_tb.close()
         if self.control_panel_tb is not None: self.control_panel_tb.close()
 
- 
+
     def check_mergeability(self, tchr, tstart, tend, tdir, treadid, tinfo):
-   
+
         for cluster in self.sbnd_cluster_list:
 
             if treadid in cluster.readids: continue
 
             # pairs of chromosome and direction should be the same.
-            # regions from start to end should overlap.   
+            # regions from start to end should overlap.
             is_mergeable = False
             if tchr == cluster.chr and tdir == cluster.dir and tend >= cluster.start and tstart <= cluster.end:
                 is_mergeable = True
@@ -67,9 +67,9 @@ class Sbnd_clusterer(object):
 
             cluster.readids.append(treadid)
             cluster.info.append(tinfo)
-                        
+
             return cluster
-            
+
         return None
 
 
@@ -80,7 +80,7 @@ class Sbnd_clusterer(object):
 
 
     def filter_single_breakend_cluster(self, cl):
-        
+
         is_filter = False
         if len(cl.readids) < self.read_num_thres: is_filter = True
 
@@ -99,7 +99,7 @@ class Sbnd_clusterer(object):
 
         control_flag = False
         if self.control_tb is not None:
-    
+
             support_read_num = 0
             tabix_error_flag = False
             try:
@@ -113,7 +113,7 @@ class Sbnd_clusterer(object):
                     rec = record_line.split('\t')
 
                     if cl.chr != rec[0] or cl.dir != rec[5]: continue
-        
+
                     if cl.end >= int(rec[2]) and cl.start <= int(rec[2]):
                         support_read_num = support_read_num + 1
 
@@ -123,21 +123,21 @@ class Sbnd_clusterer(object):
 
         control_panel_flag = False
         if self.control_panel_tb is not None:
-        
+
             tabix_error_flag = False
             try:
                 records = self.control_panel_tb.fetch(cl.chr, max(0, cl.start - 10), cl.end + 10)
             except Exception as e:
                 logger.debug(f'{e}')
                 tabix_error_flag = True
-        
-            sample2readnum_panel = {}        
+
+            sample2readnum_panel = {}
             if not tabix_error_flag:
                 for record_line in records:
                     rec = record_line.split('\t')
-                    
+
                     if cl.chr != rec[0] or cl.dir != rec[5]: continue
-                    
+
                     if cl.end >= int(rec[2]) and cl.start <= int(rec[2]):
                         readnums = rec[6].split(',')
                         psamples = rec[7].split(',')
@@ -149,9 +149,9 @@ class Sbnd_clusterer(object):
                 readnums_panel = [sample2readnum_panel[x] for x in sample2readnum_panel]
                 if len([x for x in readnums_panel if x > self.max_panel_read_num]) > self.max_panel_sample_num:
                     control_panel_flag = True
-            
 
-        if control_flag == True or control_panel_flag == True: is_filter = True 
+
+        if control_flag == True or control_panel_flag == True: is_filter = True
 
         return(is_filter)
 
@@ -168,16 +168,16 @@ class Sbnd_clusterer(object):
                 # print_line_readids = ';'.join(cl.readids)
                 print_line_readids = repr(cl.readids)
                 print_line_info = ';'.join(cl.info)
-        
+
                 print(f'{cl.chr}\t{cl.start}\t{cl.end}\t{print_line_readids}\t0\t{cl.dir}\t{print_line_info}',
                     file = self.hout)
-                        
+
         for cl in remove_cluster:
             self.sbnd_cluster_list.remove(cl)
 
 
-def cluster_supporting_reads_sbnd(input_file, output_file, control_bed = None, control_panel_bed = None, 
-    cluster_margin_size = 100, sbnd_cluster_margin_size = 20, 
+def cluster_supporting_reads_sbnd(input_file, output_file, control_bed = None, control_panel_bed = None,
+    cluster_margin_size = 100, sbnd_cluster_margin_size = 20,
     read_num_thres = 3, median_mapQ_thres = 20, max_control_read_num = 1,
     max_panel_read_num = 1, max_panel_sample_num = 1, debug = False):
 
@@ -185,12 +185,12 @@ def cluster_supporting_reads_sbnd(input_file, output_file, control_bed = None, c
 
 
     sbnd_clusterer = Sbnd_clusterer(output_file, control_bed = control_bed, control_panel_bed = control_panel_bed,
-        cluster_margin_size = cluster_margin_size, read_num_thres = read_num_thres, 
-        median_mapQ_thres = median_mapQ_thres, max_control_read_num = max_control_read_num, 
+        cluster_margin_size = cluster_margin_size, read_num_thres = read_num_thres,
+        median_mapQ_thres = median_mapQ_thres, max_control_read_num = max_control_read_num,
         max_panel_read_num = max_panel_read_num, max_panel_sample_num = max_panel_sample_num)
 
-    
-    with gzip.open(input_file, 'rt') as hin: 
+
+    with gzip.open(input_file, 'rt') as hin:
         for line in hin:
 
             tchr, _, tpos, treadid, _, tdir, tinfo = line.rstrip('\n').split('\t')
@@ -200,7 +200,7 @@ def cluster_supporting_reads_sbnd(input_file, output_file, control_bed = None, c
             # skip single breakend from secondary alignment
             if tinfo.split(',')[9] == "True": continue
 
-            # flush out existing cluster whose supporting reads have parsed alreadly 
+            # flush out existing cluster whose supporting reads have parsed alreadly
             #   (considering the chromosome and coordinates).
             sbnd_clusterer.flush_sv_cluster_list(tchr, int(tpos))
 
@@ -210,7 +210,7 @@ def cluster_supporting_reads_sbnd(input_file, output_file, control_bed = None, c
             # create new single breakend cluster when new key cannot be merged into any existing clusteres
             if cret is None:
                 sbnd_clusterer.add_new_cluster(tchr, tstart, tend, tdir, treadid, tinfo)
- 
+
 
         sbnd_clusterer.flush_sv_cluster_list("EOF", 0)
 
@@ -223,4 +223,3 @@ if __name__ == "__main__":
     control = sys.argv[3]
 
     cluster_supporting_reads_single_breakend(input_file, output_file, control_bed = control)
-             

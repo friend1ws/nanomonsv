@@ -19,7 +19,7 @@ class Consensus_generator(object):
         os.makedirs(self.tmp_dir, exist_ok = True)
 
         self.hout = open(output_file, 'w')
-        self.temp_key = None 
+        self.temp_key = None
         self.readid2is_bp = {}
         self.temp_support_read_file_h = None
         self.use_racon = False if use_racon == False else True
@@ -46,7 +46,7 @@ class Consensus_generator(object):
         self.readid2is_bp = {}
 
     def add_support_read_seq(self, readid, seq, size):
-        # skip if the seq corresponding to the input readid is already printed 
+        # skip if the seq corresponding to the input readid is already printed
         if readid not in self.readid2is_bp:
             print(f">{readid}\n{seq}", file = self.temp_support_read_file_h)
             if size in ['-', '+']: # indication of break point type supporting read
@@ -92,11 +92,11 @@ class Consensus_generator(object):
         hout_m = open(self.tmp_dir + '/' + self.temp_key + ".mafft_result.fa", 'w')
         subprocess.check_call(["mafft", self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa"], stdout = hout_m, stderr = subprocess.DEVNULL)
         hout_m.close()
-                
+
         tconsensus = self.get_consensus_from_mafft_result(self.tmp_dir + '/' + self.temp_key + ".mafft_result.fa")
         print(self.temp_key + '\t' + tconsensus, file = self.hout)
 
-        
+
     def generate_paf_file(self, query_fasta, target_fasta, output_file):
 
         user_matrix = parasail.matrix_create("ACGT", 2, -2)
@@ -104,7 +104,7 @@ class Consensus_generator(object):
 
         with open(target_fasta, 'r') as hin:
             for line in hin:
-                if line.startswith('>'): 
+                if line.startswith('>'):
                     tid = line.rstrip('\n').split(' ')[0].lstrip('>')
                 else:
                     tseq = line.rstrip('\n')
@@ -115,7 +115,7 @@ class Consensus_generator(object):
                     qid = line.rstrip('\n').lstrip('>')
                 else:
                     qseq = line.rstrip('\n')
-                    
+
                     res = parasail.ssw(qseq, tseq, 3, 1, user_matrix)
                     if res is not None:
                         print(f"{qid}\t{len(qseq)}\t{res.read_begin1}\t{res.read_end1}\t+\t" +
@@ -131,7 +131,7 @@ class Consensus_generator(object):
 
         target_flag = False
         with open(self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa", 'r') as hin, \
-            open(self.tmp_dir + '/' + self.temp_key + ".tmp.seg.first.fa", 'w') as hout: 
+            open(self.tmp_dir + '/' + self.temp_key + ".tmp.seg.first.fa", 'w') as hout:
             for line in hin:
                 tid = line.rstrip('\n').lstrip('>')
                 tseq = hin.readline().rstrip('\n')
@@ -148,14 +148,14 @@ class Consensus_generator(object):
         paf_rec_count = self.generate_paf_file(self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa",
             self.tmp_dir + '/' + self.temp_key + ".tmp.seg.first.fa",
             self.tmp_dir + '/' + self.temp_key + ".parasail.paf")
-                        
-        if paf_rec_count < 3: 
+
+        if paf_rec_count < 3:
             logger.debug(f"Not enough PAF records for the first round consensus generation for {self.temp_key}")
             return
 
-        try: 
+        try:
             with open(self.tmp_dir + '/' + self.temp_key + ".racon1.fa", 'w') as hout:
-                subprocess.check_call(["racon", "-u", 
+                subprocess.check_call(["racon", "-u",
                     self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa",
                     self.tmp_dir + '/' + self.temp_key + ".parasail.paf",
                     self.tmp_dir + '/' + self.temp_key + ".tmp.seg.first.fa"],
@@ -174,8 +174,8 @@ class Consensus_generator(object):
         paf_rec_count = self.generate_paf_file(self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa",
             self.tmp_dir + '/' + self.temp_key + ".racon1.mod.fa",
             self.tmp_dir + '/' + self.temp_key + ".parasail2.paf")
-        
-        if paf_rec_count < 3: 
+
+        if paf_rec_count < 3:
             logger.debug(f"Not enough PAF records for the second round consensus generation for {self.temp_key}")
             return
 
@@ -186,7 +186,7 @@ class Consensus_generator(object):
                     self.tmp_dir + '/' + self.temp_key + ".parasail2.paf",
                     self.tmp_dir + '/' + self.temp_key + ".racon1.mod.fa"],
                     stdout = hout, stderr = subprocess.DEVNULL)
-        except Exception as e: 
+        except Exception as e:
             logger.warning(f'{e}')
             return
 
@@ -217,7 +217,7 @@ class Consensus_generator(object):
 
         try:
             with open(self.tmp_dir + '/' + self.temp_key + "_ava_minimap2.paf", 'w') as hout:
-                subprocess.check_call(["minimap2", "-x", "ava-ont", 
+                subprocess.check_call(["minimap2", "-x", "ava-ont",
                     self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa",
                     self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa"],
                     stderr = subprocess.DEVNULL, stdout = hout, preexec_fn = self.preexec_fn)
@@ -252,14 +252,14 @@ class Consensus_generator(object):
                     print(f">{tid}\n{tseq}", file = hout)
                     break
                 seq_read_count = seq_read_count + 1
-                if tid == '' or seq_read_count > 10000: 
+                if tid == '' or seq_read_count > 10000:
                     logger.warning(f"Something inconsistent happend when choosing template reads for {self.temp_key}")
                     return
 
         try:
             with open(self.tmp_dir + '/' + self.temp_key + "_ova_minimap2.paf", 'w') as hout:
                 subprocess.check_call(["minimap2", "-x", "map-ont", self.tmp_dir + '/' + self.temp_key + "_ref.fa",
-                    self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa"], 
+                    self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa"],
                     stderr = subprocess.DEVNULL, stdout = hout, preexec_fn = self.preexec_fn)
         except Exception as e:
             logger.warning(f'{e}')
@@ -279,7 +279,7 @@ class Consensus_generator(object):
             with open(self.tmp_dir + '/' + self.temp_key + "_ref_polished.fa", 'w') as hout:
                 subprocess.check_call(["racon", self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa",
                     self.tmp_dir + '/' + self.temp_key + "_ova_minimap2.paf",
-                    self.tmp_dir + '/' + self.temp_key + "_ref.fa"], 
+                    self.tmp_dir + '/' + self.temp_key + "_ref.fa"],
                     stderr = subprocess.DEVNULL, stdout = hout)
         except Exception as e:
             logger.warning(f'{e}')
@@ -291,7 +291,7 @@ class Consensus_generator(object):
                 consensus = consensus + line.rstrip('\n')
 
         if len(consensus) < 1000: return
-                        
+
         # second round racon
         with open(self.tmp_dir + '/' + self.temp_key + "_ref_2nd.fa", 'w') as hout:
             print(f">{self.temp_key}_1st_polished_seq\n{consensus}", file = hout)
@@ -309,7 +309,7 @@ class Consensus_generator(object):
         with open(self.tmp_dir + '/' + self.temp_key + "_ova_minimap2_2nd.paf", 'r') as hin:
             for line in hin:
                 paf_rec_count = paf_rec_count + 1
-            
+
         if paf_rec_count < 3:
             logger.debug(f"Not enough PAF records for the first round consensus generation for {self.temp_key}")
             return
@@ -334,16 +334,16 @@ class Consensus_generator(object):
 
 
 
-def generate_consensus(input_file, output_file, use_racon = False, debug = False, max_memory_minimap2 = 1): 
+def generate_consensus(input_file, output_file, use_racon = False, debug = False, max_memory_minimap2 = 1):
 
     if debug: logger.setLevel(logging.DEBUG)
 
     consensus_generator = Consensus_generator(output_file, use_racon, debug, max_memory_minimap2)
-        
+
     with open(input_file, 'r') as hin:
         for line in hin:
             tkey, treadid, tsize, tseq = line.rstrip('\n').split('\t')
-            # when new key appears transaction            
+            # when new key appears transaction
             if tkey != consensus_generator.temp_key:
                 if consensus_generator.temp_key is not None:
                     consensus_generator.print_consensus()
@@ -354,7 +354,7 @@ def generate_consensus(input_file, output_file, use_racon = False, debug = False
         if consensus_generator.temp_key is not None:
             consensus_generator.print_consensus()
 
-    del consensus_generator 
+    del consensus_generator
 
 
 def generate_consensus_sbnd(input_file, output_file, use_racon = False, debug = False, max_memory_minimap2 = 1):
@@ -366,7 +366,7 @@ def generate_consensus_sbnd(input_file, output_file, use_racon = False, debug = 
     with open(input_file, 'r') as hin:
         for line in hin:
             tkey, treadid, tsize, tseq = line.rstrip('\n').split('\t')
-            # when new key appears transaction            
+            # when new key appears transaction
             if tkey != consensus_generator_sbnd.temp_key:
                 if consensus_generator_sbnd.temp_key is not None:
                     consensus_generator_sbnd.print_consensus_sbnd()
@@ -378,5 +378,3 @@ def generate_consensus_sbnd(input_file, output_file, use_racon = False, debug = 
             consensus_generator_sbnd.print_consensus_sbnd()
 
     del consensus_generator_sbnd
-
-    

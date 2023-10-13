@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-import sys, os, subprocess, shutil, statistics 
+import sys, os, subprocess, shutil, statistics
 from collections import Counter
 import pysam
 import parasail
@@ -58,7 +58,7 @@ def generate_paf_file(query_fasta, target_fasta, output_file):
 
     with open(target_fasta, 'r') as hin:
         for line in hin:
-            if line.startswith('>'): 
+            if line.startswith('>'):
                 tid = line.rstrip('\n').split(' ')[0].lstrip('>')
             else:
                 tseq = line.rstrip('\n')
@@ -69,7 +69,7 @@ def generate_paf_file(query_fasta, target_fasta, output_file):
                 qid = line.rstrip('\n').lstrip('>')
             else:
                 qseq = line.rstrip('\n')
-                
+
                 res = parasail.ssw(qseq, tseq, 3, 1, user_matrix)
                 if res is not None:
                     print("%s\t%d\t%d\t%d\t+\t%s\t%d\t%d\t%d\t*\t*\t60" %
@@ -81,7 +81,7 @@ def generate_paf_file(query_fasta, target_fasta, output_file):
 
 def generate_racon_consensus(temp_key, tmp_dir, readid2alignment):
 
-    with open(tmp_dir + '/' + temp_key + ".supporting_read.fa", 'r') as hin3, open(tmp_dir + '/' + temp_key + ".tmp.seg.first.fa", 'w') as hout3: 
+    with open(tmp_dir + '/' + temp_key + ".supporting_read.fa", 'r') as hin3, open(tmp_dir + '/' + temp_key + ".tmp.seg.first.fa", 'w') as hout3:
         for line in hin3:
             if line.startswith('>'):
                 tid = line.rstrip('\n').lstrip('>')
@@ -93,13 +93,13 @@ def generate_racon_consensus(temp_key, tmp_dir, readid2alignment):
                         break
 
         #   subprocess.check_call(["head", "-n", "2", tmp_dir + '/' + temp_key + ".supporting_read.fa"], stdout= hout3)
-                     
+
     generate_paf_file(tmp_dir + '/' + temp_key + ".supporting_read.fa",
         tmp_dir + '/' + temp_key + ".tmp.seg.first.fa",
         tmp_dir + '/' + temp_key + ".parasail.paf")
-                     
+
     with open(tmp_dir + '/' + temp_key + ".racon1.fa", 'w') as hout3:
-        subprocess.check_call(["racon", "-u", 
+        subprocess.check_call(["racon", "-u",
             tmp_dir + '/' + temp_key + ".supporting_read.fa",
             tmp_dir + '/' + temp_key + ".parasail.paf",
             tmp_dir + '/' + temp_key + ".tmp.seg.first.fa"],
@@ -144,7 +144,7 @@ def get_refined_bp(contig, fasta_file_ins, chr1, start1, end1, dir1, chr2, start
         if sret is None: return(None)
         score, contig_align, region1_align, region2_align, contig_seq, region_seq = sret
 
-        bp_pos1 = bstart1 + region1_align[1] - 1 if dir1 == '+' else bend1 - region1_align[1] + 1 
+        bp_pos1 = bstart1 + region1_align[1] - 1 if dir1 == '+' else bend1 - region1_align[1] + 1
         bp_pos2 = bstart2 + region2_align[0] - 1 if dir2 == '-' else bend2 - region2_align[0] + 1
 
         if contig_align[2] - contig_align[1] == 1:
@@ -160,9 +160,9 @@ def get_refined_bp(contig, fasta_file_ins, chr1, start1, end1, dir1, chr2, start
         print(region_seq, file = h_log)
 
         return(bp_pos1, bp_pos2, inseq)
-    
+
     else:
-    
+
         contig_start = contig[:min(i_margin, len(contig))]
         contig_end = contig[-min(i_margin, len(contig)):]
 
@@ -186,7 +186,7 @@ def get_refined_bp(contig, fasta_file_ins, chr1, start1, end1, dir1, chr2, start
 
         return(bp_pos1, bp_pos2, inseq)
 
-        
+
 def set_readid2alignment(readid2alignment, input_file, mode, alignment_margin):
 
     # readid2alignment = {}
@@ -200,7 +200,7 @@ def set_readid2alignment(readid2alignment, input_file, mode, alignment_margin):
                 info1 = F[10].split(';')
                 info2 = F[11].split(';')
                 for i in range(len(readids)):
-                    tinfo1 = info1[i].split(',') 
+                    tinfo1 = info1[i].split(',')
                     tinfo2 = info2[i].split(',')
                     start1, end1, start2, end2 = int(tinfo1[0]), int(tinfo1[2]), int(tinfo2[0]), int(tinfo2[2])
                     if readids[i] not in readid2alignment: readid2alignment[readids[i]] = []
@@ -239,7 +239,7 @@ def set_readid2alignment(readid2alignment, input_file, mode, alignment_margin):
 
     return(readid2alignment)
 
- 
+
 def identify(rearrangement_file, insertion_file, deletion_file, output_file, tumor_bam, reference_fasta, use_racon, debug, alignment_margin = 300):
 
     bamfile = pysam.AlignmentFile(tumor_bam, "rb")
@@ -285,15 +285,15 @@ def identify(rearrangement_file, insertion_file, deletion_file, output_file, tum
     os.makedirs(tmp_dir)
 
     temp_key = ''
-    # hout = open(output_file + ".tmp.consensus.fastq", 'w') 
+    # hout = open(output_file + ".tmp.consensus.fastq", 'w')
     hout_log = open(tmp_dir + "/consensus_alignment.log", 'w')
 
-    hout = open(output_file, 'w') 
+    hout = open(output_file, 'w')
     readid2exists = {}
     with open(output_file + ".tmp.supporting_read.sorted", 'r') as hin:
         for line in hin:
             F = line.rstrip('\n').split('\t')
-            if temp_key != F[0]: 
+            if temp_key != F[0]:
 
                 if temp_key != '':
                     hout2.close()
@@ -302,28 +302,28 @@ def identify(rearrangement_file, insertion_file, deletion_file, output_file, tum
                         hout3 = open(tmp_dir + '/' + temp_key + ".mafft_result.fa", 'w')
                         subprocess.check_call(["mafft", tmp_dir + '/' + temp_key + ".supporting_read.fa"], stdout = hout3, stderr = subprocess.DEVNULL)
                         hout3.close()
-                
+
                         tconsensus = get_consensus_from_mafft_result(tmp_dir + '/' + temp_key + ".mafft_result.fa")
                         print(temp_key + '\n' + tconsensus, file = hout_log)
 
                     else:
                         generate_racon_consensus(temp_key, tmp_dir, readid2alignment)
- 
+
                         with open(tmp_dir + "/" + temp_key + ".racon2.fa") as hin2:
                             header = hin2.readline()
                             tconsensus = hin2.readline().rstrip('\n')
                         print(temp_key + '\n' + tconsensus, file = hout_log)
 
                     chr1, start1, end1, dir1, chr2, start2, end2, dir2, mode = temp_key.split(',')
-                    start1, end1, start2, end2 = int(start1), int(end1), int(start2), int(end2)       
+                    start1, end1, start2, end2 = int(start1), int(end1), int(start2), int(end2)
                     bret = get_refined_bp(tconsensus, fasta_file_ins, chr1, start1, end1, dir1, chr2, start2, end2, dir2, mode, hout_log)
-                    if bret is not None:  
-                        bp_pos1, bp_pos2, inseq = bret 
+                    if bret is not None:
+                        bp_pos1, bp_pos2, inseq = bret
                         print(bp_pos1, bp_pos2, inseq, file = hout_log)
                         print('', file = hout_log)
                         print('\t'.join([chr1, str(bp_pos1), dir1, chr2, str(bp_pos2), dir2, inseq]), file = hout)
 
-                temp_key = F[0]          
+                temp_key = F[0]
                 hout2 = open(tmp_dir + '/' + temp_key + ".supporting_read.fa", 'w')
                 readid2exists = {}
 
@@ -344,13 +344,13 @@ def identify(rearrangement_file, insertion_file, deletion_file, output_file, tum
                 print(temp_key + '\n' + tconsensus, file = hout_log)
             else:
                 generate_racon_consensus(temp_key, tmp_dir, readid2alignment)
-                 
+
                 with open(tmp_dir + "/" + temp_key + ".racon2.fa") as hin2:
                     header = hin2.readline()
                     tconsensus = hin2.readline().rstrip('\n')
                 print(temp_key + '\n' + tconsensus, file = hout_log)
 
-            chr1, start1, end1, dir1, chr2, start2, end2, dir2, mode = temp_key.split(',')     
+            chr1, start1, end1, dir1, chr2, start2, end2, dir2, mode = temp_key.split(',')
             start1, end1, start2, end2 = int(start1), int(end1), int(start2), int(end2)
             bret = get_refined_bp(tconsensus, fasta_file_ins, chr1, start1, end1, dir1, chr2, start2, end2, dir2, mode, hout_log)
             if bret is not None:
@@ -387,10 +387,9 @@ if __name__ == "__main__":
     tconsensus = "AACACATGAAGTATTTGGATCAGCTGGGTACAGTGGCTCACGCCTCTAATCTCAACACTTTGGGAGGCTGAGGCGGGTGGATCACTGAGGTCAGGAGTTTGAGACCAGCCTGGCCAACATAGTGAAGCTGTTTCTACTAAAATACAAAAATTAGCCAGGCGTGGCGGGCACCTGTAATCCCAGCTACTCAGGAGGCTAAGGCAGGAGAATCACTTGAACCTGGGAGGCAGAGGTTGCAGTGAGCCGAGATCGTGTCACTACACACTTCAACTTGGGTGACAGACTGAGATATACCTAATGCTAGATGACACATTAGTGGGTGCAGCGCACCAGCATAGCATGTATACATATGTAACTAACCTGCACAATGTGCACATGTCCCTAAAACTTAAGTATAATAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGTATTTGAATCAAGGTCTTTTGAAGTCTCAGGCATTGACCATCTTGGTCTGTGAAGTCCTCACTATGATAAATATGCCAATTATGCAGCCTTCAAGTAGATCCTCAGTTACATGTACTGAGGCAGGAAAGGACTAAAGCCAAAAGCTCAATTACAGGCACCACTATGGGAGTCAAGCCCCTTATTTGAGGCTGAAACAAAATATCAGAAACCCCCAAGGATAATCCAGACTTCGAAATTAGCAGGCGATCAACTGAAAAGTCAGACATTGTTCTATAT"
 
     chr1, start1, end1, dir1, chr2, start2, end2, dir2, mode = key.split(',')
-    start1, end1, start2, end2 = int(start1), int(end1), int(start2), int(end2) 
+    start1, end1, start2, end2 = int(start1), int(end1), int(start2), int(end2)
     hout_log = open("test.txt", 'w')
     fasta_file_ins = pysam.FastaFile("/home/ubuntu/environment/workspace/seq_data/reference/GRCh37.fa")
 
     bret = get_refined_bp(tconsensus, fasta_file_ins, chr1, start1, end1, dir1, chr2, start2, end2, dir2, mode, hout_log)
     print(bret)
-

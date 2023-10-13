@@ -10,8 +10,8 @@ logger = get_logger(__name__)
 
 class Sv(object):
 
-    def __init__(self, tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq, 
-        total_read_tumor = None, var_read_tumor = None, total_read_ctrl = None, var_read_ctrl = None, 
+    def __init__(self, tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq,
+        total_read_tumor = None, var_read_tumor = None, total_read_ctrl = None, var_read_ctrl = None,
         insert_type = None, print_line = None):
 
         self.chr1 = tchr1
@@ -32,7 +32,7 @@ class Sv(object):
 
 class Duplicate_remover(object):
 
-    def __init__(self, output_file, reference_fasta, simple_repeat_bed = None, 
+    def __init__(self, output_file, reference_fasta, simple_repeat_bed = None,
         bp_dist_margin = 30, validate_seg_len = 100, simple_repeat_dist_margin = 50):
         self.sv_list = []
         self.hout = open(output_file, 'w')
@@ -50,8 +50,8 @@ class Duplicate_remover(object):
 
     def add_sv(self, tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq,
         total_read_tumor, var_read_tumor, total_read_ctrl, var_read_ctrl, insert_type, print_line):
-                     
-        sv = Sv(tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq, 
+
+        sv = Sv(tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq,
             total_read_tumor, var_read_tumor, total_read_ctrl, var_read_ctrl, insert_type, print_line)
         self.sv_list.append(sv)
 
@@ -59,30 +59,30 @@ class Duplicate_remover(object):
     def filter_close_both_breakpoints(self, sv1, sv2, filter_item = "Duplicate_with_close_SV"):
 
         # only apply when the first or the second sv is not insertion
-        if len(sv1.inseq) >= 100 or len(sv2.inseq) >= 100: return 
+        if len(sv1.inseq) >= 100 or len(sv2.inseq) >= 100: return
 
         if sv1.chr1 == sv2.chr1 and sv1.chr2 == sv2.chr2 and sv1.dir1 == sv2.dir1 and sv1.dir2 == sv2.dir2 and \
             abs(sv1.pos1 - sv2.pos1) < self.bp_dist_margin and abs(sv1.pos2 - sv2.pos2) < self.bp_dist_margin:
 
             if sv1.var_read_tumor is not None and sv2.var_read_tumor is not None:
-                if sv1.var_read_tumor > sv2.var_read_tumor: 
+                if sv1.var_read_tumor > sv2.var_read_tumor:
                     sv1.filter.append(filter_item); return
-                if sv2.var_read_tumor < sv1.var_read_tumor: 
+                if sv2.var_read_tumor < sv1.var_read_tumor:
                     sv2.filter.append(filter_item); return
 
             if len(sv1.inseq) < len(sv2.inseq):
                 sv1.filter.append(filter_item); return
-            if len(sv2.inseq) < len(sv1.inseq): 
+            if len(sv2.inseq) < len(sv1.inseq):
                 sv2.filter.append(filter_item); return
 
-            if sv1.pos1 < sv2.pos1: 
+            if sv1.pos1 < sv2.pos1:
                 sv1.filter.append(filter_item); return
-            if sv2.pos1 < sv1.pos1: 
+            if sv2.pos1 < sv1.pos1:
                 sv2.filter.append(filter_item); return
 
-            if sv1.pos2 < sv2.pos2: 
+            if sv1.pos2 < sv2.pos2:
                 sv1.filter.append(filter_item); return
-            if sv2.pos2 < sv1.pos2: 
+            if sv2.pos2 < sv1.pos2:
                 sv2.filter.append(filter_item) ; return
 
             sv2.filter.append(filter_item); return
@@ -90,13 +90,13 @@ class Duplicate_remover(object):
 
 
     def filter_sv_insertion_match(self, sv, ins, filter_item = "Duplicate_with_insertion"):
-    
+
         # only apply when the first sv is not insertion and the second sv is insertion type
-        if len(sv.inseq) >= 100 or len(ins.inseq) < 100: return 
+        if len(sv.inseq) >= 100 or len(ins.inseq) < 100: return
 
         if not (sv.chr1 == ins.chr1 and abs(sv.pos1 - ins.pos1) <= self.bp_dist_margin) and \
             not (sv.chr2 == ins.chr2 and abs(sv.pos2 - ins.pos2) <= self.bp_dist_margin):
-            return 
+            return
 
         ins_seg = self.reference_h.fetch(ins.chr1, max(ins.pos1 - self.validate_seg_len - self.bp_dist_margin - 1, 0), ins.pos1 - 1)
         ins_seg = ins_seg + ins.inseq
@@ -105,7 +105,7 @@ class Duplicate_remover(object):
         if sv.dir1 == '+':
             tseq = self.reference_h.fetch(sv.chr1, max(sv.pos1 - self.validate_seg_len - 1, 0), sv.pos1 - 1)
         else:
-            tseq = self.reference_h.fetch(sv.chr1, sv.pos1 - 1, sv.pos1 + self.validate_seg_len - 1) 
+            tseq = self.reference_h.fetch(sv.chr1, sv.pos1 - 1, sv.pos1 + self.validate_seg_len - 1)
             tseq = reverse_complement(tseq)
 
         if sv.dir1 == '+':
@@ -118,7 +118,7 @@ class Duplicate_remover(object):
         else:
             tseq = self.reference_h.fetch(sv.chr2, max(sv.pos2 - self.validate_seg_len - 1, 0), sv.pos2 - 1)
             tseq = reverse_complement(tseq)
- 
+
         sv_seg = sv_seg + tseq
 
         user_matrix = parasail.matrix_create("ACGT", 2, -2)
@@ -128,13 +128,13 @@ class Duplicate_remover(object):
         if res.score1 > res_r.score1:
             match_ratio = float(res.score1) / (2 * (res.ref_end1 - res.ref_begin1 + 1))
             if match_ratio > 0.75:
-                if res.read_begin1 < 0.1 * len(sv_seg) and res.read_end1 > 0.9 * len(sv_seg): 
+                if res.read_begin1 < 0.1 * len(sv_seg) and res.read_end1 > 0.9 * len(sv_seg):
                     sv.filter.append(filter_item)
-                    return 
+                    return
         else:
             match_ratio = float(res_r.score1) / (2 * (res_r.ref_end1 - res_r.ref_begin1 + 1))
             if match_ratio > 0.75:
-                if res_r.read_begin1 < 0.1 * len(sv_seg) and res_r.read_end1 > 0.9 * len(sv_seg): 
+                if res_r.read_begin1 < 0.1 * len(sv_seg) and res_r.read_end1 > 0.9 * len(sv_seg):
                     sv.filter.append(filter_item)
                     return
 
@@ -161,7 +161,7 @@ class Duplicate_remover(object):
 
     def filter_sv_with_decoy(self, sv, filter_item = "SV_with_decoy"):
 
-        if sv.chr1.endswith("decoy") or sv.chr2.endswith("decoy"): 
+        if sv.chr1.endswith("decoy") or sv.chr2.endswith("decoy"):
             sv.filter.append(filter_item)
             return
 
@@ -178,12 +178,12 @@ class Duplicate_remover(object):
 
         if sv.chr1 == sv.chr2 and sv.dir1 == '+' and sv.dir2 == '-':
             sv_size = sv.pos2 - sv.pos1 + len(sv.inseq) - 1
- 
+
             if sv.insert_type is not None and rescure_annotated_insertions: return
 
             tabix_error_flag = False
             try:
-                records = self.simple_repeat_tb.fetch(sv.chr1, max(sv.pos1 - self.simple_repeat_dist_margin + 1, 0), 
+                records = self.simple_repeat_tb.fetch(sv.chr1, max(sv.pos1 - self.simple_repeat_dist_margin + 1, 0),
                     sv.pos1 + self.simple_repeat_dist_margin)
             except Exception as inst:
                 logger.warning("%s: %s" % (type(inst), inst.args))
@@ -206,7 +206,7 @@ class Duplicate_remover(object):
         # logger.info("filter_sv_insertion_match")
         for sv1, sv2 in itertools.combinations(self.sv_list, 2):
 
-            if len(sv1.inseq) < 100 and len(sv2.inseq) >= 100: 
+            if len(sv1.inseq) < 100 and len(sv2.inseq) >= 100:
                 self.filter_sv_insertion_match(sv1, sv2)
             elif len(sv2.inseq) < 100 and len(sv1.inseq) >= 100:
                 self.filter_sv_insertion_match(sv2, sv1)
@@ -226,13 +226,13 @@ class Duplicate_remover(object):
         if self.simple_repeat_tb is not None:
             for sv in self.sv_list:
                 self.filter_indel_in_simple_repeat(sv)
-    
+
 
     def flush_sv_list(self):
 
         print(self.header + "\tIs_filter", file = self.hout)
         for sv in self.sv_list:
-            if len(sv.filter) == 0: 
+            if len(sv.filter) == 0:
                 filter_print = "PASS"
             else:
                 filter_print = ';'.join(list(set(sv.filter)))
@@ -278,8 +278,8 @@ def post_filter_main(args):
             """
 
             duplicate_remover.add_sv(tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq,
-                total_read_tumor = total_read_tumor, var_read_tumor = var_read_tumor, 
-                total_read_ctrl = total_read_ctrl, var_read_ctrl = var_read_ctrl, 
+                total_read_tumor = total_read_tumor, var_read_tumor = var_read_tumor,
+                total_read_ctrl = total_read_ctrl, var_read_ctrl = var_read_ctrl,
                 insert_type = insert_type, print_line = '\t'.join(F.values()))
 
 
@@ -310,5 +310,3 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     post_filter_main(args)
-
-

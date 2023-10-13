@@ -19,7 +19,7 @@ def merge_bed_by_sv(bedpe_file, hout, prefix_label, is_bedpe = False):
             if key != temp_key:
                 if temp_key is not None:
                     print(f'{temp_key}\t{temp_count}\t{prefix_label}', file = hout)
-                temp_key = key 
+                temp_key = key
                 temp_count = 0
             temp_count = temp_count + 1
 
@@ -68,9 +68,9 @@ def sort_bed(input_bed, output_bed, is_bedpe = False):
 
 def bgzip_tabix(input_bed, output_bedgz):
 
-    with open(output_bedgz, 'w') as hout: 
+    with open(output_bedgz, 'w') as hout:
         subprocess.check_call(["bgzip", "-f", "-c", input_bed], stdout = hout)
-     
+
     subprocess.check_call(["tabix", "-p", "bed", output_bedgz])
 
 
@@ -83,7 +83,7 @@ def merge_control_from_parse_files(prefix_list_file, output_prefix):
     with open(prefix_list_file, 'r') as hin:
         for line in hin:
             prefix = line.rstrip('\n')
-    
+
             if not os.path.exists(prefix + ".rearrangement.sorted.bedpe.gz"):
                 logger.error(f'No file: {prefix}/.rearrangement.sorted.bedpe.gz')
                 sys.exit(1)
@@ -147,5 +147,3 @@ def merge_control_from_parse_files(prefix_list_file, output_prefix):
     os.remove(output_prefix + ".bp_info.sorted.bed.gz.tmp1")
     os.remove(output_prefix + ".bp_info.sorted.bed.gz.tmp2")
     os.remove(output_prefix + ".bp_info.sorted.bed.gz.tmp3")
-
-

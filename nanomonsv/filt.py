@@ -12,13 +12,13 @@ def cluster_rearrangement(input_file, output_file, cluster_margin_size = 100):
     with gzip.open(input_file, 'rt') as hin:
         for line in hin:
             F = line.rstrip('\n').split('\t')
-    
+
             for key in sorted(merged_bedpe):
 
                 bchr1, bstart1, bend1, bdir1, bchr2, bstart2, bend2, bdir2 = key
                 breadids, binfo1, binfo2 = merged_bedpe[key]
 
-                if F[0] != bchr1 or int(F[1]) > int(bend1) + cluster_margin_size: 
+                if F[0] != bchr1 or int(F[1]) > int(bend1) + cluster_margin_size:
 
                     print('\t'.join([bchr1, str(bstart1), str(bend1), bchr2, str(bstart2), str(bend2), \
                        breadids, '0', bdir1, bdir2, binfo1, binfo2]), file = hout)
@@ -28,19 +28,19 @@ def cluster_rearrangement(input_file, output_file, cluster_margin_size = 100):
             match_flag = False
             for key in sorted(merged_bedpe):
 
-                bchr1, bstart1, bend1, bdir1, bchr2, bstart2, bend2, bdir2 = key 
+                bchr1, bstart1, bend1, bdir1, bchr2, bstart2, bend2, bdir2 = key
                 breadids, binfo1, binfo2 = merged_bedpe[key]
 
                 if F[6] in breadids: continue
 
                 if F[0] == bchr1 and F[3] == bchr2 and F[8] == bdir1 and F[9] == bdir2 and \
                   int(F[2]) >= bstart1 and int(F[1]) <= bend1 and int(F[5]) >= bstart2 and int(F[4]) <= bend2:
-                        
+
                     new_start1 = min(int(F[1]), bstart1)
                     new_end1 = max(int(F[2]), bend1)
                     new_start2 = min(int(F[4]), bstart2)
                     new_end2 = max(int(F[5]), bend2)
-                            
+
                     new_key = (bchr1, new_start1, new_end1, bdir1, bchr2, new_start2, new_end2, bdir2)
                     new_readids = breadids + ';' + F[6]
                     new_info1 = binfo1 + ';' + F[10]
@@ -52,7 +52,7 @@ def cluster_rearrangement(input_file, output_file, cluster_margin_size = 100):
                     match_flag = True
                     break
 
-                    
+
             if not match_flag:
                 new_key = (F[0], int(F[1]), int(F[2]), F[8], F[3], int(F[4]), int(F[5]), F[9])
                 merged_bedpe[new_key] = (F[6], F[10], F[11])
@@ -70,7 +70,7 @@ def cluster_rearrangement(input_file, output_file, cluster_margin_size = 100):
 
 def filt_clustered_rearrangement1(input_file, output_file, read_num_thres = 3, median_mapQ_thres = 40, max_overhang_size_thres = 300):
 
-    hout = open(output_file, 'w') 
+    hout = open(output_file, 'w')
     with open(input_file, 'r') as hin:
         for line in hin:
             F = line.rstrip('\n').split('\t')
@@ -82,10 +82,10 @@ def filt_clustered_rearrangement1(input_file, output_file, read_num_thres = 3, m
 
             median_mapQ1 = statistics.median([int(x.split(',')[5]) for x in info1])
             median_mapQ2 = statistics.median([int(x.split(',')[5]) for x in info2])
-        
+
             max_overhang_size1 = max([abs(int(x.split(',')[2]) - int(x.split(',')[0])) for x in info1])
-            max_overhang_size2 = max([abs(int(x.split(',')[2]) - int(x.split(',')[0])) for x in info2]) 
-        
+            max_overhang_size2 = max([abs(int(x.split(',')[2]) - int(x.split(',')[0])) for x in info2])
+
             if median_mapQ1 < median_mapQ_thres or median_mapQ2 < median_mapQ_thres: continue
             if max_overhang_size1 < max_overhang_size_thres or max_overhang_size2 < max_overhang_size_thres: continue
 
@@ -100,7 +100,7 @@ def filt_clustered_rearrangement2(input_file, output_file, control_junction_bedp
 
     hout = open(output_file, 'w')
     if control_junction_bedpe is not None: control_junction_db = pysam.TabixFile(control_junction_bedpe)
-    
+
     with open(input_file, 'r') as hin:
         for line in hin:
             F = line.rstrip('\n').split('\t')
@@ -123,7 +123,7 @@ def filt_clustered_rearrangement2(input_file, output_file, control_junction_bedp
 
                         if is_short_deletion:
                             if tchr1 == record[0] and tchr2 == record[3] and tdir1 == record[8] and tdir2 == record[9] and \
-                                int(tstart1) <= int(record[5]) and int(tend2) >= int(record[1]):   
+                                int(tstart1) <= int(record[5]) and int(tend2) >= int(record[1]):
                                 control_flag = True
                         else:
                             if tchr1 == record[0] and tdir1 == record[8] and int(tend1) >= int(record[1]) - control_check_margin and int(tstart1) <= int(record[2]) + control_check_margin and \
@@ -145,7 +145,7 @@ def cluster_insertion_deletion(input_file, output_file, deletion_cluster_margin_
 
     dcms = deletion_cluster_margin_size
     hout = open(output_file, 'w')
-    
+
     merged_bedpe = {}
     skip_pos = 0
     tmp_pos = 0
@@ -162,14 +162,14 @@ def cluster_insertion_deletion(input_file, output_file, deletion_cluster_margin_
             if F[0] != tmp_chr: tmp_chr, tmp_pos, skip_pos = F[0], 0,  0
             if int(F[1]) < skip_pos: continue
             if int(F[4]) < 90: continue
- 
+
             for key in sorted(merged_bedpe):
 
                 # bchr, bstart, bend = key
                 bchr1, bstart1, bend1, bdir1, bchr2, bstart2, bend2, bdir2 = key
                 breadids, bsize, binfo = merged_bedpe[key]
 
-                if F[0] != bchr1 or int(F[1]) > int(bend1) + check_margin_size: 
+                if F[0] != bchr1 or int(F[1]) > int(bend1) + check_margin_size:
 
                     print('\t'.join([bchr1, str(bstart1), str(bend1), bchr2, str(bstart2), str(bend2), \
                        breadids, '0', bdir1, bdir2, bsize, binfo]), file = hout)
@@ -181,10 +181,10 @@ def cluster_insertion_deletion(input_file, output_file, deletion_cluster_margin_
             match_flag = False
             for key in sorted(merged_bedpe):
 
-                # bchr, bstart, bend = key 
-                bchr1, bstart1, bend1, bdir1, bchr2, bstart2, bend2, bdir2 = key 
+                # bchr, bstart, bend = key
+                bchr1, bstart1, bend1, bdir1, bchr2, bstart2, bend2, bdir2 = key
                 breadids, bsize, binfo = merged_bedpe[key]
-                
+
                 bsize_vec = [float(x) for x in bsize.split(';')]
 
                 # if F[0] == bchr and abs(int(F[1]) - int(bstart)) <= deletion_cluster_margin_size and \
@@ -199,7 +199,7 @@ def cluster_insertion_deletion(input_file, output_file, deletion_cluster_margin_
                     new_end1 = max(int(F[1]) + dcms, bend1)
                     new_start2 = min(int(F[2]) - dcms, bstart2)
                     new_end2 = max(int(F[2]) + dcms, bend2)
-                            
+
                     new_key = (bchr1, new_start1, new_end1, bdir1, bchr2, new_start2, new_end2, bdir2)
 
                     # ney_key = key
@@ -213,9 +213,9 @@ def cluster_insertion_deletion(input_file, output_file, deletion_cluster_margin_
                     match_flag = True
                     break
 
-                    
+
             if not match_flag:
-                new_key = (F[0], int(F[1]) - dcms, int(F[1]) + dcms, '+', F[0], int(F[2]) - dcms, int(F[2]) + dcms, '-') 
+                new_key = (F[0], int(F[1]) - dcms, int(F[1]) + dcms, '+', F[0], int(F[2]) - dcms, int(F[2]) + dcms, '-')
                 # new_key = (F[0], F[1], F[2])
                 merged_bedpe[new_key] = (F[3], F[4], F[6])
 
@@ -233,8 +233,8 @@ def cluster_insertion_deletion(input_file, output_file, deletion_cluster_margin_
                 local_variant_num = 0
                 skip_pos = int(F[1]) + 100 * check_margin_size
 
-            
-            
+
+
 
         for key in sorted(merged_bedpe):
             # bchr, bstart, bene = key
@@ -244,7 +244,7 @@ def cluster_insertion_deletion(input_file, output_file, deletion_cluster_margin_
             print('\t'.join([bchr1, str(bstart1), str(bend1), bchr2, str(bstart2), str(bend2), \
               breadids, '0', bdir1, bdir2, bsize, binfo]), file = hout)
 
-            # if F[0] != bchr or int(F[1]) > int(bend) + check_margin_size:  
+            # if F[0] != bchr or int(F[1]) > int(bend) + check_margin_size:
             #     print('\t'.join([bchr, str(bstart), str(bend), breadids, bsize, '+', binfo]), file = hout)
 
     skipped_pls_list_line = ' '.join(skipped_pos_list)
@@ -278,13 +278,13 @@ def filt_clustered_insertion_deletion1(input_file, output_file, bp_bed, read_num
                         record = record_line.split('\t')
                         if (tchr == record[0] and tstart1 <= int(record[2]) and int(record[2]) <= tend1 and record[5] == '+') or \
                             (tchr == record[0] and tstart2 <= int(record[2]) and int(record[2]) <= tend2 and record[5] == '-'):
-   
+
                             if record[3] in F[6]: continue
                             F[6] = F[6] + ';' + record[3]
                             F[10] = F[10] + ';' + record[5]
                             F[11] = F[11] + ';' + record[6]
 
-            read_ids = list(set(F[6].split(';')))    
+            read_ids = list(set(F[6].split(';')))
             if len(read_ids) < read_num_thres: continue
 
             # F[6] = ';'.join(read_ids)
@@ -308,7 +308,7 @@ def filt_clustered_insertion_deletion2(input_file, output_file, control_junction
 
     hout = open(output_file, 'w')
     if control_junction_bedpe is not None: control_junction_db = pysam.TabixFile(control_junction_bedpe)
-    
+
     with open(input_file, 'r') as hin:
         for line in hin:
             F = line.rstrip('\n').split('\t')
@@ -347,7 +347,7 @@ def filt_final(input_file, input_sread_file, output_file, output_sread_file, min
     header = ["Chr_1", "Pos_1", "Dir_1", "Chr_2", "Pos_2", "Dir_2", "Inserted_Seq", "Checked_Read_Num_Tumor", "Supporting_Read_Num_Tumor"]
     if is_control: header = header + ["Checked_Read_Num_Control", "Supporting_Read_Num_Control"]
 
-    key2ikey = {}    
+    key2ikey = {}
     print('\t'.join(header), file = hout)
     with open(input_file, 'r') as hin:
         for line in hin:
@@ -373,8 +373,8 @@ def filt_final(input_file, input_sread_file, output_file, output_sread_file, min
 
     hout.close()
 
-    
-    hout = open(output_sread_file, 'w') 
+
+    hout = open(output_sread_file, 'w')
     with open(input_sread_file, 'r') as hin:
         for line in hin:
             F = line.rstrip('\n').split('\t')
@@ -388,7 +388,7 @@ def filt_final(input_file, input_sread_file, output_file, output_sread_file, min
 
                 ikey = key2ikey[key]
                 tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq = ikey.split(',')
-                
+
                 if score1 >= score2:
                     sstrand = strand1
                     if sstrand == '+':
@@ -401,7 +401,7 @@ def filt_final(input_file, input_sread_file, output_file, output_sread_file, min
                         spos = (float(send1 - sstart1) / float(cend1 - cstart1)) * (200 - cstart1) + sstart1 - len(tinseq) - 1
                     else:
                         spos = (float(sstart1 - send1) / float(cend1 - cstart1)) * (200 - cstart1) + send1 + len(tinseq) + 1
-                  
+
                 print(key2ikey[key] + '\t' + read_id + '\t' + str(int(spos)) + '\t' + sstrand, file = hout)
 
 
@@ -421,7 +421,6 @@ if __name__ == "__main__":
 
     filt_clustered_junction1(tumor_prefix + ".junction.sorted.clustered.bedpe", tumor_prefix + ".junction.sorted.clustered.filt1.bedpe")
 
-    filt_clustered_junction2(tumor_prefix + ".junction.sorted.clustered.filt1.bedpe", tumor_prefix + ".junction.sorted.clustered.filt2.bedpe", 
+    filt_clustered_junction2(tumor_prefix + ".junction.sorted.clustered.filt1.bedpe", tumor_prefix + ".junction.sorted.clustered.filt2.bedpe",
                              control_prefix + ".junction.sorted.bedpe.gz")
 """
-

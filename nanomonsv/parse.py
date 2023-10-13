@@ -4,7 +4,7 @@ import sys, os, subprocess, itertools
 import pysam
 
 from .logger import get_logger
-from .utils import get_alignment_object 
+from .utils import get_alignment_object
 logger = get_logger(__name__)
 
 def parse_alignment_info(input_alignment_file, reference_fasta, deletion_output_file, insertion_output_file, rearrangement_output_file,
@@ -14,11 +14,11 @@ def parse_alignment_info(input_alignment_file, reference_fasta, deletion_output_
 
     hout_d = open(deletion_output_file, 'w')
     hout_i = open(insertion_output_file, 'w')
-    hout_r = open(rearrangement_output_file, 'w') 
+    hout_r = open(rearrangement_output_file, 'w')
     hout_b = open(breakpoint_output_file, 'w')
 
     alignment_h = get_alignment_object(input_alignment_file, reference_fasta)
-    
+
     for read in alignment_h.fetch():
 
         # if read.is_secondary: continue
@@ -49,7 +49,7 @@ def parse_alignment_info(input_alignment_file, reference_fasta, deletion_output_
 
         if not is_supplementary:
             if query_strand == '+':
-                query_start = read.query_alignment_start + 1 
+                query_start = read.query_alignment_start + 1
                 query_end = read.query_alignment_end
             else:
                 query_start = query_length - read.query_alignment_end + 1
@@ -60,7 +60,7 @@ def parse_alignment_info(input_alignment_file, reference_fasta, deletion_output_
                 query_end = query_length - right_hard_clipping_size - right_soft_clipping_size
             else:
                 query_start = right_hard_clipping_size + right_soft_clipping_size + 1
-                query_end = query_length - left_hard_clipping_size - left_soft_clipping_size 
+                query_end = query_length - left_hard_clipping_size - left_soft_clipping_size
 
 
         query_pos_cur = query_start - 1 if query_strand == '+' else query_end
@@ -71,7 +71,7 @@ def parse_alignment_info(input_alignment_file, reference_fasta, deletion_output_
         for cigar in cigartuples:
             if cigar[0] == 0:
                 query_pos_cur = query_pos_cur + cigar[1] if query_strand == '+' else query_pos_cur - cigar[1]
-                reference_pos_cur = reference_pos_cur + cigar[1] 
+                reference_pos_cur = reference_pos_cur + cigar[1]
             elif cigar[0] == 1:
 
                 if cigar[1] >= min_ins_size:
@@ -84,7 +84,7 @@ def parse_alignment_info(input_alignment_file, reference_fasta, deletion_output_
 
                 query_pos_cur = query_pos_cur + cigar[1] if query_strand == '+' else query_pos_cur - cigar[1]
 
-            elif cigar[0] == 2: 
+            elif cigar[0] == 2:
                 if cigar[1] >= min_del_size:
 
                     """
@@ -93,7 +93,7 @@ def parse_alignment_info(input_alignment_file, reference_fasta, deletion_output_
                         query_end2 = query_pos_cur
                         reference_start2 = reference_pos_check + 1
                         reference_end2 = reference_pos_cur
-                    else:   
+                    else:
                         query_start2 = query_pos_cur + 1
                         query_end2 = query_pos_check
                         reference_start2 = reference_pos_check + 1
@@ -123,13 +123,13 @@ def parse_alignment_info(input_alignment_file, reference_fasta, deletion_output_
             query_end2 = query_pos_cur
             reference_start2 = reference_pos_check + 1
             reference_end2 = reference_pos_cur
-        else:   
+        else:
             query_start2 = query_pos_cur + 1
             query_end2 = query_pos_check
             reference_start2 = reference_pos_check + 1
             reference_end2 = reference_pos_cur
 
-        import pdb; pdb.set_trace() 
+        import pdb; pdb.set_trace()
         if query_start != query_start2:
             print("query start inconsistent!!")
             sys.exit(1)
@@ -161,12 +161,12 @@ def parse_alignment_info(input_alignment_file, reference_fasta, deletion_output_
             else:
                 tinfo = f'{query_start},{query_end},{query_end},{query_length},{query_strand},' + \
                     f'{mapping_quality},{num_M},{num_I},{num_D},{is_supplementary},{is_secondary}'
- 
+
             print(f'{reference_name}\t{reference_start - 1}\t{reference_start}\t{query_name}\t*\t-\t{tinfo}',
                 file = hout_b)
 
         if right_soft_clipping_size + right_hard_clipping_size >= min_clipping_size_for_bp:
-            
+
             if query_strand == '+':
                 tinfo = f'{query_start},{query_end},{query_end},{query_length},{query_strand},' + \
                     f'{mapping_quality},{num_M},{num_I},{num_D},{is_supplementary},{is_secondary}'
@@ -187,7 +187,7 @@ def parse_alignment_info(input_alignment_file, reference_fasta, deletion_output_
 
 def extract_bedpe_junction(input_file, output_file, split_alignment_check_margin1 = 50, split_alignment_check_margin2 = 50, minimum_ambiguity = 20):
 
-   
+
     def print_bedpe_junction(query2target, hout):
 
         query_list = list(query2target)
@@ -197,50 +197,50 @@ def extract_bedpe_junction(input_file, output_file, split_alignment_check_margin
                 qpos1, qpos2 = qpos_comb[0], qpos_comb[1]
             else:
                 qpos1, qpos2 = qpos_comb[1], qpos_comb[0]
-            
+
             # if the first region completely covers the second region
             if qpos1[2] >= qpos2[2]: continue
-            
-            # if there is a significant overlap         
+
+            # if there is a significant overlap
             if (qpos1[2] - qpos2[1]) / (qpos2[2] - qpos1[2]) >= 0.2: continue
-            
+
             # if abs(qpos2[1] - qpos1[2]) <= split_alignment_check_margin:
             if qpos2[1] - qpos1[2] <= split_alignment_check_margin1 and qpos1[2] - qpos2[1] <= split_alignment_check_margin2:
                 bp_flag = True
                 tchr1, tstart1, tend1, tmapQ1, tnumM1, tnumI1, tnumD1, tis_supp1, tis_2nd1 = query2target[qpos1]
                 tchr2, tstart2, tend2, tmapQ2, tnumM2, tnumI2, tnumD2, tis_supp2, tis_2nd2 = query2target[qpos2]
-                
+
                 if qpos2[1] - qpos1[2] > 0:
                     outward_ambiguity, inward_ambiguity = max(qpos2[1] - qpos1[2], minimum_ambiguity), minimum_ambiguity
                 else:
                     outward_ambiguity, inward_ambiguity = minimum_ambiguity, max(qpos1[2] - qpos2[1], minimum_ambiguity)
-                
-                
+
+
                 bchr1, bchr2 = tchr1, tchr2
-                if qpos1[4] == '+': 
+                if qpos1[4] == '+':
                     bstart1, bend1, bstrand1 = max(int(tend1) - inward_ambiguity, 0), int(tend1) + outward_ambiguity, '+'
                 else:
                     bstart1, bend1, bstrand1 = max(int(tstart1) - outward_ambiguity, 0), int(tstart1) + inward_ambiguity, '-'
-                
-                if qpos2[4] == '+': 
+
+                if qpos2[4] == '+':
                     bstart2, bend2, bstrand2 = max(int(tstart2) - outward_ambiguity, 0), int(tstart2) + inward_ambiguity, '-'
                 else:
                     bstart2, bend2, bstrand2 = max(int(tend2) - inward_ambiguity, 0), int(tend2) + outward_ambiguity, '+'
 
-                
+
                 bread_name = qpos1[0]
-                
+
                 binfo1 = ','.join([str(qpos1[1]), '*', str(qpos1[2]), str(qpos1[3]), qpos1[4], tmapQ1, tnumM1, tnumI1, tnumD1, tis_supp1, tis_2nd1])
                 binfo2 = ','.join([str(qpos2[1]), '*', str(qpos2[2]), str(qpos2[3]), qpos2[4], tmapQ2, tnumM2, tnumI2, tnumD2, tis_supp2, tis_2nd2])
-                
+
                 if bchr1 > bchr2 or (bchr1 == bchr2 and bstart1 > bstart2):
                     bchr1, bstart1, bend1, bstrand1, binfo1, bchr2, bstart2, bend2, bstrand2, binfo2 = \
                         bchr2, bstart2, bend2, bstrand2, binfo2, bchr1, bstart1, bend1, bstrand1, binfo1
-               
+
                 print(f'{bchr1}\t{bstart1}\t{bend1}\t{bchr2}\t{bstart2}\t{bend2}\t{bread_name}\t0\t{bstrand1}\t{bstrand2}\t{binfo1}\t{binfo2}',
                     file = hout)
 
- 
+
     hout = open(output_file, 'w')
 
     temp_read_name = ''
@@ -253,7 +253,7 @@ def extract_bedpe_junction(input_file, output_file, split_alignment_check_margin
 
             if F[0] != temp_read_name:
                 if temp_read_name != '' and len(query2target) > 1: print_bedpe_junction(query2target, hout)
-                            
+
                 temp_read_name = F[0]
                 query2target = {}
 
@@ -263,7 +263,7 @@ def extract_bedpe_junction(input_file, output_file, split_alignment_check_margin
 
     hout.close()
 
- 
+
 if __name__ == "__main__":
 
     import sys
@@ -282,13 +282,9 @@ if __name__ == "__main__":
     hout = open(output_prefix + ".tmp.junction.sorted.bedpe", 'w')
     subprocess.check_call(["sort", "-k1,1", "-k2,2n", "-k3,3n", "-k4,4", "-k5,5n", "-k6,6n", output_prefix + ".tmp.junction.bedpe"], stdout = hout)
     hout.close()
-  
+
     hout = open(output_prefix + ".junction.sorted.bedpe.gz", 'w')
     subprocess.check_call(["bgzip", "-f", "-c", output_prefix + ".tmp.junction.sorted.bedpe"], stdout = hout)
     hout.close()
 
     subprocess.check_call(["tabix", "-p", "bed", output_prefix + ".junction.sorted.bedpe.gz"])
-
-
-
-
