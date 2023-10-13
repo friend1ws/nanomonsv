@@ -34,19 +34,19 @@ def create_parser():
                        help = "Two split alignments whose margin sizes are no more than this value is counted as candidate breakpoint (default: 50)")
 
     parse.add_argument("--minimum_breakpoint_ambiguity", default = 20, type = int,
-                       help = "Sizes of ambiguities of breakpoint positions from the observed ones (default: 20)") 
+                       help = "Sizes of ambiguities of breakpoint positions from the observed ones (default: 20)")
 
     parse.set_defaults(func = parse_main)
     ##########
-   
+
     ##########
     # merge_control
-    merge_control = subparsers.add_parser("merge_control", 
+    merge_control = subparsers.add_parser("merge_control",
                                           help = "Merge control panel files from parse results")
 
     merge_control.add_argument("prefix_list_file", default = None, type = str,
                                help = "Path to prefix for the parse function for control panels")
-        
+
     merge_control.add_argument("output_prefix", default = None, type = str,
                                help = "Prefix of merged control files")
 
@@ -60,10 +60,10 @@ def create_parser():
 
     get.add_argument("tumor_prefix", type = str,
                       help = "Prefix of tumor data processed in parse step")
-       
+
     get.add_argument("tumor_bam", default = None, type = str,
                       help = "Path to tumor alignment (BAM or CRAM) file")
- 
+
     get.add_argument("reference_fasta", metavar = "reference.fa", default = None, type = str,
                      help = "the path to the reference genome sequence")
 
@@ -73,7 +73,7 @@ def create_parser():
     get.add_argument("--control_bam", type = str, # required = True,
                      help = "Path to control alignment (BAM or CRAM) file")
 
-    get.add_argument("--control_panel_prefix", type = str, 
+    get.add_argument("--control_panel_prefix", type = str,
                      help = "Prefix of non-matched control panel data processed in merge_control step")
 
     get.add_argument("--min_tumor_variant_read_num", default = 3, type = int,
@@ -84,7 +84,7 @@ def create_parser():
 
     get.add_argument("--max_control_variant_read_num", default = 1, type = int,
                      help = "Maximum allowed supporting read number for a control sample (default: 1)")
-        
+
     get.add_argument("--max_control_VAF", default = 0.03, type = float,
                      help = "Maximum allowed variant allele frequeycy for a control sample (default: 0.03)")
 
@@ -148,10 +148,10 @@ def create_parser():
     get.add_argument("--processes", default = 1, type = int,
                      help = "Number of parallel processes to use (default: 1)")
 
-    get.add_argument("--sort_option", type = str, default = "-S 1G", 
+    get.add_argument("--sort_option", type = str, default = "-S 1G",
                      help = "Options for Linux sort command (default: '-S 1G')")
 
-    get.add_argument("--max_memory_minimap2", type = int, default = 2, 
+    get.add_argument("--max_memory_minimap2", type = int, default = 2,
                      help = "Maximum memory size (Gbyte) for minimap2 (default: 2)")
 
     get.add_argument("--debug", default = False, action = 'store_true', help = "keep intermediate files (default: False)")
@@ -160,10 +160,10 @@ def create_parser():
     ##########
 
     ##########
-    # validate 
+    # validate
     validate = subparsers.add_parser("validate",
                                      help = "Validate GenomonSV format SV list using nanopore sequence reads")
- 
+
     validate.add_argument("sv_list_file", default = None, type = str,
                           help = "Path to GenomonSV format SV list file")
 
@@ -182,22 +182,22 @@ def create_parser():
     validate.add_argument("--var_read_min_mapq", default = 40, type = int,
                           help = "Threshould for mapping quality in validate step")
 
-    validate.add_argument("--validation_score_ratio_thres", default = 1.2, type = float, 
+    validate.add_argument("--validation_score_ratio_thres", default = 1.2, type = float,
                      help = "Threshould for threshould for SV segment validation by alignment")
 
     validate.add_argument("--qv10", default = False, action = 'store_true',
                      help = "Parameter preset for sequencing data with a base quality of around 10. Recommended for ONT data called by Guppy before version 5")
-    
+
     validate.add_argument("--qv15", default = False, action = 'store_true',
                      help = "Parameter preset for sequencing data with a base quality of around 15. Recommended for ONT data called by Guppy version 5, 6.")
-    
+
     validate.add_argument("--qv20", default = False, action = 'store_true',
                      help = "Parameter preset for sequencing data with a base quality of around 20. Recommended for ONT data with Q20+ chemistry.")
 
     validate.add_argument("--qv25", default = False, action = 'store_true',
                      help = "Parameter preset for sequencing data with a base quality above 25. Recommended for PacBio Hifi data.")
 
-    validate.add_argument("--sort_option", metavar = "-S 1G", type = str, default = "-S 2G", 
+    validate.add_argument("--sort_option", metavar = "-S 1G", type = str, default = "-S 2G",
                      help = "options for sort command")
 
     validate.add_argument("--debug", default = False, action = 'store_true', help = "keep intermediate files")
@@ -209,10 +209,10 @@ def create_parser():
     # insert_classify
     insert_classify = subparsers.add_parser("insert_classify",
                                             help = "Classify long insertion into LINE1, Alu, SVA, and so on")
-    
+
     insert_classify.add_argument("sv_list_file", default = None, type =str,
                                  help = "Path to nanomonsv get result file")
-    
+
     insert_classify.add_argument("output_file", type = str,
                                  help = "Path to output file")
 
@@ -231,7 +231,3 @@ def create_parser():
     ##########
 
     return parser
-  
-
-
-    
