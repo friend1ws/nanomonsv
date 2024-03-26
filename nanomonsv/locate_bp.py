@@ -63,7 +63,7 @@ def get_refined_bp(contig, fasta_file_ins, chr1, start1, end1, dir1, chr2, start
         contig_start = contig[:min(i_margin, len(contig))]
         contig_end = contig[-min(i_margin, len(contig)):]
 
-        region_seq = fasta_file_ins.fetch(chr1, max(0, start1 - 100), end2 + 100)
+        region_seq = fasta_file_ins.fetch(chr1, max(0, start1 - 100), end2 + 100).upper()
         sret = smith_waterman.sw_jump(region_seq, contig_start, contig_end,
                                       match_score = sw_jump_params[0], mismatch_penalty = sw_jump_params[1], 
                                       gap_cost = sw_jump_params[2], jump_cost = sw_jump_params[3])
