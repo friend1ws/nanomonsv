@@ -10,7 +10,7 @@ from .logger import get_logger
 
 logger = get_logger(__name__)
 
-       
+
 def get_refined_bp_sbnd(tconsensus, fasta_file_h, tchr, tstart, tend, tdir, hout_log, margin = 200):
 
     tconsensus_part = tconsensus[:1000] if len(tconsensus) > 1000 else tconsensus
@@ -20,9 +20,9 @@ def get_refined_bp_sbnd(tconsensus, fasta_file_h, tchr, tstart, tend, tdir, hout
     if ref_len < tend: tend = ref_len 
 
     if tdir == '+':
-        qseq = fasta_file_h.fetch(tchr, max(int(tstart) - margin, 0), int(tend))
+        qseq = fasta_file_h.fetch(tchr, max(int(tstart) - margin, 0), int(tend)).upper()
     else:
-        qseq = fasta_file_h.fetch(tchr, max(int(tstart) - 1, 0), int(tend) + margin)
+        qseq = fasta_file_h.fetch(tchr, max(int(tstart) - 1, 0), int(tend) + margin).upper()
         qseq = reverse_complement(qseq)
 
     user_matrix = parasail.matrix_create("ACGT", 1, -2)
@@ -41,7 +41,7 @@ def get_refined_bp_sbnd(tconsensus, fasta_file_h, tchr, tstart, tend, tdir, hout
 
     return (bp_pos_reference, tconsensus_after)
 
- 
+
 def locate_bp_sbnd(consensus_file, output_file, reference_fasta, debug):
 
     fasta_file_ins = pysam.FastaFile(reference_fasta)
