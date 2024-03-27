@@ -236,15 +236,15 @@ class Alignment_counter(object):
         tinseq = '' if tinseq == "---" else tinseq
 
         # reference_local_seq
-        self.reference_segment_1 = self.reference_fasta_h.fetch(tchr1, max(tpos1 - self.validate_sequence_length - 1, 0), tpos1 + self.validate_sequence_length - 1)
-        self.reference_segment_2 = self.reference_fasta_h.fetch(tchr2, max(tpos2 - self.validate_sequence_length - 1, 0), tpos2 + self.validate_sequence_length - 1)
+        self.reference_segment_1 = self.reference_fasta_h.fetch(tchr1, max(tpos1 - self.validate_sequence_length - 1, 0), tpos1 + self.validate_sequence_length - 1).upper()
+        self.reference_segment_2 = self.reference_fasta_h.fetch(tchr2, max(tpos2 - self.validate_sequence_length - 1, 0), tpos2 + self.validate_sequence_length - 1).upper()
 
         # variant_seq
         variant_seq = ""
         if tdir1 == '+':
-            tseq = self.reference_fasta_h.fetch(tchr1, max(tpos1 - self.validate_sequence_length - 1, 0), tpos1 - 1)
+            tseq = self.reference_fasta_h.fetch(tchr1, max(tpos1 - self.validate_sequence_length - 1, 0), tpos1 - 1).upper()
         else:
-            tseq = self.reference_fasta_h.fetch(tchr1, tpos1 - 1, tpos1 + self.validate_sequence_length - 1)
+            tseq = self.reference_fasta_h.fetch(tchr1, tpos1 - 1, tpos1 + self.validate_sequence_length - 1).upper()
             tseq = reverse_complement(tseq)
 
         if tdir1 == "+":
@@ -253,9 +253,9 @@ class Alignment_counter(object):
             variant_seq = tseq + reverse_complement(tinseq)
 
         if tdir2 == '-':
-            tseq = self.reference_fasta_h.fetch(tchr2, tpos2 - 1, tpos2 + self.validate_sequence_length - 1)
+            tseq = self.reference_fasta_h.fetch(tchr2, tpos2 - 1, tpos2 + self.validate_sequence_length - 1).upper()
         else:
-            tseq = self.reference_fasta_h.fetch(tchr2, max(tpos2 - self.validate_sequence_length - 1, 0), tpos2 - 1)
+            tseq = self.reference_fasta_h.fetch(tchr2, max(tpos2 - self.validate_sequence_length - 1, 0), tpos2 - 1).upper()
             tseq = reverse_complement(tseq)
 
         variant_seq = variant_seq + tseq
@@ -270,15 +270,15 @@ class Alignment_counter(object):
         tpos = int(tpos)
 
         # referene_local_seq
-        self.reference_segment_1 = self.reference_fasta_h.fetch(tchr, max(tpos - self.validate_sequence_length - 1, 0), tpos + self.validate_sequence_length - 1)
+        self.reference_segment_1 = self.reference_fasta_h.fetch(tchr, max(tpos - self.validate_sequence_length - 1, 0), tpos + self.validate_sequence_length - 1).upper()
 
         # variant_seq
         variant_seq = ''
         if tdir == '+':
-            tseq = self.reference_fasta_h.fetch(tchr, max(tpos - self.validate_sequence_length - 1, 0), tpos)
+            tseq = self.reference_fasta_h.fetch(tchr, max(tpos - self.validate_sequence_length - 1, 0), tpos).upper()
             tseq = tseq + tcontig
         else:
-            tseq = self.reference_fasta_h.fetch(tchr, tpos - 1, tpos + self.validate_sequence_length - 1)
+            tseq = self.reference_fasta_h.fetch(tchr, tpos - 1, tpos + self.validate_sequence_length - 1).upper()
             tseq = reverse_complement(tseq)
         self.variant_segment_1 = tseq + tcontig
 
