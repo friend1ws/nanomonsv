@@ -27,8 +27,9 @@ def get_refined_bp(contig, fasta_file_ins, chr1, start1, end1, dir1, chr2, start
         if ref_len1 < bend1: bend1 = ref_len1
         if ref_len2 < bend2: bend2 = ref_len2    
 
-        region1_seq = fasta_file_ins.fetch(chr1, bstart1 - 1, bend1)
-        region2_seq = fasta_file_ins.fetch(chr2, bstart2 - 1, bend2)
+        region1_seq = fasta_file_ins.fetch(chr1, bstart1 - 1, bend1).upper()
+        region2_seq = fasta_file_ins.fetch(chr2, bstart2 - 1, bend2).upper()
+        
 
         if dir1 == '-': region1_seq = reverse_complement(region1_seq)
         if dir2 == '+': region2_seq = reverse_complement(region2_seq)
@@ -62,7 +63,7 @@ def get_refined_bp(contig, fasta_file_ins, chr1, start1, end1, dir1, chr2, start
         contig_start = contig[:min(i_margin, len(contig))]
         contig_end = contig[-min(i_margin, len(contig)):]
 
-        region_seq = fasta_file_ins.fetch(chr1, max(0, start1 - 100), end2 + 100)
+        region_seq = fasta_file_ins.fetch(chr1, max(0, start1 - 100), end2 + 100).upper()
         sret = smith_waterman.sw_jump(region_seq, contig_start, contig_end,
                                       match_score = sw_jump_params[0], mismatch_penalty = sw_jump_params[1], 
                                       gap_cost = sw_jump_params[2], jump_cost = sw_jump_params[3])

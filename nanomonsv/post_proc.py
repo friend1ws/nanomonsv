@@ -91,14 +91,14 @@ class Sv_filterer(object):
             not (sv.chr2 == ins.chr2 and abs(sv.pos2 - ins.pos2) <= self.bp_dist_margin):
             return 
 
-        ins_seg = self.reference_h.fetch(ins.chr1, max(ins.pos1 - self.validate_seg_len - self.bp_dist_margin - 1, 0), ins.pos1 - 1)
+        ins_seg = self.reference_h.fetch(ins.chr1, max(ins.pos1 - self.validate_seg_len - self.bp_dist_margin - 1, 0), ins.pos1 - 1).upper()
         ins_seg = ins_seg + ins.inseq
-        ins_seg = ins_seg + self.reference_h.fetch(ins.chr1, ins.pos2 - 1, ins.pos2 + self.validate_seg_len + self.bp_dist_margin - 1)
+        ins_seg = ins_seg + self.reference_h.fetch(ins.chr1, ins.pos2 - 1, ins.pos2 + self.validate_seg_len + self.bp_dist_margin - 1).upper()
 
         if sv.dir1 == '+':
-            tseq = self.reference_h.fetch(sv.chr1, max(sv.pos1 - self.validate_seg_len - 1, 0), sv.pos1 - 1)
+            tseq = self.reference_h.fetch(sv.chr1, max(sv.pos1 - self.validate_seg_len - 1, 0), sv.pos1 - 1).upper()
         else:
-            tseq = self.reference_h.fetch(sv.chr1, sv.pos1 - 1, sv.pos1 + self.validate_seg_len - 1) 
+            tseq = self.reference_h.fetch(sv.chr1, sv.pos1 - 1, sv.pos1 + self.validate_seg_len - 1).upper()
             tseq = reverse_complement(tseq)
 
         if sv.dir1 == '+':
@@ -107,9 +107,9 @@ class Sv_filterer(object):
             sv_seg = tseq + reverse_complement(sv.inseq)
 
         if sv.dir2 == '-':
-            tseq = self.reference_h.fetch(sv.chr2, sv.pos2 - 1, sv.pos2 + self.validate_seg_len - 1)
+            tseq = self.reference_h.fetch(sv.chr2, sv.pos2 - 1, sv.pos2 + self.validate_seg_len - 1).upper()
         else:
-            tseq = self.reference_h.fetch(sv.chr2, max(sv.pos2 - self.validate_seg_len - 1, 0), sv.pos2 - 1)
+            tseq = self.reference_h.fetch(sv.chr2, max(sv.pos2 - self.validate_seg_len - 1, 0), sv.pos2 - 1).upper()
             tseq = reverse_complement(tseq)
  
         sv_seg = sv_seg + tseq
