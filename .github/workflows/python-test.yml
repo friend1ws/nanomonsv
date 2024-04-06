@@ -38,7 +38,7 @@ jobs:
 
     - name: Install python dependencies
       run: |
-        pip install -U setuptools 
+        pip install setuptools 
         pip install -U importlib-metadata
         pip install requests
         pip install pytest
