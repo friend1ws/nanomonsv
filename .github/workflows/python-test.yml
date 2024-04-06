@@ -39,8 +39,7 @@ jobs:
     - name: Install python dependencies
       run: |
         pip install setuptools 
-        pip install -U importlib-metadata
-        pip install requests
+        pip install importlib-metadata
         pip install pytest
         pip install numpy
         pip install pysam
