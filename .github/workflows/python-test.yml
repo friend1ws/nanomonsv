@@ -45,6 +45,7 @@ jobs:
         pip install numpy
         pip install pysam
         pip install parasail
+        pip install . 
     - name: Pytest
       run: |
         pytest
