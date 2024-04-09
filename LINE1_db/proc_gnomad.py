@@ -14,7 +14,8 @@ for record in vcf_file.fetch():
     # lstrand = record.info["MEINFO"][3]
     lstrand = '*'
     label = ','.join([lchr, lstart, lend, lstrand, lid])
-    laf = float(record.info["AF"][0])
+    laf = 0
+    # laf = float(record.info["AF"][0])
     # if laf < 0.01: continue
 
     print('\t'.join([lchr, lstart, lend, label, str(laf), lstrand]))
