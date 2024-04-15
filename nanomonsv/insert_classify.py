@@ -1,6 +1,6 @@
 #! /user/bin/env python3
 
-import sys, re, pkg_resources
+import sys, re, os, gzip, subprocess, pkg_resources
 import pysam
 
 from .swalign import *
@@ -23,6 +23,48 @@ def make_fasta_file(input_file, output_file, seq_id_file):
             print("seq" + str(sid) + ',' + str(len(F[6])) + '\t' + key, file = hout2)
             sid = sid + 1
  
+
+def make_exon_bed_from_gtf(gtf_file, exon_bed_file):
+
+    if gtf_file.endswith(".gtf"):
+        hin = open(gtf_file, 'r')
+    elif gtf_file.endswith(".gtf.gz"):
+        hin = gzip.open(gtf_file, 'rt')
+    else:
+        print("The input GTF file should ends with 'gtf' or 'gtf.gz'", file = sys.stderr)
+        sys.exit(1)
+
+    hout = open(output_file + ".unsorted.tmp", 'w')
+    for line in hin:
+        if line.startswith('#'): continue
+        F = line.rstrip('\n').split('\t')
+        if F[2] != "exon": continue
+        infos = F[8].split('; ')
+
+        transcript_id = None
+        exon_number = None
+        for elm in infos:
+            if elm.startswith("transcript_id "):
+                transcript_id = elm.replace("transcript_id ", '').strip('"')
+            if elm.startswith("exon_number "):
+                exon_number = elm.replace("exon_number ", '').strip('"')
+
+        
+        print(f'{F[0]}\t{int(F[3]) - 1}\t{F[4]}\t{transcript_id}\t{exon_number}\t{F[6]}', file = hout)
+
+    hin.close()
+    hout.close()
+
+    with open(output_file + ".sorted.tmp", 'w') as hout:
+        subprocess.run(["sort", "-k1,1", "-k2,2n", "-k3,3n", output_file + ".unsorted.tmp"], stdout = hout)
+    
+    with open(output_file, 'w') as hout:
+        subprocess.run(["bgzip", "-f", "-c", output_file + ".sorted.tmp"], stdout = hout)
+
+    subprocess.run(["tabix", "-p", "bed", output_file])
+
+    os.remove(output_file + ".unsorted.tmp")
+    os.remove(output_file + ".sorted.tmp")
 
 
 def sam2bed_split(input_file, output_file):
@@ -484,7 +526,7 @@ def summarize_bwa_alignment2(input_sam, seq_list, output_file):
 
 
 
-def organize_info(rmsk_file, alignment_file, tsd_file, seq_list, output_file, genome_id):
+def organize_info(rmsk_file, alignment_file, tsd_file, seq_list, output_file, LINE1_db_file):
 
     key2rmsk = {}
     with open(rmsk_file, 'r') as hin:
@@ -507,10 +549,13 @@ def organize_info(rmsk_file, alignment_file, tsd_file, seq_list, output_file, ge
 
     keys = list(set(list(key2rmsk) + list(key2alignment) + list(key2tsd_polyAT)))
 
+    """
     if genome_id == "hg38":
         line1_tb = pysam.TabixFile(pkg_resources.resource_filename("nanomonsv", "data/LINE1.hg38.bed.gz"))
     else:
         line1_tb = pysam.TabixFile(pkg_resources.resource_filename("nanomonsv", "data/LINE1.hg19.bed.gz"))
+    """
+    line1_tb = pysam.TabixFile(LINE1_db_file)
 
     with open(output_file, 'w') as hout:
 

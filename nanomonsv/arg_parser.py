@@ -219,11 +219,16 @@ def create_parser():
     insert_classify.add_argument("reference_fasta", metavar = "reference.fa", default = None, type = str,
                                  help = "Path to the reference genome sequence")
 
-    insert_classify.add_argument("--grc", default = False, action = 'store_true',
-                                 help = "Deprecated. This is not used any more. Convert chromosome names to Genome Reference Consortium nomenclature (default: %(default)s)")
+    # insert_classify.add_argument("--grc", default = False, action = 'store_true',
+    #                              help = "Deprecated. This is not used any more. Convert chromosome names to Genome Reference Consortium nomenclature (default: %(default)s)")
+    insert_classify.add_argument("gtf_file", metavar = "gencode.gtf.gz", default = None, type = str,
+                                 help = "Path to GFT file for transcript")
 
-    insert_classify.add_argument("--genome_id", choices = ["hg19", "hg38", "mm10"], default = "hg38",
-                                 help = "Genome id used for selecting UCSC-GRC chromosome name corresponding files (default: %(default)s)")
+    # insert_classify.add_argument("--genome_id", choices = ["hg19", "hg38", "mm10"], default = "hg38",
+    #                              help = "Genome id used for selecting UCSC-GRC chromosome name corresponding files (default: %(default)s)")
+
+    insert_classify.add_argument("LINE1_db", default = None, type = str,
+                                 help = "Path to LINE1 position file")
 
     insert_classify.add_argument("--debug", default = False, action = 'store_true', help = "keep intermediate files")
 
