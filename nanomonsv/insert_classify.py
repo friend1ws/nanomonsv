@@ -24,7 +24,7 @@ def make_fasta_file(input_file, output_file, seq_id_file):
             sid = sid + 1
  
 
-def make_exon_bed_from_gtf(gtf_file, exon_bed_file):
+def make_exon_bed_from_gtf(gtf_file, output_file):
 
     if gtf_file.endswith(".gtf"):
         hin = open(gtf_file, 'r')
