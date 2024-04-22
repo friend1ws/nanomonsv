@@ -7,7 +7,7 @@ bgzip -c ../workspace/human_GRCh37_simpleRepeat.bed > ../human_GRCh37_simpleRepe
 tabix -p bed ../human_GRCh37_simpleRepeat.bed.gz
 
 wget -O ../workspace/human_GRCh38_simpleRepeat.txt.gz http://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/simpleRepeat.txt.gz   
-zcat ../workspace/human_GRCh37_simpleRepeat.txt.gz | cut -f 2-4 | sort -k1,1 -k2,2n -k3,3n > ../workspace/human_GRCh38_simpleRepeat.bed   
+zcat ../workspace/human_GRCh38_simpleRepeat.txt.gz | cut -f 2-4 | sort -k1,1 -k2,2n -k3,3n > ../workspace/human_GRCh38_simpleRepeat.bed   
 bgzip -c ../workspace/human_GRCh38_simpleRepeat.bed > ../human_GRCh38_simpleRepeat.bed.gz
 tabix -p bed ../human_GRCh38_simpleRepeat.bed.gz
 
