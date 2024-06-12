@@ -63,8 +63,8 @@ In addition, for users who do not have sufficient sequencing data that can serve
 we prepared a control panel that has been created using the 30 Nanopore sequencing data from the [Human Pangenome Reference Consortium](https://humanpangenome.org/), which is available at [zenodo](https://zenodo.org/records/11470934).
 
 This control panel is made by aligning 30~40 Nanopore (basecalled by Guppy ver. 4 and 6) and PacBio HiFi sequencing data to the GRCh38/CHM13 reference genome (obtained from [here](https://console.cloud.google.com/storage/browser/genomics-public-data/resources/broad/hg38/v0;tab=objects)) with minimap2 version 2.24. 
-For the choice of the control panel, it is recommended to use one that is as close as possible in platform and basecall quality. 
-However, based on experience, a noisier control panel tends to be more versatile. Therefore, if in doubt, it is advisable to use the Nanopore control panel from Guppy version 4.
+For the choice of the control panel, we recommend that you use one that is as close as possible in platform and basecall quality. 
+However, based on our experience, a noisier control panel tends to be more versatile. Therefore, when unsure, we advise to use the Nanopore control panel from Guppy version 4.
 **When you use these control panels and publish, do not forget to credit to [HPRC](https://github.com/human-pangenomics/HG002_Data_Freeze_v1.0#citations)!**
 
 
