@@ -16,6 +16,7 @@ from .insert_classify import *
 from .utils import *
 from .logger import get_logger
 from .utils import *
+from .connect import *
 
 logger = get_logger(__name__)
 
@@ -600,4 +601,13 @@ def insert_classify_main(args):
         os.remove(args.output_file + ".tmp.alignment.txt")
         os.remove(args.output_file + ".tmp.org.txt")
 
-
+def connect_main(args):
+    hout = open(args.output_prefix + ".supporting_read.sorted.txt", 'w')
+    subprocess.check_call(["sort", "-k9,9", "-k10,10n", args.support_read_file], stdout = hout)
+    hout.close()
+    filter_support_reads(args.nanomonsv_result_file, args.output_prefix + ".supporting_read.sorted.txt", args.output_prefix + ".supporting_read.sorted.filtered.txt")
+    get_edge(args.output_prefix + ".supporting_read.sorted.filtered.txt", args.output_prefix + ".edge.txt", args.consistent_pos_margin)
+    connect(args.output_prefix + ".edge.txt", args.output_prefix + ".connect.txt")
+    
+    if not args.debug:
+        os.remove(args.output_prefix + ".supporting_read.sorted.txt")

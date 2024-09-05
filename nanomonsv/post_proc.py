@@ -175,7 +175,7 @@ class Sv_filterer(object):
     
     def add_sv(self, tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq, sv_id,
         total_read_tumor, var_read_tumor, total_read_ctrl, var_read_ctrl):
-                     
+    
         sv = Sv(tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq, sv_id,
             total_read_tumor, var_read_tumor, total_read_ctrl, var_read_ctrl)
         self.sv_list.append(sv)
@@ -307,10 +307,10 @@ def proc_sread_info_file(tumor_sread_info_file, sv_result_file, output_file, val
             else:
                 sstrand = strand2
                 if sstrand == '+':
-                    spos = (float(send1 - sstart1) / float(cend1 - cstart1)) * (validate_sequence_length - cstart1) + sstart1 - len(tinseq) - 1
+                    spos = (float(send2 - sstart2) / float(cend2 - cstart2)) * (validate_sequence_length - cstart2) + sstart2 - len(tinseq) - 1
                 else:
-                    spos = (float(sstart1 - send1) / float(cend1 - cstart1)) * (200 - cstart1) + send1 + len(tinseq) + 1
-              
+                    spos = (float(sstart2 - send2) / float(cend2 - cstart2)) * (validate_sequence_length - cstart2) + send2 + len(tinseq) + 1
+            
             print(f"{tkey}\t{readid}\t{int(spos)}\t{sstrand}", file = hout)
 
 

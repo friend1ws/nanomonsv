@@ -234,9 +234,30 @@ def create_parser():
 
     insert_classify.set_defaults(func = insert_classify_main)
     ##########
+    
+    ##########
+    # connect
+    connect = subparsers.add_parser("connect",
+                                    help = "Connect called SVs by support reads")
+
+    connect.add_argument("nanomonsv_result_file", default = None, type = str,
+                         help = "Path to nanomonsv get result file")
+
+    connect.add_argument("support_read_file", type = str,
+                         help = "PATH to support read file")
+    
+    connect.add_argument("output_prefix", type = str,
+                         help = "Prefix of output files")
+
+    connect.add_argument("--consistent_pos_margin", default = 1.3, type = float,
+                         help = "Consistency coefficient of distances of read and reference between two SVs")
+    
+    connect.add_argument("--debug", default = False, action = 'store_true', help = "keep intermediate files")
+
+    connect.set_defaults(func = connect_main)
+    ##########
 
     return parser
-  
 
 
     
