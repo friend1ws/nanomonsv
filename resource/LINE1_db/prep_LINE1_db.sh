@@ -1,5 +1,6 @@
 #! /usr/bin/env bash
 
+
 ##########
 # chain file
 if [ ! -f hg38ToHg19.over.chain.gz ]
@@ -79,26 +80,30 @@ python subscript/mod_label.py 1000genomes.line1.chm13v2.0.bed.tmp > 1000genomes.
 
 ##########
 # gnomAD SV file
-if [ ! -f gnomad_v2.1_sv.controls_only.sites.vcf.gz ]
+# if [ ! -f gnomad_v2.1_sv.controls_only.sites.vcf.gz ]
+if [ ! -f gnomad.v4.1.sv.non_neuro_controls.sites.vcf.gz ]
 then
     # wget https://storage.googleapis.com/gnomad-public/papers/2019-sv/gnomad_v2.1_sv.controls_only.sites.vcf.gz
-    wget https://storage.googleapis.com/gcp-public-data--gnomad/papers/2019-sv/gnomad_v2.1_sv.controls_only.sites.vcf.gz
+    # wget https://storage.googleapis.com/gcp-public-data--gnomad/papers/2019-sv/gnomad_v2.1_sv.controls_only.sites.vcf.gz
+    wget https://storage.googleapis.com/gcp-public-data--gnomad/release/4.1/genome_sv/gnomad.v4.1.sv.non_neuro_controls.sites.vcf.gz
 fi
 
-if [ ! -f gnomad_v2.1_sv.controls_only.sites.vcf.gz.tbi ]
+# if [ ! -f gnomad_v2.1_sv.controls_only.sites.vcf.gz.tbi ]
+if [ ! -f gnomad.v4.1.sv.non_neuro_controls.sites.vcf.gz.tbi ]
 then
     # wget https://storage.googleapis.com/gnomad-public/papers/2019-sv/gnomad_v2.1_sv.controls_only.sites.vcf.gz.tbi
-    wget https://storage.googleapis.com/gcp-public-data--gnomad/papers/2019-sv/gnomad_v2.1_sv.controls_only.sites.vcf.gz.tbi
+    # wget https://storage.googleapis.com/gcp-public-data--gnomad/papers/2019-sv/gnomad_v2.1_sv.controls_only.sites.vcf.gz.tbi
+    wget https://storage.googleapis.com/gcp-public-data--gnomad/release/4.1/genome_sv/gnomad.v4.1.sv.non_neuro_controls.sites.vcf.gz.tbi
 fi
 
-bcftools filter -i 'ALT == "<INS:ME:LINE1>" && INFO/SVLEN >= 5800' gnomad_v2.1_sv.controls_only.sites.vcf.gz | cut -f 1-8 > gnomad.line1.hg19.vcf
+bcftools filter -i 'ALT == "<INS:ME:LINE1>" && INFO/SVLEN >= 5800' gnomad.v4.1.sv.non_neuro_controls.sites.vcf.gz | cut -f 1-8 > gnomad.line1.hg38.vcf
 
-python subscript/proc_gnomad.py gnomad.line1.hg19.vcf > gnomad.line1.hg19.bed
+python subscript/proc_gnomad.py gnomad.line1.hg38.vcf > gnomad.line1.hg38.bed
 
-liftOver gnomad.line1.hg19.bed hg19ToHg38.over.chain.gz gnomad.line1.hg38.bed.tmp gnomad.line1.hg38.unmapped
-liftOver gnomad.line1.hg19.bed hg19-chm13v2.over.chain.gz gnomad.line1.chm13v2.0.bed.tmp gnomad.line1.chm13v2.0.unmapped
+liftOver gnomad.line1.hg38.bed hg38ToHg19.over.chain.gz gnomad.line1.hg19.bed.tmp gnomad.line1.hg19.unmapped
+liftOver gnomad.line1.hg38.bed hg38-chm13v2.over.chain.gz gnomad.line1.chm13v2.0.bed.tmp gnomad.line1.chm13v2.0.unmapped
 
-python subscript/mod_label.py gnomad.line1.hg38.bed.tmp > gnomad.line1.hg38.bed
+python subscript/mod_label.py gnomad.line1.hg19.bed.tmp > gnomad.line1.hg19.bed
 python subscript/mod_label.py gnomad.line1.chm13v2.0.bed.tmp > gnomad.line1.chm13v2.0.bed
 
 ##########
