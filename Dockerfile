@@ -28,10 +28,10 @@ RUN wget https://github.com/samtools/htslib/releases/download/1.15/htslib-1.15.t
 
 RUN wget http://ftp.debian.org/debian/pool/main/m/mafft/mafft_7.407-2_amd64.deb && \
     dpkg -i mafft_7.407-2_amd64.deb
-    
-RUN wget https://github.com/isovic/racon/releases/download/1.4.3/racon-v1.4.3.tar.gz && \
-    tar zxvf racon-v1.4.3.tar.gz && \
-    cd racon-v1.4.3 && mkdir build && cd build && \
+
+RUN wget https://github.com/lbcb-sci/racon/archive/refs/tags/1.5.0.tar.gz && \
+    tar zxvf racon-v1.5.0.tar.gz && \
+    cd racon-v1.5.0 && mkdir build && cd build && \
     cmake -DCMAKE_BUILD_TYPE=Release .. && \
     make && make install
 
