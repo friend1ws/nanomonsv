@@ -40,6 +40,7 @@ RUN pip3 install --upgrade setuptools
 RUN pip3 install pysam==0.19.1
 RUN pip3 install numpy==1.23.0
 RUN pip3 install parasail==1.2.4
+RUN pip3 install h5py==3.13.0
 
 RUN wget https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library/archive/v1.1.tar.gz && \
     tar zxvf v1.1.tar.gz && \
