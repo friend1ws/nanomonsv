@@ -34,8 +34,9 @@ def parse_alignment_info(input_alignment_file, reference_fasta, deletion_output_
         is_secondary = read.is_secondary
         is_supplementary = read.is_supplementary
 
+        # import pdb; pdb.set_trace()
         cigar_stats = read.get_cigar_stats()
-        num_M = cigar_stats[0][0]
+        num_M = cigar_stats[0][0] + cigar_stats[0][7] + cigar_stats[0][8]
         num_I = cigar_stats[0][1]
         num_D = cigar_stats[0][2]
 
@@ -69,7 +70,7 @@ def parse_alignment_info(input_alignment_file, reference_fasta, deletion_output_
         reference_pos_check = reference_start - 1
 
         for cigar in cigartuples:
-            if cigar[0] == 0:
+            if cigar[0] in [0, 7, 8]:
                 query_pos_cur = query_pos_cur + cigar[1] if query_strand == '+' else query_pos_cur - cigar[1]
                 reference_pos_cur = reference_pos_cur + cigar[1] 
             elif cigar[0] == 1:
