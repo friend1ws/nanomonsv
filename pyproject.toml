@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.dynamic]
+version = {attr = "src.version.__version__"}
+
+[project]
+name = "nanomonsv"
+dynamic = ["version"]
+description = "Python tools for detecting structural variation from nanopore sequence data"
+readme = {file = "README.md", content-type = "text/markdown"}
+requires-python = ">=3.9"
+license = { text = "GPL-3.0-or-later" }
+authors = [
+    { name="Yuichi Shiraishi", email="friend1ws@gamil.com" },
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: Unix",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Bio-Informatics"
+]
+dependencies = [
+    "numpy",
+    "parasail",
+    "pysam",
+    "h5py"
+]
+
+[project.scripts]
+nanomonsv = "src:main"
+
+[project.urls]
+Homepage = "https://github.com/friend1ws/nanomonsv"
+
+[tool.setuptools]
+packages = {find = {exclude = ["tests", "LINE_db"]}}
+
+[tool.setuptools.package-data]
+nanomonsv = ["data/*"]
+
