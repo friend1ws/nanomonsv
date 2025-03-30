@@ -65,7 +65,7 @@ def create_parser():
                       help = "Path to tumor alignment (BAM or CRAM) file")
  
     get.add_argument("reference_fasta", metavar = "reference.fa", default = None, type = str,
-                     help = "the path to the reference genome sequence")
+                     help = "Path to the reference genome sequence")
 
     get.add_argument("--control_prefix", type = str, # required = True,
                      help = "Prefix of matched control data processed in parse step")
@@ -75,6 +75,9 @@ def create_parser():
 
     get.add_argument("--control_panel_prefix", type = str, 
                      help = "Prefix of non-matched control panel data processed in merge_control step")
+
+    get.add_argument("--simple_repeat_bed", type = str, default = None,
+                     help = "Path to simple repeat bed file")
 
     get.add_argument("--min_tumor_variant_read_num", default = 3, type = int,
                      help = "Minimum required supporting read number for a tumor sample (default: 3)")

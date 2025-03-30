@@ -30,7 +30,7 @@ class Sv(object):
 
 class Sv_filterer(object):
 
-    def __init__(self, output_file, reference_fasta, is_control, 
+    def __init__(self, output_file, reference_fasta, is_control, simple_repeat_bed,  
         min_tumor_VAF = 0.05, min_indel_size = 50, bp_dist_margin = 30, validate_seg_len = 100):
         self.sv_list = []
         self.hout = open(output_file, 'w')
@@ -41,8 +41,9 @@ class Sv_filterer(object):
         self.min_indel_size = min_indel_size
         self.bp_dist_margin = bp_dist_margin
         self.validate_seg_len = validate_seg_len
+        self.simple_repeat_tb = pysam.TabixFile(simple_repeat_bed) if simple_repeat_bed is not None else None 
         self.header = None
-
+        
 
     def __del__(self):
         self.hout.close()
@@ -172,7 +173,28 @@ class Sv_filterer(object):
         if float(sv.var_read_tumor) / float(sv.total_read_tumor) < self.min_tumor_VAF:
             sv.filter.append(filter_item)
 
-    
+   
+    def filter_simple_repeat(self, sv, filter_item = "Simple_repeat", simple_repeat_dist_margin = 30):
+
+        if sv.chr1 == sv.chr2 and sv.dir1 == '+' and sv.dir2 == '-':
+            sv_size = sv.pos2 - sv.pos1 + len(sv.inseq) - 1
+
+            tabix_error_flag = False
+            try:
+                records = self.simple_repeat_tb.fetch(sv.chr1, max(sv.pos1 - simple_repeat_dist_margin + 1, 0), 
+                    sv.pos1 + simple_repeat_dist_margin)
+            except Exception as inst:
+                print(f'{type(inst)}: {inst.args}', file = sys.stderr)
+                tabix_error_flag = True
+
+            if tabix_error_flag == False:
+                for record_line in records:
+                    record = record_line.split('\t')
+                    if sv.pos1 >= int(record[1]) - simple_repeat_dist_margin and sv.pos2 <= int(record[2]) + simple_repeat_dist_margin:
+                        sv.filter.append(filter_item)
+
+
+            
     def add_sv(self, tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq, sv_id,
         total_read_tumor, var_read_tumor, total_read_ctrl, var_read_ctrl):
     
@@ -191,6 +213,10 @@ class Sv_filterer(object):
 
         for sv in self.sv_list:
             self.filter_sv_with_decoy(sv)
+
+        if self.simple_repeat_tb is not None:
+            for sv in self.sv_list:
+                self.filter_simple_repeat(sv)
 
         # logger.info("filter_close_both_breakpoints")
         for sv1, sv2 in itertools.combinations(self.sv_list, 2):
@@ -235,7 +261,7 @@ class Sv_filterer(object):
             print(f"{print_sv_line}\t{filter_print}", file = self.hout)
 
     
-def integrate_realignment_result(tumor_file, control_file, output_file, reference_fasta, min_indel_size = 50,
+def integrate_realignment_result(tumor_file, control_file, output_file, reference_fasta, simple_repeat_bed = None, min_indel_size = 50,
     min_tumor_variant_read_num = 3, min_tumor_VAF = 0.05, max_control_variant_read_num = 1, max_control_VAF = 0.03):
 
     is_control = True if control_file is not None else False
@@ -247,7 +273,7 @@ def integrate_realignment_result(tumor_file, control_file, output_file, referenc
                 svkey = (F[0], int(F[1]), F[2], F[3], int(F[4]), F[5], F[6], F[7])
                 svkey2control_info[svkey] = (int(F[8]), int(F[9]))
 
-    sv_filterer = Sv_filterer(output_file, reference_fasta, is_control, min_tumor_VAF, min_indel_size)
+    sv_filterer = Sv_filterer(output_file, reference_fasta, is_control, simple_repeat_bed, min_tumor_VAF, min_indel_size)
     with open(tumor_file, 'r') as hin:
         for line in hin:
             F = line.rstrip('\n').split('\t')

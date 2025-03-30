@@ -232,6 +232,7 @@ def get_main(args):
     is_exists_bam(args.tumor_bam)
     is_exists(args.reference_fasta)
     if args.control_bam is not None: is_exists_bam(args.control_bam)
+    if args.simple_repeat_bed is not None: is_exists(args.simple_repeat_bed)
    
     # check parsed files existences
     is_exists_parsed_files(args.tumor_prefix)
@@ -425,7 +426,7 @@ def get_main(args):
     logger.info("Final processing") 
     control_sread_count_file = args.tumor_prefix + ".realignment.control.sread_count.txt" if args.control_bam is not None else None
     integrate_realignment_result(args.tumor_prefix + ".realignment.tumor.sread_count.txt", control_sread_count_file,
-        args.tumor_prefix + ".nanomonsv.result.txt", args.reference_fasta, min_indel_size = args.min_indel_size,
+        args.tumor_prefix + ".nanomonsv.result.txt", args.reference_fasta, args.simple_repeat_bed, min_indel_size = args.min_indel_size,
         min_tumor_variant_read_num = args.min_tumor_variant_read_num, min_tumor_VAF = args.min_tumor_VAF, 
         max_control_variant_read_num = args.max_control_variant_read_num, max_control_VAF = args.max_control_VAF)
 
