@@ -42,7 +42,7 @@ RUN wget https://github.com/lbcb-sci/racon/archive/refs/tags/1.5.0.tar.gz && \
     make && make install
 
 
-RUN pip3 install --upgrade setuptools
+RUN pip3 install --upgrade pip setuptools wheel
 
 RUN pip3 install pysam==0.23.0
 RUN pip3 install numpy==2.2.4
@@ -65,6 +65,7 @@ ENV PATH $PATH:/minimap2-2.28
 
 RUN git clone https://github.com/friend1ws/nanomonsv.git && \
     cd nanomonsv && \
-    python3 -m pip install . 
+    pip install . && \
+	pip show nanomonsv
 
 
