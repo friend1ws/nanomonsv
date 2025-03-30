@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.dynamic]
-version = {attr = "src.version.__version__"}
+version = {attr = "nanomonsv.version.__version__"}
 
 [project]
 name = "nanomonsv"
@@ -34,7 +34,7 @@ dependencies = [
 ]
 
 [project.scripts]
-nanomonsv = "src:main"
+nanomonsv = "nanomonsv:main"
 
 [project.urls]
 Homepage = "https://github.com/friend1ws/nanomonsv"
