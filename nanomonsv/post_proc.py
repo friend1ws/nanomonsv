@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 
-import csv, itertools
+import sys, csv, itertools
 import pysam, parasail
 
 from nanomonsv.my_seq import reverse_complement
