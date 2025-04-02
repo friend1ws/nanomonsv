@@ -22,7 +22,7 @@ Please see the [wiki page](https://github.com/friend1ws/nanomonsv/wiki/Single-br
 [htslib](http://www.htslib.org/), [mafft](https://mafft.cbrc.jp/alignment/software/), [racon](https://github.com/isovic/racon)(optional from ver. 0.3.0. However, we recommend to use this option. Add --use_racon option when you perfrom get command.)
 
 ### Python
-Python (tested with >=3.6), pysam, numpy, parasail
+Python (tested with >=3.9), pysam, numpy, parasail
 
 
 
@@ -142,6 +142,8 @@ This step gets the SV result from the parsed supporting reads data obtained abov
 ```
 nanomonsv get [-h] [--control_prefix CONTROL_PREFIX]
               [--control_bam CONTROL_BAM]
+              [--control_panel_prefix CONTROL_PANEL_PREFIX]
+              [--simple_repeat_bed SIMPLE_REPEAT_BED]
               [--min_tumor_variant_read_num MIN_TUMOR_VARIANT_READ_NUM]
               [--min_tumor_VAF MIN_TUMOR_VAF]
               [--max_control_variant_read_num MAX_CONTROL_VARIANT_READ_NUM]
@@ -151,24 +153,55 @@ nanomonsv get [-h] [--control_prefix CONTROL_PREFIX]
               [--max_overhang_size_thres MAX_OVERHANG_SIZE_THRES]
               [--var_read_min_mapq VAR_READ_MIN_MAPQ]
               [--qv10] [--qv15] [--qv20] [--qv25] [--use_racon]
-              [--single_bnd] [--threads THREADS] [--processes PROCESSES] 
+              [--single_bnd] [--processes PROCESSES] 
               [--sort_option SORT_OPTION] [--max_memory_minimap2] [--debug]
               tumor_prefix tumor_bam reference.fa
  ```
  - **tumor_prefix**: Prefix to the tumor data set in the parse step
  - **tumor_bam**: Path to input indexed BAM file
  - **reference.fa**: Path to reference genome used for the alignment
- 
-This software can generate a list of SVs without specifying the matched control.
-But we have not tested the performance of the approach just using tumor sample, and strongly recommend using the matched control data.
-Even when only tumor sample is available, we still recommend using dummy control sample (collected from other person's tissue).
-- **control_prefix**: Prefix to the matched control data set in the parse step
-- **control_bam**: Path to the matched control BAM file
 
-When you use the control panel (recommended!), use the following argument.
-- **control_panel_prefix**: Prefix of non-matched control panel data processed in merge_control step.
 
-You can also use **--process** to use multi-processing mode. Currently, we do not recommend using **--thread** option.
+You can also use **--process** to use multi-processing mode.
+
+#### Several important tips!
+
+##### <ins>Use of matched control</ins>
+
+This software can generate a list of SVs without specifying matched control samples. 
+However, we have not evaluated the performance of this approach when using only tumor samples, 
+and **we strongly recommend** using matched control data whenever possible.
+
+If only tumor samples are available, we still recommend using a dummy control sample (obtained from another individual's tissue).
+
+- **control_prefix**: Prefix of the matched control dataset generated in the parsing step
+- **control_bam**: File path to the matched control BAM file.
+
+##### <ins>Use of control panel</ins>
+
+When using a control panel (**recommended**), specify the following argument:
+
+- **control_panel_prefix**: Prefix of the non-matched control panel dataset generated in the merge_control step.
+
+
+##### <ins>Filtering indels within simple repeat regions</ins>
+
+We **strongly recommend** filtering indels located within simple repeat regions.
+From v0.8.0 onwards, we introduced the **--simple_repeat_bed** option, which allows specifying the path to a BED file containing simple repeat regions.
+We provide preprocessed simple repeat BED files in the [resource directory](https://github.com/friend1ws/nanomonsv/tree/master/resource/simple_repeats) repository .
+
+For the older version, please see the [wiki page](https://github.com/friend1ws/nanomonsv/wiki/An-example-on-removing-indels-within-simple-repeat)).
+
+
+##### <ins>Use of Racon</ins>
+
+We basically recommend using `--use_racon` option. This will slightly improve the identification of single-base resolution breakpoint,
+and polishing of inserted sequences. 
+For detection of single breakend SVs, please use `--single_bnd` option as well as `--use_racon`. 
+Please see [wiki page](https://github.com/friend1ws/nanomonsv/wiki/Single-breakend-SV).
+
+
+##### <ins>Preset</ins>
 
 From v0.7.0, we prepared preset parameter options:
 - **--qv10**: Parameter preset for sequencing data with a base quality of around 10. Recommended for ONT data called by Guppy before version 5
@@ -176,26 +209,19 @@ From v0.7.0, we prepared preset parameter options:
 - **--qv20**: Parameter preset for sequencing data with a base quality of around 20. Recommended for ONT data with Q20+ chemistry.
 - **--qv25**: Parameter preset for sequencing data with a base quality above 25. Recommended for PacBio Hifi data.
   
+This will slightly improve the breakpoint resolusion. 
+
+
+##### <ins>Other trivial things</ins>
+
+- When you want to change the engine of Smith-Waterman algorithm to SSW Library, specify `--use_ssw_lib` option, though we do not generally recommend this.
+
+- For the older versions (before v0.4.0), we have prepared the script (misc/post_fileter.py) for filtering the result. Please see the [wiki page](https://github.com/friend1ws/nanomonsv/wiki/How-to-filter-nanomonsv-result).
+
+
+#### Result
+
 After successful execution, you will be able to find the result file names as {tumor_prefix}.nanomonsv.result.txt.
-See the help (`nanomonsv get -h`) for other options. 
-
-When you want to change the engine of Smith-Waterman algorithm to SSW Library, specify `--use_ssw_lib` option,
-though we do not generally recommend this.
-
-Also, we basically recommend using `--use_racon` option. This will slightly improve the identification of single-base resolution breakpoint, 
-and polishing of inserted sequences. 
-
-For detection of single breakend SVs, please use `--single_bnd` option as well as `--use_racon`. 
-Please see [wiki page](https://github.com/friend1ws/nanomonsv/wiki/Single-breakend-SV).
-
-Also, we have prepared the script (misc/post_fileter.py) for filtering the result.
-Please see the [wiki page](https://github.com/friend1ws/nanomonsv/wiki/How-to-filter-nanomonsv-result).
-For output files of the version 0.4.0 and later, some filtering has already been performed (see the [wiki page](https://github.com/friend1ws/nanomonsv/wiki/How-to-understand-nanomonsv-result-filtering)). 
-However, we strongly recommed to perform additional processing; removing indels within simple repeat regions (see the [wiki page](https://github.com/friend1ws/nanomonsv/wiki/An-example-on-removing-indels-within-simple-repeat)).
-
-From the version 0.4.0, we will also provide the VCF format result files.
-
-#### result
 
 * **Chr_1**: Chromosome for the 1st breakpoint
 * **Pos_1**: Coordinate for the 1st breakpoint
@@ -211,6 +237,8 @@ From the version 0.4.0, we will also provide the VCF format result files.
 * **Supporting_Read_Num_Control**: Total number of variant reads in the matched control determined in the validation alignment step
 * **Is_Filter**: Filter status. PASS if this SV has passed all the filters
 
+From the version 0.4.0, we will also provide the VCF format result files.
+For output files of the version 0.4.0 and later, some filtering has already been performed (see the [wiki page](https://github.com/friend1ws/nanomonsv/wiki/How-to-understand-nanomonsv-result-filtering)). 
 
 ### merge_control
 
@@ -230,14 +258,13 @@ This command classifies the long insertions into several mobile element insertio
 This does not yet support VCF format, but we will do so in the near future.
 
 ```
-nanomonsv insert_classify [-h] [--grc] [--genome_id {hg19,hg38,mm10}]
-                          [--debug]
-                          sv_list_file output_file reference.fa
+nanomonsv insert_classify [-h] [--debug] sv_list_file output_file reference.fa gencode.gtf.gz LINE1_db
 ```
 - **sv_list_file**: SV list file obtained in the get step
 - **output_file**: Path to the output file for this command
 - **reference.fa**: Path to the reference genome
-- **genome_id**: The type of reference genome. Choose from hg19 and hg38 (default is hg38). This is used for selecting LINE1 database.
+- **gencode.gtf.gz**: Path to GTF file (downloaded from Gencode or others).
+- **LINE1_db**: Path to LINE1 database for identification of transduction source. Basically use the preprovided files in the [resource directory](https://github.com/friend1ws/nanomonsv/tree/master/resource/LINE1_db).
 
 #### result
 
