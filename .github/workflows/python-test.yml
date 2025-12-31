@@ -36,12 +36,13 @@ jobs:
 
     - name: Install python dependencies
       run: |
-        pip install setuptools 
+        pip install setuptools
         pip install importlib-metadata
         pip install pytest
         pip install numpy
         pip install pysam
         pip install parasail
+        pip install h5py
         pip install . 
     - name: Pytest
       run: |
