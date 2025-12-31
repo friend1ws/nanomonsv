@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 
-import os, subprocess, shutil
+import sys, os, subprocess, shutil
 from .parse import *
 from .merge_control import *
 from .cluster import *
@@ -15,7 +15,6 @@ from .vcf_convert import *
 from .insert_classify import *
 from .utils import *
 from .logger import get_logger
-from .utils import *
 from .connect import *
 
 logger = get_logger(__name__)
@@ -44,76 +43,67 @@ def parse_main(args):
 
     ####################
     # deletion processing
-    hout = open(args.output_prefix + ".tmp.deletion.sorted.bed", 'w')
-    subprocess.check_call(["sort", "-k1,1", "-k2,2n", "-k3,3n", "-k5,5n", args.output_prefix + ".tmp.deletion_info.txt"], stdout = hout)
-    hout.close()
+    with open(args.output_prefix + ".tmp.deletion.sorted.bed", 'w') as hout:
+        subprocess.check_call(["sort", "-k1,1", "-k2,2n", "-k3,3n", "-k5,5n", args.output_prefix + ".tmp.deletion_info.txt"], stdout=hout)
 
-    hout = open(args.output_prefix + ".deletion.sorted.bed.gz", 'w')
-    subprocess.check_call(["bgzip", "-f", "-c", args.output_prefix + ".tmp.deletion.sorted.bed"], stdout = hout)
-    hout.close()
+    with open(args.output_prefix + ".deletion.sorted.bed.gz", 'w') as hout:
+        subprocess.check_call(["bgzip", "-f", "-c", args.output_prefix + ".tmp.deletion.sorted.bed"], stdout=hout)
 
     subprocess.check_call(["tabix", "-p", "bed", args.output_prefix + ".deletion.sorted.bed.gz"])
     ####################
 
     ####################
     # insertion processing
-    hout = open(args.output_prefix + ".tmp.insertion.sorted.bed", 'w')
-    subprocess.check_call(["sort", "-k1,1", "-k2,2n", "-k3,3n", "-k5,5n", args.output_prefix + ".tmp.insertion_info.txt"], stdout = hout)
-    hout.close()
-    
-    hout = open(args.output_prefix + ".insertion.sorted.bed.gz", 'w') 
-    subprocess.check_call(["bgzip", "-f", "-c", args.output_prefix + ".tmp.insertion.sorted.bed"], stdout = hout)
-    hout.close()
-     
+    with open(args.output_prefix + ".tmp.insertion.sorted.bed", 'w') as hout:
+        subprocess.check_call(["sort", "-k1,1", "-k2,2n", "-k3,3n", "-k5,5n", args.output_prefix + ".tmp.insertion_info.txt"], stdout=hout)
+
+    with open(args.output_prefix + ".insertion.sorted.bed.gz", 'w') as hout:
+        subprocess.check_call(["bgzip", "-f", "-c", args.output_prefix + ".tmp.insertion.sorted.bed"], stdout=hout)
+
     subprocess.check_call(["tabix", "-p", "bed", args.output_prefix + ".insertion.sorted.bed.gz"])
     ####################
 
     ####################
     # rearrangement processing
-    hout = open(args.output_prefix + ".tmp.rearrangement_info.name_sorted.txt", 'w')
-    subprocess.check_call(["sort", "-k1,1", "-k2,2n", args.output_prefix + ".tmp.rearrangement_info.txt"], stdout = hout)
-    hout.close()
+    with open(args.output_prefix + ".tmp.rearrangement_info.name_sorted.txt", 'w') as hout:
+        subprocess.check_call(["sort", "-k1,1", "-k2,2n", args.output_prefix + ".tmp.rearrangement_info.txt"], stdout=hout)
 
-    extract_bedpe_junction(args.output_prefix + ".tmp.rearrangement_info.name_sorted.txt", 
+    extract_bedpe_junction(args.output_prefix + ".tmp.rearrangement_info.name_sorted.txt",
                            args.output_prefix + ".tmp.rearrangement.bedpe",
                            args.split_alignment_check_margin, args.split_alignment_check_margin, args.minimum_breakpoint_ambiguity)
 
-    hout = open(args.output_prefix + ".tmp.rearrangement.sorted.bedpe", 'w')
-    subprocess.check_call(["sort", "-k1,1", "-k2,2n", "-k3,3n", "-k4,4", "-k5,5n", "-k6,6n", 
-                           args.output_prefix + ".tmp.rearrangement.bedpe"], stdout = hout)
-    hout.close()
-  
-    hout = open(args.output_prefix + ".rearrangement.sorted.bedpe.gz", 'w')
-    subprocess.check_call(["bgzip", "-f", "-c", args.output_prefix + ".tmp.rearrangement.sorted.bedpe"], stdout = hout)
-    hout.close()
+    with open(args.output_prefix + ".tmp.rearrangement.sorted.bedpe", 'w') as hout:
+        subprocess.check_call(["sort", "-k1,1", "-k2,2n", "-k3,3n", "-k4,4", "-k5,5n", "-k6,6n",
+                               args.output_prefix + ".tmp.rearrangement.bedpe"], stdout=hout)
+
+    with open(args.output_prefix + ".rearrangement.sorted.bedpe.gz", 'w') as hout:
+        subprocess.check_call(["bgzip", "-f", "-c", args.output_prefix + ".tmp.rearrangement.sorted.bedpe"], stdout=hout)
 
     subprocess.check_call(["tabix", "-p", "bed", args.output_prefix + ".rearrangement.sorted.bedpe.gz"])
     ####################
 
     ####################
     # breakpoint processing
-    hout = open(args.output_prefix + ".bp_info.sorted.bed", 'w')
-    subprocess.check_call(["sort", "-k1,1", "-k2,2n", "-k3,3n", args.output_prefix + ".tmp.bp_info.txt"], stdout = hout)
-    hout.close()
+    with open(args.output_prefix + ".bp_info.sorted.bed", 'w') as hout:
+        subprocess.check_call(["sort", "-k1,1", "-k2,2n", "-k3,3n", args.output_prefix + ".tmp.bp_info.txt"], stdout=hout)
 
-    hout = open(args.output_prefix + ".bp_info.sorted.bed.gz", 'w')
-    subprocess.check_call(["bgzip", "-f", "-c", args.output_prefix + ".bp_info.sorted.bed"], stdout = hout)
-    hout.close()
+    with open(args.output_prefix + ".bp_info.sorted.bed.gz", 'w') as hout:
+        subprocess.check_call(["bgzip", "-f", "-c", args.output_prefix + ".bp_info.sorted.bed"], stdout=hout)
 
     subprocess.check_call(["tabix", "-p", "bed", args.output_prefix + ".bp_info.sorted.bed.gz"])
     ####################
 
     if not args.debug:
-        subprocess.check_call(["rm", "-rf", args.output_prefix + ".tmp.deletion_info.txt"])
-        subprocess.check_call(["rm", "-rf", args.output_prefix + ".tmp.deletion.sorted.bed"])
-        subprocess.check_call(["rm", "-rf", args.output_prefix + ".tmp.insertion_info.txt"])
-        subprocess.check_call(["rm", "-rf", args.output_prefix + ".tmp.insertion.sorted.bed"])
-        subprocess.check_call(["rm", "-rf", args.output_prefix + ".tmp.rearrangement_info.txt"])
-        subprocess.check_call(["rm", "-rf", args.output_prefix + ".tmp.rearrangement_info.name_sorted.txt"])
-        subprocess.check_call(["rm", "-rf", args.output_prefix + ".tmp.rearrangement.bedpe"])
-        subprocess.check_call(["rm", "-rf", args.output_prefix + ".tmp.rearrangement.sorted.bedpe"])
-        subprocess.check_call(["rm", "-rf", args.output_prefix + ".tmp.bp_info.txt"])
-        subprocess.check_call(["rm", "-rf", args.output_prefix + ".bp_info.sorted.bed"])
+        os.remove(args.output_prefix + ".tmp.deletion_info.txt")
+        os.remove(args.output_prefix + ".tmp.deletion.sorted.bed")
+        os.remove(args.output_prefix + ".tmp.insertion_info.txt")
+        os.remove(args.output_prefix + ".tmp.insertion.sorted.bed")
+        os.remove(args.output_prefix + ".tmp.rearrangement_info.txt")
+        os.remove(args.output_prefix + ".tmp.rearrangement_info.name_sorted.txt")
+        os.remove(args.output_prefix + ".tmp.rearrangement.bedpe")
+        os.remove(args.output_prefix + ".tmp.rearrangement.sorted.bedpe")
+        os.remove(args.output_prefix + ".tmp.bp_info.txt")
+        os.remove(args.output_prefix + ".bp_info.sorted.bed")
 
 
 def merge_control_main(args):
@@ -191,7 +181,7 @@ def get_main(args):
         is_tool("racon")
     else:
         is_tool("mafft")
-    if False: libssw_check()
+    # libssw_check()
 
     if args.single_bnd: 
         is_tool("minimap2")
@@ -379,14 +369,6 @@ def get_main(args):
                         raise Exception(err_message)
 
     logger.info("Merge parallel execution")
-
-    """
-    def merge_txt(prefix):
-        with open(prefix + ".txt", 'w') as hout:
-            for i in range(parallel_num):
-                for l in open(prefix + ".%d.txt" % (i)):
-                    hout.write(l)
-    """
 
     def merge_txt(prefix):
         with open(prefix + ".txt", 'w') as hout:
@@ -603,9 +585,8 @@ def insert_classify_main(args):
         os.remove(args.output_file + ".tmp.org.txt")
 
 def connect_main(args):
-    hout = open(args.output_prefix + ".supporting_read.sorted.txt", 'w')
-    subprocess.check_call(["sort", "-k9,9", "-k10,10n", args.support_read_file], stdout = hout)
-    hout.close()
+    with open(args.output_prefix + ".supporting_read.sorted.txt", 'w') as hout:
+        subprocess.check_call(["sort", "-k9,9", "-k10,10n", args.support_read_file], stdout=hout)
     filter_support_reads(args.nanomonsv_result_file, args.output_prefix + ".supporting_read.sorted.txt", args.output_prefix + ".supporting_read.sorted.filtered.txt")
     get_edge(args.output_prefix + ".supporting_read.sorted.filtered.txt", args.output_prefix + ".edge.txt", args.consistent_pos_margin)
     connect(args.output_prefix + ".edge.txt", args.output_prefix + ".connect.txt")

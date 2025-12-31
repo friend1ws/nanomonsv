@@ -1,4 +1,4 @@
-#! /user/bin/env python3
+#! /usr/bin/env python3
 
 import sys, re, os, gzip, subprocess # pkg_resources
 import pysam
