@@ -18,14 +18,12 @@ jobs:
     - name: Install Linux dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y build-essential wget libbz2-dev liblzma-dev libcurl4-openssl-dev
+        sudo apt-get install -y build-essential wget libbz2-dev liblzma-dev libcurl4-openssl-dev mafft
     - name: Download and install HTSLib
       run: |
         wget -q https://github.com/samtools/htslib/releases/download/1.17/htslib-1.17.tar.bz2
         tar jxvf htslib-1.17.tar.bz2
         cd htslib-1.17 && ./configure && make && sudo make install && cd ../
-        wget -q http://ftp.debian.org/debian/pool/main/m/mafft/mafft_7.407-2_amd64.deb
-        sudo dpkg -i mafft_7.407-2_amd64.deb && cd ../
         wget -q https://github.com/isovic/racon/releases/download/1.4.3/racon-v1.4.3.tar.gz
         tar zxvf racon-v1.4.3.tar.gz
         cd racon-v1.4.3 && mkdir build && cd build
