@@ -21,7 +21,10 @@ class Sv_cluster(object):
         self.end2 = tend2
         self.dir2 = tdir2
         self.readids = [treadid]
+        self.readids_set = {treadid}
         self.size = [tsize]
+        self.min_size = tsize
+        self.max_size = tsize
         self.info1 = [tinfo1]
         self.info2 = [tinfo2]
 
@@ -83,24 +86,24 @@ class Sv_clusterer(object):
    
         for cluster in self.sv_cluster_list:
 
-            if treadid in cluster.readids: continue
+            if treadid in cluster.readids_set: continue
 
             # pairs of chromosome and direction should be the same.
-            # two pairs of start and end should overlap.   
+            # two pairs of start and end should overlap.
             is_mergeable = False
-            if self.svtype == "rearrangement": 
+            if self.svtype == "rearrangement":
                 if tchr1 == cluster.chr1 and tchr2 == cluster.chr2 and tdir1 == cluster.dir1 and tdir2 == cluster.dir2 and \
-                    tend1 >= cluster.start1 and tstart1 <= cluster.end1 and tend2 >= cluster.start2 and tstart2 <= cluster.end2: 
+                    tend1 >= cluster.start1 and tstart1 <= cluster.end1 and tend2 >= cluster.start2 and tstart2 <= cluster.end2:
                     is_mergeable = True
 
             elif self.svtype in ["insertion", "deletion"]:
 
                 if tchr1 == cluster.chr1 and tstart1 <= cluster.end1 and tend1 >= cluster.start1 and \
                     tstart2 <= cluster.end2 and tend2 >= cluster.start1 and \
-                    tsize > (1.0 - self.size_margin_ratio) * float(min(cluster.size)) and \
-                    tsize < (1.0 + self.size_margin_ratio) * float(max(cluster.size)):
+                    tsize > (1.0 - self.size_margin_ratio) * float(cluster.min_size) and \
+                    tsize < (1.0 + self.size_margin_ratio) * float(cluster.max_size):
                     is_mergeable = True
-                   
+
             if not is_mergeable: continue
 
             cluster.start1 = min(tstart1, cluster.start1)
@@ -109,10 +112,13 @@ class Sv_clusterer(object):
             cluster.end2 = max(tend2, cluster.end2)
 
             cluster.readids.append(treadid)
+            cluster.readids_set.add(treadid)
             cluster.size.append(tsize)
+            cluster.min_size = min(cluster.min_size, tsize)
+            cluster.max_size = max(cluster.max_size, tsize)
             cluster.info1.append(tinfo1)
             cluster.info2.append(tinfo2)
-                        
+
             return cluster
             
         return None
@@ -239,9 +245,10 @@ class Sv_clusterer(object):
                     rec = record_line.split('\t')
                     if cl.chr1 == rec[0] and cl.start1 <= int(rec[2]) and int(rec[2]) <= cl.end1 and rec[5] == '+' or \
                         cl.chr1 == rec[0] and cl.start2 <= int(rec[2]) and int(rec[2]) <= cl.end2 and rec[5] == '-':
-    
-                        if rec[3] in cl.readids: continue
+
+                        if rec[3] in cl.readids_set: continue
                         cl.readids.append(rec[3])
+                        cl.readids_set.add(rec[3])
                         cl.size.append(rec[5])
                         cl.info1.append(rec[6])
 
