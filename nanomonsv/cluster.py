@@ -114,8 +114,9 @@ class Sv_clusterer(object):
             cluster.readids.append(treadid)
             cluster.readids_set.add(treadid)
             cluster.size.append(tsize)
-            cluster.min_size = min(cluster.min_size, tsize)
-            cluster.max_size = max(cluster.max_size, tsize)
+            if self.svtype in ["insertion", "deletion"]:
+                cluster.min_size = min(cluster.min_size, tsize)
+                cluster.max_size = max(cluster.max_size, tsize)
             cluster.info1.append(tinfo1)
             cluster.info2.append(tinfo2)
 
