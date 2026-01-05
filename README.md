@@ -5,7 +5,7 @@
 
 ## Introduction
 
-nanomonsv is a software for detecting somatic structural variations from paired (tumor and matched control) cancer genome sequence data. nanomonsv is presented in the following paper. **When you use nanomonsv or any resource of this repository, please kindly site this paper**.
+nanomonsv is a software for detecting somatic structural variations from paired (tumor and matched control) cancer genome sequence data. nanomonsv is presented in the following paper. **When you use nanomonsv or any resource of this repository, please kindly cite this paper**.
 
 Precise characterization of somatic complex structural variations from tumor/control paired long-read sequencing data with nanomonsv, Shiraishi et al., Nucleic Acids Research, 2023, [[link]](https://academic.oup.com/nar/advance-article/doi/10.1093/nar/gkad526/7201946).
 
@@ -188,9 +188,9 @@ When using a control panel (**recommended**), specify the following argument:
 
 We **strongly recommend** filtering indels located within simple repeat regions.
 From v0.8.0 onwards, we introduced the **--simple_repeat_bed** option, which allows specifying the path to a BED file containing simple repeat regions.
-We provide preprocessed simple repeat BED files in the [resource directory](https://github.com/friend1ws/nanomonsv/tree/master/resource/simple_repeats) repository .
+We provide preprocessed simple repeat BED files in the [resource directory](https://github.com/friend1ws/nanomonsv/tree/master/resource/simple_repeats) repository.
 
-For the older version, please see the [wiki page](https://github.com/friend1ws/nanomonsv/wiki/An-example-on-removing-indels-within-simple-repeat)).
+For the older version, please see the [wiki page](https://github.com/friend1ws/nanomonsv/wiki/An-example-on-removing-indels-within-simple-repeat).
 
 
 ##### <ins>Use of Racon</ins>
@@ -209,14 +209,14 @@ From v0.7.0, we prepared preset parameter options:
 - **--qv20**: Parameter preset for sequencing data with a base quality of around 20. Recommended for ONT data with Q20+ chemistry.
 - **--qv25**: Parameter preset for sequencing data with a base quality above 25. Recommended for PacBio Hifi data.
   
-This will slightly improve the breakpoint resolusion. 
+This will slightly improve the breakpoint resolution. 
 
 
 ##### <ins>Other trivial things</ins>
 
 - When you want to change the engine of Smith-Waterman algorithm to SSW Library, specify `--use_ssw_lib` option, though we do not generally recommend this.
 
-- For the older versions (before v0.4.0), we have prepared the script (misc/post_fileter.py) for filtering the result. Please see the [wiki page](https://github.com/friend1ws/nanomonsv/wiki/How-to-filter-nanomonsv-result).
+- For the older versions (before v0.4.0), we have prepared the script (misc/post_filter.py) for filtering the result. Please see the [wiki page](https://github.com/friend1ws/nanomonsv/wiki/How-to-filter-nanomonsv-result).
 
 
 #### Result
@@ -270,7 +270,7 @@ nanomonsv insert_classify [-h] [--debug] sv_list_file output_file reference.fa g
 
 * **Insert_Type**: Type of insertion (Solo_L1, Partnered_L1, Orphan_L1, Alu, SVA, PSD)
 * **Is_Inversion**: Type of inverted form for Solo LINE1 insertion (Simple, Inverted, Other)
-* **L1_Raito**: The match rate with LINE1 sequences for the inserted sequences
+* **L1_Ratio**: The match rate with LINE1 sequences for the inserted sequences
 * **Alu_Ratio**: The match rate with Alu sequences for the inserted sequences
 * **SVA_Ratio**: The match rate with SVA sequences for the inserted sequences
 * **RMSK_Info**: Summary information of RepeatMasker
@@ -281,7 +281,7 @@ nanomonsv insert_classify [-h] [--debug] sv_list_file output_file reference.fa g
 * **L1_Source_Info**: Inferred source site of LINE1 transduction
 * **PSD_Gene**: Processed pseudogene name
 * **PSD_Overlap_Ratio**: The match rate with the pseudogene
-* **PDS_Exon_Num**: The number of pseudogene exons matched with the inserted sequence
+* **PSD_Exon_Num**: The number of pseudogene exons matched with the inserted sequence
 
 
 ### validate
