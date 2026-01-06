@@ -204,6 +204,27 @@ class Consensus_generator(object):
         else:
             self.print_consensus_mafft()
 
+    def select_top_longest_reads(self, num_candidates=3):
+        """
+        Select top N longest reads from supporting_read.fa and write to a new file.
+        Output: {tmp_dir}/{temp_key}.top_longest.fa
+        """
+        reads = []
+        with open(self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa", 'r') as hin:
+            for line in hin:
+                if line.startswith('>'):
+                    readid = line.rstrip('\n').lstrip('>')
+                    seq = hin.readline().rstrip('\n')
+                    reads.append((readid, seq, len(seq)))
+
+        # Sort by length descending and take top N
+        reads_sorted = sorted(reads, key=lambda x: x[2], reverse=True)
+        top_reads = reads_sorted[:num_candidates]
+
+        with open(self.tmp_dir + '/' + self.temp_key + ".top_longest.fa", 'w') as hout:
+            for readid, seq, _ in top_reads:
+                print(f">{readid}\n{seq}", file=hout)
+
     def preexec_fn(self):
         limit = self.max_memory_minimap2 * 1024 ** 3
         if "RLIMIT_AS" in resource.__dict__:
@@ -215,46 +236,43 @@ class Consensus_generator(object):
 
         if self.temp_support_read_file_h is not None: self.temp_support_read_file_h.close()
 
+        # Select top 3 longest reads as template candidates
+        self.select_top_longest_reads(num_candidates=3)
+
+        # Map all reads to top longest candidates
         try:
-            with open(self.tmp_dir + '/' + self.temp_key + "_ava_minimap2.paf", 'w') as hout:
-                subprocess.check_call(["minimap2", "-x", "ava-ont", 
-                    self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa",
+            with open(self.tmp_dir + '/' + self.temp_key + "_top_minimap2.paf", 'w') as hout:
+                subprocess.check_call(["minimap2", "-x", "map-ont",
+                    self.tmp_dir + '/' + self.temp_key + ".top_longest.fa",
                     self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa"],
-                    stderr = subprocess.DEVNULL, stdout = hout, preexec_fn = self.preexec_fn)
+                    stderr=subprocess.DEVNULL, stdout=hout, preexec_fn=self.preexec_fn)
         except Exception as e:
             logger.warning(f'{e}')
             return
 
-
+        # Count inclusions for each candidate (target)
         readid2inclusion_count = {}
-        with open(self.tmp_dir + '/' + self.temp_key + "_ava_minimap2.paf") as hin:
+        with open(self.tmp_dir + '/' + self.temp_key + "_top_minimap2.paf") as hin:
             for line in hin:
                 row = line.rstrip('\n').split('\t')
                 if int(row[2]) <= self.start_margin and (float(row[3]) - float(row[2])) / float(row[1]) >= self.min_inclusion_ratio:
                     if row[5] not in readid2inclusion_count: readid2inclusion_count[row[5]] = 0
                     readid2inclusion_count[row[5]] = readid2inclusion_count[row[5]] + 1
-                if int(row[7]) <= self.start_margin and (float(row[8]) - float(row[7])) / float(row[6]) >= self.min_inclusion_ratio:
-                    if row[0] not in readid2inclusion_count: readid2inclusion_count[row[0]] = 0
-                    readid2inclusion_count[row[0]] = readid2inclusion_count[row[0]] + 1
 
         if len(readid2inclusion_count) == 0: return
-        readid_max = max(readid2inclusion_count, key = readid2inclusion_count.get)
+        readid_max = max(readid2inclusion_count, key=readid2inclusion_count.get)
         if readid2inclusion_count[readid_max] < self.min_inclusion_count: return
 
         # first round racon
-        with open(self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa", 'r') as hin, \
+        with open(self.tmp_dir + '/' + self.temp_key + ".top_longest.fa", 'r') as hin, \
             open(self.tmp_dir + '/' + self.temp_key + "_ref.fa", 'w') as hout:
-            seq_read_count = 0
             while True:
                 tid = hin.readline().rstrip('\n').lstrip('>')
                 tseq = hin.readline().rstrip('\n')
+                if tid == '': break
                 if tid == readid_max:
-                    print(f">{tid}\n{tseq}", file = hout)
+                    print(f">{tid}\n{tseq}", file=hout)
                     break
-                seq_read_count = seq_read_count + 1
-                if tid == '' or seq_read_count > 10000: 
-                    logger.warning(f"Something inconsistent happend when choosing template reads for {self.temp_key}")
-                    return
 
         try:
             with open(self.tmp_dir + '/' + self.temp_key + "_ova_minimap2.paf", 'w') as hout:
@@ -311,7 +329,7 @@ class Consensus_generator(object):
                 paf_rec_count = paf_rec_count + 1
             
         if paf_rec_count < 3:
-            logger.debug(f"Not enough PAF records for the first round consensus generation for {self.temp_key}")
+            logger.debug(f"Not enough PAF records for the second round consensus generation for {self.temp_key}")
             return
 
         consensus = ''
