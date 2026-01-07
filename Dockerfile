@@ -12,6 +12,9 @@ RUN apt-get update && apt-get install -y \
     cmake \
     gcc \
     g++ \
+    autoconf \
+    automake \
+    libtool \
     zlib1g-dev \
     libbz2-dev \
     liblzma-dev \
