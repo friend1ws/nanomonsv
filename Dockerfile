@@ -56,7 +56,7 @@ RUN pip3 install boto3==1.37.28
 RUN wget https://github.com/lh3/minimap2/releases/download/v2.28/minimap2-2.28.tar.bz2 && \
     tar jxvf minimap2-2.28.tar.bz2 && \
     cd minimap2-2.28 && \
-    make
+    if [ "$(uname -m)" = "aarch64" ]; then make arm_neon=1 aarch64=1; else make; fi
 
 ENV PATH=$PATH:/minimap2-2.28
 
