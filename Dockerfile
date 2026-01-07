@@ -1,5 +1,5 @@
 FROM ubuntu:22.04
-MAINTAINER Yuichi Shiraishi <friend1ws@gmail.com> 
+LABEL maintainer="Yuichi Shiraishi <friend1ws@gmail.com>" 
 
 ENV TZ=Asia/Tokyo
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y \
     make \
     cmake \
     gcc \
+    g++ \
     zlib1g-dev \
     libbz2-dev \
     liblzma-dev \
@@ -54,7 +55,7 @@ RUN wget https://github.com/lh3/minimap2/releases/download/v2.28/minimap2-2.28.t
     cd minimap2-2.28 && \
     make
 
-ENV PATH $PATH:/minimap2-2.28
+ENV PATH=$PATH:/minimap2-2.28
 
 RUN git clone https://github.com/friend1ws/nanomonsv.git && \
     cd nanomonsv && \
