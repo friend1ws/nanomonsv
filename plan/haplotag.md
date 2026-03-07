@@ -1,6 +1,7 @@
 # Haplotype-aware read counting and filtering
 
 ## Status: TODO
+- Created: 2026-03-08
 
 ## Overview
 When BAM reads have haplotype tags (HP:i:1, HP:i:2), count supporting reads

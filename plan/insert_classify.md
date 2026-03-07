@@ -1,6 +1,7 @@
 # insert_classify: VCF input/output support
 
 ## Status: TODO
+- Created: 2026-03-08
 
 ## Overview
 Enable `nanomonsv insert_classify` to accept VCF files as input and produce

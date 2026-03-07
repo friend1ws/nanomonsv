@@ -1,6 +1,7 @@
 # sbnd: Integrate simple repeat filtering into `nanomonsv get`
 
 ## Status: TODO
+- Created: 2026-03-08
 
 ## Overview
 Move the sbnd simple repeat filtering (currently a post-processing step in `misc/postprocess_sbnd.sh`)

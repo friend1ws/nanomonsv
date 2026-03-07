@@ -1,6 +1,7 @@
 # Micro homology detection and reporting
 
 ## Status: TODO
+- Created: 2026-03-08
 
 ## Overview
 Detect micro homology at SV breakpoints and report it in the output,

@@ -6,7 +6,7 @@ Release plan from v0.8.1 (current) to v0.9.0.
 
 Low risk. No change to existing canonical SV output format.
 
-- [ ] [vcf_fix](vcf_fix.md) — Fix BND ALT field bug (tref2→tref1), sort order, missing FILTER header
+- [x] [vcf_fix](done/vcf_fix.md) — Fix BND ALT field bug (tref2→tref1), sort order, missing FILTER header
 - [ ] [sbnd_simple_repeat](sbnd_simple_repeat.md) — Simple repeat filtering for sbnd (only when `--simple_repeat_bed` is set)
 - [ ] [sbnd_dedup_canonical](sbnd_dedup_canonical.md) — Remove sbnd overlapping canonical SVs (coordinate comparison only, no RepeatMasker/BWA dependency)
 

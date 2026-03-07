@@ -1,6 +1,7 @@
 # sbnd: Remove single breakends overlapping with canonical SVs
 
 ## Status: TODO
+- Created: 2026-03-08
 
 ## Overview
 Remove single breakend (sbnd) calls whose breakpoint overlaps with a canonical SV breakpoint.

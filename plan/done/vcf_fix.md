@@ -1,6 +1,8 @@
 # VCF output: Fix issues in canonical SV VCF conversion
 
-## Status: TODO
+## Status: DONE
+- Created: 2026-03-08
+- Completed: 2026-03-08
 
 ## Overview
 Review and fix issues in the current VCF output (`nanomonsv/vcf_convert.py`)

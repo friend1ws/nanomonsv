@@ -1,6 +1,7 @@
 # Prepare HGSVC3 mobile element insertion database for insert_classify
 
 ## Status: TODO
+- Created: 2026-03-08
 
 ## Overview
 Prepare a LINE1 database from the HGSVC3 mobile element insertion (MEI) dataset

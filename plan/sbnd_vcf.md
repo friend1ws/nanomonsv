@@ -1,6 +1,7 @@
 # sbnd: VCF output
 
 ## Status: TODO
+- Created: 2026-03-08
 
 ## Overview
 Output sbnd results in VCF format, complementing the existing VCF conversion
