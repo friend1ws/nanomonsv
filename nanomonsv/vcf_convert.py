@@ -39,6 +39,8 @@ def genomesv2vcf_convert(result_file, output_vcf, reference):
             '##FORMAT=<ID=TR,Number=1,Type=Integer,Description="The number of reads around the breakpoints">\n'\
             '##FORMAT=<ID=VR,Number=1,Type=Integer,Description="The number of variant supporting reads determined in the validation realignment step">'
 
+    chrom_order = {chrom: i for i, chrom in enumerate(ref_tb.references)}
+
     with open(result_file, 'r') as hin, open(output_vcf, 'w') as hout:
 
         dreader = csv.DictReader(hin, delimiter = '\t')
@@ -50,8 +52,7 @@ def genomesv2vcf_convert(result_file, output_vcf, reference):
         else:
             header = header + '\n' + "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tTUMOR"
 
-        print(header,  file = hout)
-
+        records = []
         for F in dreader:
 
             tchrom = F["Chr_1"]
@@ -92,7 +93,7 @@ def genomesv2vcf_convert(result_file, output_vcf, reference):
                     talt = "<INS>"
                     tinfo = f"END={tend};SVTYPE=INS;SVINSLEN={tsvinslen};SVINSSEQ={tsvinsseq}"
 
-                print(f"{tchrom}\t{tpos}\t{tid}\t{tref}\t{talt}\t{tqual}\t{tfilter}\t{tinfo}\t{tformat_sample}", file = hout)
+                records.append((chrom_order.get(tchrom, float('inf')), tpos, f"{tchrom}\t{tpos}\t{tid}\t{tref}\t{talt}\t{tqual}\t{tfilter}\t{tinfo}\t{tformat_sample}"))
 
             # Duplication
             elif F["Chr_1"] == F["Chr_2"] and F["Dir_1"] == '-' and F["Dir_2"] == '+' and F["Pos_1"] != '1': 
@@ -107,9 +108,43 @@ def genomesv2vcf_convert(result_file, output_vcf, reference):
                 if tsvinslen != 0:
                     tinfo = tinfo + f";SVINSLEN={tsvinslen};SVINSSEQ={tsvinsseq}"
 
-                print(f"{tchrom}\t{tpos}\t{tid}\t{tref}\t{talt}\t{tqual}\t{tfilter}\t{tinfo}\t{tformat_sample}", file = hout)
+                records.append((chrom_order.get(tchrom, float('inf')), tpos, f"{tchrom}\t{tpos}\t{tid}\t{tref}\t{talt}\t{tqual}\t{tfilter}\t{tinfo}\t{tformat_sample}"))
 
-            # Breakend 
+            # Breakend
+            #
+            # VCF BND ALT field encoding
+            #
+            # Example: chr1:100 (REF=A) ↔ chr3:500 (REF=G)
+            #
+            # Record 1 (chr1:100 side):
+            #   Dir_1  Dir_2  ALT             Note
+            #   +      -      A[chr3:500[     REF left,  bracket [ (Dir_2=-)
+            #   +      +      A]chr3:500]     REF left,  bracket ] (Dir_2=+)
+            #   -      -      [chr3:500[A     REF right, bracket [ (Dir_2=-)
+            #   -      +      ]chr3:500]A     REF right, bracket ] (Dir_2=+)
+            #
+            # Record 2 (chr3:500 side, mate):
+            #   Dir_1  Dir_2  ALT             Note
+            #   +      -      ]chr1:100]G     REF right, bracket ] (Dir_1=+)
+            #   +      +      G]chr1:100]     REF left,  bracket ] (Dir_1=+)
+            #   -      -      [chr1:100[G     REF right, bracket [ (Dir_1=-)
+            #   -      +      G[chr1:100[     REF left,  bracket [ (Dir_1=-)
+            #
+            # Rules:
+            #   Record 1: Dir_1=+ -> REF left,  Dir_1=- -> REF right
+            #             Dir_2=+ -> ']',       Dir_2=- -> '['
+            #   Record 2: Dir_2=+ -> REF left,  Dir_2=- -> REF right
+            #             Dir_1=+ -> ']',       Dir_1=- -> '['
+            #
+            # With insertion (SVINSSEQ, e.g. "TCG"):
+            #   Inserted sequence is placed between the REF base and the bracketed mate.
+            #   Example:
+            #     Record 1, Dir_1=+, Dir_2=- : ATCG[chr3:500[
+            #     Record 1, Dir_1=-, Dir_2=+ : ]chr3:500]TCGA
+            #
+            #   For the mate record, if the same inserted junction sequence is represented
+            #   from the opposite breakend, use the reverse-complemented inserted sequence.
+            #
             else:
                 tchrom1 = F["Chr_1"]
                 tpos1 = int(F["Pos_1"])
@@ -125,12 +160,12 @@ def genomesv2vcf_convert(result_file, output_vcf, reference):
                 if F["Dir_1"] == '+':
                     talt1 = f'{tref1}{tsvinsseq}{tbracket}{tchrom2}:{tpos2}{tbracket}'
                 else:
-                    talt1 = f'{tbracket}{tchrom2}:{tpos2}{tbracket}{tsvinsseq}{tref2}' 
+                    talt1 = f'{tbracket}{tchrom2}:{tpos2}{tbracket}{tsvinsseq}{tref1}'
 
                 tinfo1 = f"SVTYPE=BND;MATEID={tid}_1"
                 if tsvinslen != 0: tinfo1 = tinfo1 + f";SVINSLEN={tsvinslen};SVINSSEQ={tsvinsseq}"
 
-                print(f"{tchrom1}\t{tpos1}\t{tid}_0\t{tref1}\t{talt1}\t{tqual}\t{tfilter}\t{tinfo1}\t{tformat_sample}", file = hout)
+                records.append((chrom_order.get(tchrom1, float('inf')), tpos1, f"{tchrom1}\t{tpos1}\t{tid}_0\t{tref1}\t{talt1}\t{tqual}\t{tfilter}\t{tinfo1}\t{tformat_sample}"))
 
                 # tchrom2 = F["Chr_2"]
                 # tpos = int(F["Pos_2"])
@@ -146,7 +181,20 @@ def genomesv2vcf_convert(result_file, output_vcf, reference):
                 tinfo2 = f"SVTYPE=BND;MATEID={tid}_0"
                 if tsvinslen != 0: tinfo2 = tinfo2 + f";SVINSLEN={tsvinslen};SVINSSEQ={tsvinsseq}"
 
-                print(f"{tchrom2}\t{tpos2}\t{tid}_1\t{tref2}\t{talt2}\t{tqual}\t{tfilter}\t{tinfo2}\t{tformat_sample}", file = hout)
+                records.append((chrom_order.get(tchrom2, float('inf')), tpos2, f"{tchrom2}\t{tpos2}\t{tid}_1\t{tref2}\t{talt2}\t{tqual}\t{tfilter}\t{tinfo2}\t{tformat_sample}"))
+
+        # Add Simple_repeat FILTER header if any record uses it
+        if any('Simple_repeat' in line for _, _, line in records):
+            header = header.replace(
+                '##INFO=<ID=SVTYPE',
+                '##FILTER=<ID=Simple_repeat,Description="SVs overlapping with simple repeat regions">\n##INFO=<ID=SVTYPE'
+            )
+
+        print(header, file = hout)
+
+        records.sort()
+        for _, _, line in records:
+            print(line, file = hout)
 
 
 if __name__ == "__main__":
