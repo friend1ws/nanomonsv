@@ -154,7 +154,7 @@ nanomonsv insert_classify [-h] [--debug] sv_list_file output_file reference.fa g
 - **sv_list_file**: SV list file obtained in the get step
 - **output_file**: Path to the output file
 - **reference.fa**: Path to the reference genome
-- **gencode.gtf.gz**: Path to GTF file (from Gencode or others)
+- **gencode.gtf.gz**: Path to gene annotation GTF file. We recommend [Gencode basic annotation](https://www.gencodegenes.org/human/) (e.g., [gencode.v49.basic.annotation.gtf.gz](https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_49/gencode.v49.basic.annotation.gtf.gz))
 - **LINE1_db**: Path to LINE1 database. Use the files in [resource/LINE1_db](https://github.com/friend1ws/nanomonsv/tree/master/resource/LINE1_db)
 
 

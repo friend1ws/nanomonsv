@@ -11,11 +11,12 @@ Low risk. No change to existing canonical SV output format.
 - [x] [sbnd_dedup_canonical](done/sbnd_dedup_canonical.md) — Remove sbnd overlapping canonical SVs (coordinate comparison only, no RepeatMasker/BWA dependency)
 - [x] [sbnd_vcf](done/sbnd_vcf.md) — VCF output for single breakends (VCF 4.3 single breakend format with contig sequence)
 
-## v0.9.0 — insert_classify extension + misc cleanup
+## v0.9.0 — insert_classify extension + misc cleanup + default options
 
 - [ ] [insert_classify](insert_classify.md) — VCF input/output support for insert_classify
-- [ ] [hgsvc3_mei_db](hgsvc3_mei_db.md) — Prepare HGSVC3 MEI database (LINE1 from 1,604 records + Alu/SVA)
-- [ ] [misc_cleanup](misc_cleanup.md) — Remove misc/ scripts whose functionality has been integrated into `nanomonsv get`
+- [x] [hgsvc3_mei_db](hgsvc3_mei_db.md) — Prepare HGSVC3 MEI database (LINE1 from 1,604 records + Alu/SVA)
+- [x] [misc_cleanup](misc_cleanup.md) — Remove misc/ scripts whose functionality has been integrated into `nanomonsv get`
+- [ ] [default_options](default_options.md) — Make `--use_racon` and `--single_bnd` default on in `nanomonsv get`
 
 ## v0.9.1 — Haplotype support
 
@@ -34,7 +35,7 @@ v0.8.2  vcf_fix                 ✓
         sbnd_vcf                ✓
             │
             ▼
-v0.9.0  insert_classify + hgsvc3_mei_db + misc_cleanup
+v0.9.0  insert_classify + hgsvc3_mei_db ✓ + misc_cleanup ✓ + default_options
             │
             ▼
 v0.9.1  haplotag
