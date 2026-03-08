@@ -66,103 +66,6 @@ nanomonsv get output/test_tumor tests/resource/bam/test_tumor.bam GRCh38.d1.vd1.
 
 You will find the result file `test_tumor.nanomonsv.result.txt`.
 
-## Output Format
-
-### Canonical SV result ({tumor_prefix}.nanomonsv.result.txt)
-
-| Column | Description |
-|--------|------------|
-| Chr_1 | Chromosome for the 1st breakpoint |
-| Pos_1 | Coordinate for the 1st breakpoint |
-| Dir_1 | Direction of the 1st breakpoint |
-| Chr_2 | Chromosome for the 2nd breakpoint |
-| Pos_2 | Coordinate for the 2nd breakpoint |
-| Dir_2 | Direction of the 2nd breakpoint |
-| Inserted_Seq | Inserted nucleotides within the breakpoints (`---` if none) |
-| SV_ID | Identifier of SVs |
-| Checked_Read_Num_Tumor | Total reads in the tumor used for validation alignment |
-| Supporting_Read_Num_Tumor | Variant reads in the tumor from validation alignment |
-| Checked_Read_Num_Control | Total reads in the matched control used for validation alignment |
-| Supporting_Read_Num_Control | Variant reads in the matched control from validation alignment |
-| Is_Filter | Filter status (`PASS` or filter reason such as `Simple_repeat`) |
-
-A VCF format file ({tumor_prefix}.nanomonsv.result.vcf) is also generated.
-See the [wiki page](https://github.com/friend1ws/nanomonsv/wiki/How-to-understand-nanomonsv-result-filtering) for details on filtering.
-
-### Single breakend result ({tumor_prefix}.nanomonsv.sbnd.result.txt)
-
-Generated when `--single_bnd` is specified.
-
-| Column | Description |
-|--------|------------|
-| Chr_1 | Chromosome of the breakpoint |
-| Pos_1 | Coordinate of the breakpoint |
-| Dir_1 | Direction of the breakpoint |
-| Contig | Assembled contig sequence at the breakpoint |
-| SV_ID | Identifier of the single breakend |
-| Checked_Read_Num_Tumor | Total reads in the tumor used for validation alignment |
-| Supporting_Read_Num_Tumor | Variant reads in the tumor from validation alignment |
-| Checked_Read_Num_Control | Total reads in the matched control used for validation alignment |
-| Supporting_Read_Num_Control | Variant reads in the matched control from validation alignment |
-| Is_Filter | Filter status (`PASS`, `Simple_repeat`, `Canonical_SV_overlap`, or combinations) |
-
-A VCF format file ({tumor_prefix}.nanomonsv.sbnd.result.vcf) is also generated,
-using VCF single breakend notation (e.g., `N.` or `.N` in ALT field with `SVTYPE=BND`).
-
-### insert_classify result
-
-| Column | Description |
-|--------|------------|
-| Insert_Type | Type of insertion (Solo_L1, Partnered_L1, Orphan_L1, Alu, SVA, PSD) |
-| Is_Inversion | Inverted form for Solo LINE1 (Simple, Inverted, Other) |
-| L1_Ratio | Match rate with LINE1 sequences |
-| Alu_Ratio | Match rate with Alu sequences |
-| SVA_Ratio | Match rate with SVA sequences |
-| RMSK_Info | Summary information of RepeatMasker |
-| Alignment_Info | Alignment information to the human genome |
-| Inserted_Pos | Inserted position (for tandem duplication or nested LINE1 transduction) |
-| Is_PolyA_T | Extracted poly-A or poly-T sequences |
-| Target_Site_Duplication | Nucleotides of target site duplications |
-| L1_Source_Info | Inferred source site of LINE1 transduction |
-| PSD_Gene | Processed pseudogene name |
-| PSD_Overlap_Ratio | Match rate with the pseudogene |
-| PSD_Exon_Num | Number of pseudogene exons matched with the inserted sequence |
-
-
-## Control Panel
-
-We recommend using a control panel for filtering common SVs and noise.
-Use `merge_control` to create one from your own sequencing data.
-
-For users without sufficient control data, we provide a pre-built control panel
-created from 30 Nanopore sequencing samples from the [Human Pangenome Reference Consortium](https://humanpangenome.org/),
-available at [zenodo](https://zenodo.org/records/11470934).
-
-This control panel was built by aligning 30-40 Nanopore (basecalled by Guppy ver. 4 and 6) and PacBio HiFi sequencing data
-to the GRCh38/CHM13 reference genome with minimap2 version 2.24.
-We recommend using a control panel as close as possible in platform and basecall quality.
-When unsure, use the Nanopore control panel from Guppy version 4 (noisier panels tend to be more versatile).
-
-**When you use these control panels and publish, do not forget to credit [HPRC](https://github.com/human-pangenomics/HG002_Data_Freeze_v1.0#citations)!**
-
-
-## Example Data
-
-The Oxford Nanopore Sequencing data used in the paper is available through the public sequence repository (BioProject ID: PRJDB10898):
-- COLO829: [tumor](https://www.ncbi.nlm.nih.gov/sra/DRX248304[accn]), [control](https://www.ncbi.nlm.nih.gov/sra/DRX248305[accn])
-- H2009: [tumor](https://www.ncbi.nlm.nih.gov/sra/DRX248308[accn]), [control](https://www.ncbi.nlm.nih.gov/sra/DRX248309[accn])
-- HCC1954: [tumor](https://www.ncbi.nlm.nih.gov/sra/DRX248306[accn]), [control](https://www.ncbi.nlm.nih.gov/sra/DRX248307[accn])
-
-Results of nanomonsv for the above data are available [here](https://github.com/friend1ws/nanomonsv/tree/master/misc/example).
-Please kindly cite the [NAR paper](https://academic.oup.com/nar/advance-article/doi/10.1093/nar/gkad526/7201946) when you use these data.
-
-See the tutorial [wiki page](https://github.com/friend1ws/nanomonsv/wiki/Tutorial) for an example workflow on analyzing the COLO829 sample.
-
-
-## Citation
-
-Shiraishi et al., Precise characterization of somatic complex structural variations from tumor/control paired long-read sequencing data with nanomonsv, Nucleic Acids Research, 2023, [[link]](https://academic.oup.com/nar/advance-article/doi/10.1093/nar/gkad526/7201946).
-
 ## Usage
 
 ### parse
@@ -269,3 +172,101 @@ nanomonsv validate [-h] [--control_bam CONTROL_BAM]
 - **sv_list_file**: SV candidate list file (only **Chr_1** to **Inserted_Seq** columns are necessary)
 - **output_file**: Path to the output file
 - **reference.fa**: Path to the reference genome
+
+
+## Output Format
+
+### Canonical SV result ({tumor_prefix}.nanomonsv.result.txt)
+
+| Column | Description |
+|--------|------------|
+| Chr_1 | Chromosome for the 1st breakpoint |
+| Pos_1 | Coordinate for the 1st breakpoint |
+| Dir_1 | Direction of the 1st breakpoint |
+| Chr_2 | Chromosome for the 2nd breakpoint |
+| Pos_2 | Coordinate for the 2nd breakpoint |
+| Dir_2 | Direction of the 2nd breakpoint |
+| Inserted_Seq | Inserted nucleotides within the breakpoints (`---` if none) |
+| SV_ID | Identifier of SVs |
+| Checked_Read_Num_Tumor | Total reads in the tumor used for validation alignment |
+| Supporting_Read_Num_Tumor | Variant reads in the tumor from validation alignment |
+| Checked_Read_Num_Control | Total reads in the matched control used for validation alignment |
+| Supporting_Read_Num_Control | Variant reads in the matched control from validation alignment |
+| Is_Filter | Filter status (`PASS` or filter reason such as `Simple_repeat`) |
+
+A VCF format file ({tumor_prefix}.nanomonsv.result.vcf) is also generated.
+See the [wiki page](https://github.com/friend1ws/nanomonsv/wiki/How-to-understand-nanomonsv-result-filtering) for details on filtering.
+
+### Single breakend result ({tumor_prefix}.nanomonsv.sbnd.result.txt)
+
+Generated when `--single_bnd` is specified.
+
+| Column | Description |
+|--------|------------|
+| Chr_1 | Chromosome of the breakpoint |
+| Pos_1 | Coordinate of the breakpoint |
+| Dir_1 | Direction of the breakpoint |
+| Contig | Assembled contig sequence at the breakpoint |
+| SV_ID | Identifier of the single breakend |
+| Checked_Read_Num_Tumor | Total reads in the tumor used for validation alignment |
+| Supporting_Read_Num_Tumor | Variant reads in the tumor from validation alignment |
+| Checked_Read_Num_Control | Total reads in the matched control used for validation alignment |
+| Supporting_Read_Num_Control | Variant reads in the matched control from validation alignment |
+| Is_Filter | Filter status (`PASS`, `Simple_repeat`, `Canonical_SV_overlap`, or combinations) |
+
+A VCF format file ({tumor_prefix}.nanomonsv.sbnd.result.vcf) is also generated,
+using VCF single breakend notation (e.g., `N.` or `.N` in ALT field with `SVTYPE=BND`).
+
+### insert_classify result
+
+| Column | Description |
+|--------|------------|
+| Insert_Type | Type of insertion (Solo_L1, Partnered_L1, Orphan_L1, Alu, SVA, PSD) |
+| Is_Inversion | Inverted form for Solo LINE1 (Simple, Inverted, Other) |
+| L1_Ratio | Match rate with LINE1 sequences |
+| Alu_Ratio | Match rate with Alu sequences |
+| SVA_Ratio | Match rate with SVA sequences |
+| RMSK_Info | Summary information of RepeatMasker |
+| Alignment_Info | Alignment information to the human genome |
+| Inserted_Pos | Inserted position (for tandem duplication or nested LINE1 transduction) |
+| Is_PolyA_T | Extracted poly-A or poly-T sequences |
+| Target_Site_Duplication | Nucleotides of target site duplications |
+| L1_Source_Info | Inferred source site of LINE1 transduction |
+| PSD_Gene | Processed pseudogene name |
+| PSD_Overlap_Ratio | Match rate with the pseudogene |
+| PSD_Exon_Num | Number of pseudogene exons matched with the inserted sequence |
+
+
+## Control Panel
+
+We recommend using a control panel for filtering common SVs and noise.
+Use `merge_control` to create one from your own sequencing data.
+
+For users without sufficient control data, we provide a pre-built control panel
+created from 30 Nanopore sequencing samples from the [Human Pangenome Reference Consortium](https://humanpangenome.org/),
+available at [zenodo](https://zenodo.org/records/11470934).
+
+This control panel was built by aligning 30-40 Nanopore (basecalled by Guppy ver. 4 and 6) and PacBio HiFi sequencing data
+to the GRCh38/CHM13 reference genome with minimap2 version 2.24.
+We recommend using a control panel as close as possible in platform and basecall quality.
+When unsure, use the Nanopore control panel from Guppy version 4 (noisier panels tend to be more versatile).
+
+**When you use these control panels and publish, do not forget to credit [HPRC](https://github.com/human-pangenomics/HG002_Data_Freeze_v1.0#citations)!**
+
+
+## Example Data
+
+The Oxford Nanopore Sequencing data used in the paper is available through the public sequence repository (BioProject ID: PRJDB10898):
+- COLO829: [tumor](https://www.ncbi.nlm.nih.gov/sra/DRX248304[accn]), [control](https://www.ncbi.nlm.nih.gov/sra/DRX248305[accn])
+- H2009: [tumor](https://www.ncbi.nlm.nih.gov/sra/DRX248308[accn]), [control](https://www.ncbi.nlm.nih.gov/sra/DRX248309[accn])
+- HCC1954: [tumor](https://www.ncbi.nlm.nih.gov/sra/DRX248306[accn]), [control](https://www.ncbi.nlm.nih.gov/sra/DRX248307[accn])
+
+Results of nanomonsv for the above data are available [here](https://github.com/friend1ws/nanomonsv/tree/master/misc/example).
+Please kindly cite the [NAR paper](https://academic.oup.com/nar/advance-article/doi/10.1093/nar/gkad526/7201946) when you use these data.
+
+See the tutorial [wiki page](https://github.com/friend1ws/nanomonsv/wiki/Tutorial) for an example workflow on analyzing the COLO829 sample.
+
+
+## Citation
+
+Shiraishi et al., Precise characterization of somatic complex structural variations from tumor/control paired long-read sequencing data with nanomonsv, Nucleic Acids Research, 2023, [[link]](https://academic.oup.com/nar/advance-article/doi/10.1093/nar/gkad526/7201946).
