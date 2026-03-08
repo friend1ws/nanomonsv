@@ -422,7 +422,8 @@ def get_main(args):
     control_sread_count_file_sbnd = args.tumor_prefix + ".realignment.control.sread_count.sbnd.txt" if args.control_bam is not None else None
     integrate_realignment_result_sbnd(args.tumor_prefix + ".realignment.tumor.sread_count.sbnd.txt", control_sread_count_file_sbnd,
         args.tumor_prefix + ".nanomonsv.sbnd.result.txt",
-        args.tumor_prefix + ".nanomonsv.result.txt", args.tumor_prefix + ".refined_bp.sbnd.txt")
+        args.tumor_prefix + ".nanomonsv.result.txt", args.tumor_prefix + ".refined_bp.sbnd.txt",
+        simple_repeat_bed = args.simple_repeat_bed)
  
     if not args.debug:
         os.remove(args.tumor_prefix + ".rearrangement.sorted.clustered.bedpe")

@@ -340,9 +340,26 @@ def proc_sread_info_file(tumor_sread_info_file, sv_result_file, output_file, val
             print(f"{tkey}\t{readid}\t{int(spos)}\t{sstrand}", file = hout)
 
 
+def filter_sbnd_in_simple_repeat(tchr, tpos, simple_repeat_tb, margin=50):
+    tabix_error_flag = False
+    try:
+        records = simple_repeat_tb.fetch(tchr, max(tpos - margin, 0), tpos + margin)
+    except Exception as inst:
+        print(f'{type(inst)}: {inst.args}', file=sys.stderr)
+        tabix_error_flag = True
+
+    if not tabix_error_flag:
+        for record_line in records:
+            record = record_line.split('\t')
+            if tpos >= int(record[1]) - margin and tpos <= int(record[2]) + margin:
+                return True
+    return False
+
+
 def integrate_realignment_result_sbnd(tumor_sbnd_count_file, ctrl_sbnd_count_file, output_file,
     nonsbnd_result_file, refined_bp_sbnd_file,
-    min_tumor_variant_read_num = 3, min_tumor_VAF = 0.05, max_control_variant_read_num = 1, max_control_VAF = 0.03):
+    min_tumor_variant_read_num = 3, min_tumor_VAF = 0.05, max_control_variant_read_num = 1, max_control_VAF = 0.03,
+    simple_repeat_bed = None):
 
     margin = 30
     nanomonsv_bp_list = {}
@@ -368,9 +385,14 @@ def integrate_realignment_result_sbnd(tumor_sbnd_count_file, ctrl_sbnd_count_fil
             key = F[4]
             key2contig[key] = F[3]
 
+    simple_repeat_tb = None
+    if simple_repeat_bed is not None:
+        simple_repeat_tb = pysam.TabixFile(simple_repeat_bed)
+
     with open(tumor_sbnd_count_file, 'r') as hin, open(output_file, 'w') as hout:
         header = "Chr_1\tPos_1\tDir_1\tContig\tSV_ID\tChecked_Read_Num_Tumor\tSupporting_Read_Num_Tumor"
         if ctrl_sbnd_count_file is not None: header = header + "\tChecked_Read_Num_Control\tSupporting_Read_Num_Control"
+        header = header + "\tIs_Filter"
         print(header, file = hout)
 
         for line in hin:
@@ -396,10 +418,14 @@ def integrate_realignment_result_sbnd(tumor_sbnd_count_file, ctrl_sbnd_count_fil
             if int(F[6]) < min_tumor_variant_read_num: continue
             if float(F[6]) / float(F[5]) < min_tumor_VAF: continue
 
+            is_filter = "PASS"
+            if simple_repeat_tb is not None and filter_sbnd_in_simple_repeat(F[0], int(F[1]), simple_repeat_tb):
+                is_filter = "Simple_repeat"
+
             if ctrl_sbnd_count_file is not None:
-                print(f"{F[0]}\t{F[1]}\t{F[2]}\t{key2contig[key]}\t{F[4]}\t{F[5]}\t{F[6]}\t{ctrl_count[0]}\t{ctrl_count[1]}", file = hout)
+                print(f"{F[0]}\t{F[1]}\t{F[2]}\t{key2contig[key]}\t{F[4]}\t{F[5]}\t{F[6]}\t{ctrl_count[0]}\t{ctrl_count[1]}\t{is_filter}", file = hout)
             else:
-                print(f"{F[0]}\t{F[1]}\t{F[2]}\t{key2contig[key]}\t{F[4]}\t{F[5]}\t{F[6]}", file = hout)
+                print(f"{F[0]}\t{F[1]}\t{F[2]}\t{key2contig[key]}\t{F[4]}\t{F[5]}\t{F[6]}\t{is_filter}", file = hout)
     
 
 if __name__ == "__main__":
