@@ -361,14 +361,14 @@ def integrate_realignment_result_sbnd(tumor_sbnd_count_file, ctrl_sbnd_count_fil
     min_tumor_variant_read_num = 3, min_tumor_VAF = 0.05, max_control_variant_read_num = 1, max_control_VAF = 0.03,
     simple_repeat_bed = None):
 
-    margin = 30
-    nanomonsv_bp_list = {}
+    margin_bp = 50
+    nanomonsv_bp_list = []
     with open(nonsbnd_result_file, 'r') as hin:
         for line in hin:
             F = line.rstrip('\n').split('\t')
             if F[0] == "Chr_1": continue
-            nanomonsv_bp_list[(F[0], int(F[1]) - margin, int(F[1]) + margin)] = 1
-            nanomonsv_bp_list[(F[3], int(F[4]) - margin, int(F[4]) + margin)] = 1
+            nanomonsv_bp_list.append((F[0], int(F[1]), F[2]))
+            nanomonsv_bp_list.append((F[3], int(F[4]), F[5]))
 
     key2count_ctrl = {}
     if ctrl_sbnd_count_file is not None:
@@ -398,12 +398,11 @@ def integrate_realignment_result_sbnd(tumor_sbnd_count_file, ctrl_sbnd_count_fil
         for line in hin:
             F = line.rstrip('\n').split('\t')
             key = F[4]
-            """
-            nanomonsv_flag = False
+            canonical_overlap = False
             for bp in nanomonsv_bp_list:
-                if F[0] == bp[0] and int(F[1]) >= bp[1] and int(F[1]) <= bp[2]: nanomonsv_flag = True
-            if nanomonsv_flag: continue
-            """
+                if F[0] == bp[0] and F[2] == bp[2] and abs(int(F[1]) - bp[1]) < margin_bp:
+                    canonical_overlap = True
+                    break
 
             if ctrl_sbnd_count_file is not None:
                 if key not in key2count_ctrl:
@@ -418,9 +417,12 @@ def integrate_realignment_result_sbnd(tumor_sbnd_count_file, ctrl_sbnd_count_fil
             if int(F[6]) < min_tumor_variant_read_num: continue
             if float(F[6]) / float(F[5]) < min_tumor_VAF: continue
 
-            is_filter = "PASS"
+            filter_list = []
             if simple_repeat_tb is not None and filter_sbnd_in_simple_repeat(F[0], int(F[1]), simple_repeat_tb):
-                is_filter = "Simple_repeat"
+                filter_list.append("Simple_repeat")
+            if canonical_overlap:
+                filter_list.append("Canonical_SV_overlap")
+            is_filter = ";".join(filter_list) if filter_list else "PASS"
 
             if ctrl_sbnd_count_file is not None:
                 print(f"{F[0]}\t{F[1]}\t{F[2]}\t{key2contig[key]}\t{F[4]}\t{F[5]}\t{F[6]}\t{ctrl_count[0]}\t{ctrl_count[1]}\t{is_filter}", file = hout)
