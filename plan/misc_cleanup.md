@@ -25,19 +25,24 @@ Simplify remaining postprocess_sbnd pipeline.
 
 ### postprocess_sbnd.sh
 - Removed `add_simple_repeat.py` and `insert_classify` calls
-- Now only runs: `integrate_sbnd.py` -> `plot_sbnd_vis.R`
+- Now only runs: `annotate_contig.py` -> `plot_contig.R`
 
-### integrate_sbnd.py
+### integrate_sbnd.py -> annotate_contig.py
 - Removed `Sv_filterer` / SV promotion logic (canonical SV overlap now handled by `nanomonsv get`)
 - Removed `nanomonsv2info` canonical SV cross-reference
 - Now generates: bwa.txt, rmsk.txt, class.txt
+
+### Directory/file renames
+- `misc/subscript_postprocess_sbnd/` -> `misc/subscript_sbnd/`
+- `integrate_sbnd.py` -> `annotate_contig.py`
+- `plot_sbnd_vis.R` -> `plot_contig.R`
 
 ## Kept files
 
 ### postprocess_sbnd pipeline
 - `misc/postprocess_sbnd.sh` — Simplified pipeline script
-- `misc/subscript_postprocess_sbnd/integrate_sbnd.py` — BWA/RepeatMasker annotation + contig classification
-- `misc/subscript_postprocess_sbnd/plot_sbnd_vis.R` — Visualization tool
+- `misc/subscript_sbnd/annotate_contig.py` — BWA/RepeatMasker annotation + contig classification
+- `misc/subscript_sbnd/plot_contig.R` — Visualization tool
 
 ### Utilities
 - `misc/sv_type.py` — Adds SV_Type column (Del/Ins/Dup/Inv/Trans)

@@ -4,84 +4,140 @@
 - Created: 2026-03-08
 
 ## Overview
-Prepare a LINE1 database from the HGSVC3 mobile element insertion (MEI) dataset
-for use with `nanomonsv insert_classify`.
+Add HGSVC3 LINE1 data to the LINE1 database and remove duplicates between all sources.
 
 Source: https://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/HGSVC3/release/Mobile_Elements/1.0/
 
-## HGSVC3 MEI data
+## Current LINE1 db sources and issues
 
-### Available files (downloaded to `resource/LINE1_db/`)
-| File | Description | Records |
-|------|-------------|---------|
-| `MEI_Callset_GRCh38.ALL.20241211.csv.gz` | Non-reference MEIs called against GRCh38 | 12,642 |
-| `MEI_Callset_T2T-CHM13.ALL.20241211.csv.gz` | Non-reference MEIs called against T2T-CHM13 | — |
-| `GRCh38_MEIs.ALL.20241211.csv.gz` | Reference MEIs (present in GRCh38 ref, absent in some samples) | 2,468 |
-| `T2T-CHM13_MEIs.ALL.20241211.csv.gz` | Reference MEIs for T2T-CHM13 | — |
+### Sources in `LINE1.chm13v2.0.bed` (19,081 records, no dedup)
+| Source | Records | Type | Coordinates |
+|--------|---------|------|-------------|
+| rmsk (RepeatMasker) | 5,139 | Reference full-length L1 (L1HS, L1PA2-5) | Wide intervals (start << end) |
+| gnomAD-SV v3 | 13,290 | Non-reference insertion | Point (start, start+1) |
+| 1000genomes (umary) | 652 | Non-reference insertion | Point (start, start+1) |
 
-### MEI Callset format (CSV)
-VCF-like columns: ID, CHROM, POS, REF, ALT, QUAL, FILTER, INFO, FORMAT, [sample genotypes...]
-Plus: Caller_Count, TE_Designation, L1ME-AID, PALMER, L1ME-AID_INFO, PALMER_INFO, PAVMergedCalls
+### Duplicate problem
+- gnomAD vs 1000genomes: 424 of 652 overlap within 100bp (65%)
+- gnomAD vs rmsk: 9 overlaps (non-ref insertion at edge of reference full-length L1)
+- 1000genomes vs rmsk: 20 overlaps (same pattern)
 
-### TE type breakdown (GRCh38 callset)
-| TE_Designation | Count |
-|---------------|-------|
-| SINE/Alu | 10,270 |
-| LINE/L1 | 1,604 |
-| Retroposon/SVA | 764 |
-| HERVK | 3 |
-| snRNA | 1 |
+### HGSVC3 MEI data to add
+From `MEI_Callset_T2T-CHM13.ALL.20241211.csv.gz`:
+- LINE/L1 records: 1,649 total
+- Full-length (SV_Length >= 5800): 565 (L1HS: 540, L1PA2: 25)
 
-### Key fields for LINE1 db
-From PALMER_INFO:
-- `SUBFAM` — L1 subfamily (e.g., L1Ta, L1Ambig, L1HS)
-- `STRAND` — Insertion orientation (+/-)
-- `AF` — Allele frequency
-- `SN` — Number of samples with the MEI
+Subfamily detail (PALMER SUBFAM): L1Ta(568), L1Ta1d(386), L1Ambig(177), L1Ta1nd(154), L1Ta0(97), L1PreTa(28), L1Pa2(1)
 
-From L1ME-AID_INFO:
-- `RM_Annotation` — RepeatMasker annotation (e.g., L1HS, AluYa5, SVA_D)
-- `Orientation` — Insertion orientation
-
-## Current LINE1 db format
-
-The existing LINE1 db (`nanomonsv/data/LINE1.hg38.bed.gz`) is a tabix-indexed BED file:
+## BED format
 ```
 chr  start  end  info_string  score  strand
 ```
-Where `info_string` = `chr,start,end,strand,name` and sources include:
-- RepeatMasker full-length L1 (L1HS, L1PA2-5): 5,944 records
-- gnomAD-SV v2.1: 2,546 records
-- Total: 8,490 records
+Where `info_string` = `chr,start,end,strand,name`
 
-The `resource/LINE1_db/LINE1.hg38.bed` is a newer version with gnomAD-SV v3 data (19,254 records).
+## Processing steps
 
-## Design
+### 1. Extract HGSVC3 LINE1 from CSV and convert to BED
+```bash
+zcat MEI_Callset_T2T-CHM13.ALL.20241211.csv.gz \
+  | awk -F',' 'NR>1 && $76 == "LINE/L1"' \
+  | python3 hgsvc3_to_bed.py > hgsvc3.line1.chm13v2.0.bed
+```
+Extract CHROM, POS, and from PALMER_INFO: STRAND, SUBFAM.
+Output: `chr  pos  pos+1  chr,pos,pos+1,strand,HGSVC3_SUBFAM_ID  0  strand`
 
-### What to extract from HGSVC3
-For `insert_classify`, the LINE1 db is used to find source L1 elements near the insertion site
-to determine transduction class (Solo vs Partnered vs Orphan).
+### 2. Merge with dedup: `merge_bed_with_dedup()`
+Priority order: rmsk > HGSVC3 > 1000genomes > gnomAD.
+rmsk has the most reliable coordinates (reference-based), so it takes highest priority.
+HGSVC3 is next because it has subfamily annotation (SUBFAM) and strand information.
 
-From HGSVC3 MEI Callset, extract **LINE/L1** records (1,604 in GRCh38) and convert to BED format
-compatible with the existing LINE1 db.
+Input: list of BED files in priority order (highest first).
+Logic: for each file, add records only if no existing record is within 100bp on the same chromosome.
 
-### Processing steps
-1. Parse `MEI_Callset_GRCh38.ALL.20241211.csv.gz` (and T2T-CHM13 version)
-2. Filter for `TE_Designation == "LINE/L1"`
-3. Extract: CHROM, POS, POS+1, info_string, AF/SN, STRAND
-4. Convert to BED format matching existing LINE1 db
-5. Merge with existing sources (RepeatMasker, gnomAD-SV) — avoiding duplicates
-6. Sort, bgzip, tabix index
+```python
+def merge_bed_with_dedup(bed_files, window=100):
+    """Merge multiple BED files, dropping duplicates by proximity.
 
-### Open questions
-- Should HGSVC3 MEIs be added to the existing LINE1 db, or provided as a separate resource?
-- Should Alu and SVA insertions also be included for future use?
-- Which reference genome versions to support? (GRCh38, T2T-CHM13, hg19 via liftover?)
-- The GRCh38 reference MEIs (`GRCh38_MEIs.ALL.20241211.csv.gz`) represent deletions of
-  reference L1 elements — are these useful for insert_classify?
+    Args:
+        bed_files: list of BED file paths in priority order (highest first)
+        window: records within this distance on the same chr are considered duplicates
+
+    Returns:
+        list of BED lines (sorted by chr, start)
+    """
+    # collected records: {chr: sorted list of (start, end, line)}
+    records = {}
+
+    for bed_file in bed_files:
+        for line in open(bed_file):
+            fields = line.strip().split('\t')
+            chrom, start, end = fields[0], int(fields[1]), int(fields[2])
+            chr_records = records.setdefault(chrom, [])
+            # binary search for nearby records
+            if not _has_nearby(chr_records, start, end, window):
+                bisect.insort(chr_records, (start, end, line.strip()))
+
+    # flatten and sort
+    result = []
+    for chrom in sorted(records.keys()):
+        for start, end, line in records[chrom]:
+            result.append(line)
+    return result
+
+
+def _has_nearby(chr_records, start, end, window):
+    """Check if any existing record overlaps [start-window, end+window]."""
+    # binary search to find candidates
+    idx = bisect.bisect_left(chr_records, (start - window,))
+    for i in range(max(0, idx - 1), len(chr_records)):
+        s, e, _ = chr_records[i]
+        if s > end + window:
+            break
+        # two intervals overlap if NOT (e2+w < s1 or s2-w > e1)
+        if not (e + window < start or s - window > end):
+            return True
+    return False
+```
+
+Usage:
+```python
+lines = merge_bed_with_dedup([
+    "rmsk.line1.chm13v2.0.bed",
+    "hgsvc3.line1.chm13v2.0.bed",
+    "1000genomes.line1.chm13v2.0.bed",
+    "gnomad.line1.chm13v2.0.bed",
+])
+```
+
+### 3. Write, compress, and index
+```bash
+bgzip LINE1.chm13v2.0.bed
+tabix -p bed LINE1.chm13v2.0.bed.gz
+```
+
+### Record counts (chm13v2.0)
+| Source | Before dedup | After dedup |
+|--------|-------------|-------------|
+| rmsk | 5,139 | 5,134 |
+| HGSVC3 | 1,664 | 1,646 |
+| 1000genomes | 652 | 394 |
+| gnomAD-SV v3 | 13,290 | 12,712 |
+| **Total** | **20,745** | **19,886** |
+
+### Final results (all references)
+| Reference | Records |
+|-----------|---------|
+| hg38 | 20,006 |
+| hg19 | 19,674 |
+| chm13v2.0 | 19,886 |
+
+## Same process for hg38 and hg19
+- hg38: Apply the same steps using the GRCh38 callset (`MEI_Callset_GRCh38.ALL.20241211.csv.gz`).
+- hg19: HGSVC3にはhg19データがないので、hg38のBEDからliftOverで変換する。
 
 ## Related files
 - `nanomonsv/insert_classify.py` L529-658 — `organize_info()` uses LINE1_db
 - `nanomonsv/data/LINE1.hg38.bed.gz` — Current bundled LINE1 db (8,490 records)
 - `resource/LINE1_db/LINE1.hg38.bed` — Newer LINE1 db with gnomAD v3 (19,254 records)
 - `resource/LINE1_db/MEI_Callset_GRCh38.ALL.20241211.csv.gz` — Downloaded HGSVC3 data
+- `resource/LINE1_db/MEI_Callset_T2T-CHM13.ALL.20241211.csv.gz` — Downloaded HGSVC3 data
