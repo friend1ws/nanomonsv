@@ -424,7 +424,11 @@ def get_main(args):
         args.tumor_prefix + ".nanomonsv.sbnd.result.txt",
         args.tumor_prefix + ".nanomonsv.result.txt", args.tumor_prefix + ".refined_bp.sbnd.txt",
         simple_repeat_bed = args.simple_repeat_bed)
- 
+
+    if args.single_bnd:
+        sbnd2vcf_convert(args.tumor_prefix + ".nanomonsv.sbnd.result.txt",
+            args.tumor_prefix + ".nanomonsv.sbnd.result.vcf", args.reference_fasta)
+
     if not args.debug:
         os.remove(args.tumor_prefix + ".rearrangement.sorted.clustered.bedpe")
         os.remove(args.tumor_prefix + ".insertion.sorted.clustered.bedpe")

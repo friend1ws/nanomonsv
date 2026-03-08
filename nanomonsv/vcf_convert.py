@@ -197,6 +197,86 @@ def genomesv2vcf_convert(result_file, output_vcf, reference):
             print(line, file = hout)
 
 
+def sbnd2vcf_convert(sbnd_result_file, output_vcf, reference):
+
+    today_str = datetime.datetime.today().strftime("%Y%m%d")
+
+    header = '##fileformat=VCFv4.3\n'\
+             f'##fileDate={today_str}\n'\
+             f'##source=nanomonsv-{__version__}\n'\
+             f'##reference={reference}'
+
+    ref_tb = pysam.FastaFile(reference)
+
+    for (tchr, tlen) in zip(ref_tb.references, ref_tb.lengths):
+        header = header + '\n' + f"##contig=<ID={tchr},length={tlen}>"
+
+    header = header + '\n' + \
+            '##INFO=<ID=SVTYPE,Number=1,Type=String,Description="Type of structural variant">\n'\
+            '##FORMAT=<ID=TR,Number=1,Type=Integer,Description="The number of reads around the breakpoints">\n'\
+            '##FORMAT=<ID=VR,Number=1,Type=Integer,Description="The number of variant supporting reads determined in the validation realignment step">'
+
+    chrom_order = {chrom: i for i, chrom in enumerate(ref_tb.references)}
+
+    with open(sbnd_result_file, 'r') as hin, open(output_vcf, 'w') as hout:
+
+        dreader = csv.DictReader(hin, delimiter = '\t')
+        fieldname_list = dreader.fieldnames
+        is_control = True if "Checked_Read_Num_Control" in fieldname_list and "Supporting_Read_Num_Control" in fieldname_list else False
+
+        if is_control:
+            header = header + '\n' + "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tTUMOR\tCONTROL"
+        else:
+            header = header + '\n' + "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tTUMOR"
+
+        records = []
+        for F in dreader:
+
+            tchrom = F["Chr_1"]
+            tpos = int(F["Pos_1"])
+            tid = F["SV_ID"]
+            tqual = '.'
+            tfilter = F["Is_Filter"]
+            tcontig = F["Contig"]
+
+            tref = ref_tb.fetch(tchrom, tpos - 1, tpos)
+            if tref == '' or tref is None: continue
+
+            # Single breakend ALT field (VCF 4.3)
+            #   Dir=+: {REF}{Contig}.   (breakpoint extends rightward)
+            #   Dir=-: .{RC(Contig)}{REF} (sequence approaches from left, contig stored in RC orientation)
+            if F["Dir_1"] == '+':
+                talt = f'{tref}{tcontig}.'
+            else:
+                talt = f'.{reverse_complement(tcontig)}{tref}'
+
+            tinfo = "SVTYPE=BND"
+
+            tformat_sample = f'TR:VR\t{F["Checked_Read_Num_Tumor"]}:{F["Supporting_Read_Num_Tumor"]}'
+            if is_control:
+                tformat_sample = tformat_sample + f'\t{F["Checked_Read_Num_Control"]}:{F["Supporting_Read_Num_Control"]}'
+
+            records.append((chrom_order.get(tchrom, float('inf')), tpos, f"{tchrom}\t{tpos}\t{tid}\t{tref}\t{talt}\t{tqual}\t{tfilter}\t{tinfo}\t{tformat_sample}"))
+
+        # Add FILTER headers dynamically based on records
+        filter_headers = []
+        if any('Simple_repeat' in line for _, _, line in records):
+            filter_headers.append('##FILTER=<ID=Simple_repeat,Description="Single breakends overlapping with simple repeat regions">')
+        if any('Canonical_SV_overlap' in line for _, _, line in records):
+            filter_headers.append('##FILTER=<ID=Canonical_SV_overlap,Description="Single breakends overlapping with canonical SV breakpoints">')
+        if filter_headers:
+            header = header.replace(
+                '##INFO=<ID=SVTYPE',
+                '\n'.join(filter_headers) + '\n##INFO=<ID=SVTYPE'
+            )
+
+        print(header, file = hout)
+
+        records.sort()
+        for _, _, line in records:
+            print(line, file = hout)
+
+
 if __name__ == "__main__":
 
     import sys
