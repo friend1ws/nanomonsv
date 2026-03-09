@@ -14,7 +14,7 @@ def make_fasta_file(input_file, output_file, seq_id_file):
         sid = 1
         for line in hin:
             F = line.rstrip('\n').split('\t')
-            if len(F[6]) < 100: continue
+            if len(F[6]) < 50: continue
         
             key = ','.join(F[:6] + [str(len(F[6]))])
 
@@ -23,6 +23,67 @@ def make_fasta_file(input_file, output_file, seq_id_file):
             print("seq" + str(sid) + ',' + str(len(F[6])) + '\t' + key, file = hout2)
             sid = sid + 1
  
+
+def extract_insert_seq_from_vcf_record(F):
+    """Extract insertion sequence from a VCF record (list of fields).
+    Returns the insertion sequence string, or None if not extractable."""
+
+    info = F[7]
+    # Try SVINSSEQ first
+    for field in info.split(';'):
+        if field.startswith('SVINSSEQ='):
+            return field[9:]
+
+    ref = F[3]
+    alt = F[4]
+    # Skip symbolic ALT (e.g., <INS>, <DEL>)
+    if alt.startswith('<'):
+        return None
+    # Skip BND notation
+    if '[' in alt or ']' in alt or '.' == alt[0] or '.' == alt[-1]:
+        return None
+    # Simple insertion: ALT longer than REF, both are base sequences
+    if len(alt) > len(ref):
+        return alt[1:]
+
+    return None
+
+
+def make_fasta_file_from_vcf(input_file, output_file, seq_id_file):
+
+    if input_file.endswith(".vcf.gz"):
+        hin = gzip.open(input_file, 'rt')
+    else:
+        hin = open(input_file, 'r')
+
+    with open(output_file, 'w') as hout1, open(seq_id_file, 'w') as hout2:
+        sid = 1
+        for line in hin:
+            if line.startswith('#'): continue
+            F = line.rstrip('\n').split('\t')
+
+            inserted_seq = extract_insert_seq_from_vcf_record(F)
+
+            if inserted_seq is None:
+                if '<INS>' in F[4]:
+                    sv_id = F[2] if F[2] != '.' else f'{F[0]}:{F[1]}'
+                    print(f"Skipping record {sv_id}: symbolic <INS> without sequence is not supported", file=sys.stderr)
+                continue
+
+            if len(inserted_seq) < 50: continue
+
+            tchrom = F[0]
+            tpos = F[1]
+            # Internal key: same 7-element format as TSV mode
+            key = ','.join([tchrom, tpos, '+', tchrom, tpos, '-', str(len(inserted_seq))])
+
+            print(">seq" + str(sid) + ',' + str(len(inserted_seq)), file=hout1)
+            print(inserted_seq, file=hout1)
+            print("seq" + str(sid) + ',' + str(len(inserted_seq)) + '\t' + key, file=hout2)
+            sid = sid + 1
+
+    hin.close()
+
 
 def make_exon_bed_from_gtf(gtf_file, output_file):
 
@@ -76,8 +137,6 @@ def sam2bed_split(input_file, output_file):
 
         if read.is_unmapped: continue
 
-        is_secondary = read.is_secondary
-        is_supplementary = read.is_supplementary
         if read.is_secondary: continue
 
         query_name = read.query_name
@@ -93,7 +152,7 @@ def sam2bed_split(input_file, output_file):
         if cigartuples[0][0] == 5: left_hard_clipping_size = cigartuples[0][1]
         if cigartuples[-1][0] == 5: right_hard_clipping_size = cigartuples[-1][1]
     
-        if not is_supplementary:
+        if not read.is_supplementary:
             if query_strand == '+':
                 query_start = read.query_alignment_start + 1 
                 query_end = read.query_alignment_end
@@ -374,8 +433,6 @@ def check_tsd_polyAT(input_file, seq_list, reference, output_file):
 
 def summarize_bwa_alignment(input_sam, seq_list, output_file):
 
-    samfile = pysam.AlignmentFile(input_sam, 'r')
-
     inserted_positions = []
     with open(seq_list, 'r') as hin:
         for line in hin:
@@ -424,9 +481,6 @@ def summarize_bwa_alignment(input_sam, seq_list, output_file):
 
 def summarize_bwa_alignment2(input_sam, seq_list, output_file):
 
-    samfile = pysam.AlignmentFile(input_sam, 'r')
-
-
     inserted_positions = []
     with open(seq_list, 'r') as hin:
         for line in hin:
@@ -441,7 +495,6 @@ def summarize_bwa_alignment2(input_sam, seq_list, output_file):
     query2align_primary = {}
     query2align_ins = {}
 
-    hout = open(output_file, 'w') 
     for read in samfile.fetch():
 
         if read.is_unmapped: continue
@@ -689,9 +742,9 @@ def annotate_sv_file(sv_file, source_file, ppseudo_file, seq_list, output_file):
 
     with open(sv_file, 'r') as hin, open(output_file, 'w') as hout:
         header = hin.readline().rstrip('\n')
-        print(header + '\t' + '\t'.join(["Insert_Type", "Is_Inversion", "L1_Raito", "Alu_Ratio", "SV_Ratio", "RMSK_Info",
+        print(header + '\t' + '\t'.join(["Insert_Type", "Is_Inversion", "L1_Ratio", "Alu_Ratio", "SVA_Ratio", "RMSK_Info",
                                          "Alignment_Info", "Inserted_Pos", "Is_PolyA_T", "Target_Site_Duplication", "L1_Source_Info",
-                                         "PSD_Gene", "PSD_Overlap_Ratio", "PDS_Exon_Num"]), file = hout) 
+                                         "PSD_Gene", "PSD_Overlap_Ratio", "PSD_Exon_Num"]), file = hout) 
         for line in hin:
             F = line.rstrip('\n').split('\t')
             skey = ','.join(F[:6] + [str(len(F[6]))])
@@ -728,5 +781,124 @@ def annotate_sv_file(sv_file, source_file, ppseudo_file, seq_list, output_file):
             print('\t'.join(F) + '\t' + insert_type + '\t' + is_inversion + '\t' + \
                   '\t'.join(source_info[1:10]) + '\t' + ppseudo_line, file = hout)
 
+
+def classify_record(skey, skey2source_info, skey2ppseudo_info):
+    """Determine insert_type and is_inversion from classification results.
+    Returns (insert_type, is_inversion, source_info) or None if not classified."""
+
+    if skey not in skey2source_info:
+        return None
+
+    source_info = skey2source_info[skey]
+    ppseudo_info = skey2ppseudo_info.get(skey)
+
+    insert_type = "---"
+    if source_info[10] == "Orphan":
+        insert_type = "Orphan_L1"
+    elif source_info[10] == "Partnered":
+        insert_type = "Partnered_L1"
+    elif source_info[10] == "Solo":
+        insert_type = "Solo_L1"
+    elif source_info[0] == "Alu":
+        insert_type = "Alu"
+    elif source_info[0] == "SVA":
+        insert_type = "SVA"
+    elif ppseudo_info is not None:
+        insert_type = "PSD"
+
+    is_inversion = "NA"
+    if source_info[0].startswith("Simple"):
+        is_inversion = "Simple"
+    elif source_info[0].startswith("Inverted"):
+        is_inversion = "Inverted"
+    elif source_info[0].startswith("Other"):
+        is_inversion = "Other"
+
+    return (insert_type, is_inversion, source_info, ppseudo_info)
+
+
+def annotate_vcf_file(vcf_file, source_file, ppseudo_file, seq_list, output_file):
+
+    sid2skey = {}
+    with open(seq_list, 'r') as hin:
+        for line in hin:
+            F = line.rstrip('\n').split('\t')
+            sid2skey[F[0]] = F[1]
+
+    skey2source_info = {}
+    with open(source_file, 'r') as hin:
+        for line in hin:
+            F = line.rstrip('\n').split('\t')
+            skey = sid2skey[F[0]]
+            skey2source_info[skey] = F[1:]
+
+    skey2ppseudo_info = {}
+    with open(ppseudo_file, 'r') as hin:
+        for line in hin:
+            F = line.rstrip('\n').split('\t')
+            skey = sid2skey[F[0]]
+            if skey in skey2ppseudo_info:
+                tmatch_ratio = float(skey2ppseudo_info[skey][1])
+                if float(F[2]) > tmatch_ratio:
+                    skey2ppseudo_info[skey] = F[1:4]
+            else:
+                skey2ppseudo_info[skey] = F[1:4]
+
+    info_header_lines = \
+        '##INFO=<ID=INSERT_TYPE,Number=1,Type=String,Description="Type of mobile element insertion (Solo_L1, Partnered_L1, Orphan_L1, Alu, SVA, PSD)">\n'\
+        '##INFO=<ID=IS_INVERSION,Number=1,Type=String,Description="Inversion status of LINE1 insertion (Simple, Inverted, Other, NA)">\n'\
+        '##INFO=<ID=L1_RATIO,Number=1,Type=Float,Description="Match ratio with LINE1 sequences">\n'\
+        '##INFO=<ID=ALU_RATIO,Number=1,Type=Float,Description="Match ratio with Alu sequences">\n'\
+        '##INFO=<ID=SVA_RATIO,Number=1,Type=Float,Description="Match ratio with SVA sequences">\n'\
+        '##INFO=<ID=RMSK_INFO,Number=1,Type=String,Description="RepeatMasker classification summary">\n'\
+        '##INFO=<ID=TSD,Number=1,Type=String,Description="Target site duplication sequence">\n'\
+        '##INFO=<ID=L1_SOURCE,Number=1,Type=String,Description="Inferred source LINE1 element">\n'\
+        '##INFO=<ID=PSD_GENE,Number=1,Type=String,Description="Processed pseudogene source gene">\n'\
+        '##INFO=<ID=PSD_OVERLAP_RATIO,Number=1,Type=Float,Description="Match ratio with the pseudogene">\n'\
+        '##INFO=<ID=PSD_EXON_NUM,Number=1,Type=Integer,Description="Number of pseudogene exons matched">'
+
+    if vcf_file.endswith(".vcf.gz"):
+        hin = gzip.open(vcf_file, 'rt')
+    else:
+        hin = open(vcf_file, 'r')
+
+    with open(output_file, 'w') as hout:
+        for line in hin:
+            # Header lines
+            if line.startswith('#'):
+                # Insert INFO headers before the #CHROM line
+                if line.startswith('#CHROM'):
+                    print(info_header_lines, file=hout)
+                print(line.rstrip('\n'), file=hout)
+                continue
+
+            F = line.rstrip('\n').split('\t')
+
+            inserted_seq = extract_insert_seq_from_vcf_record(F)
+            if inserted_seq is not None and len(inserted_seq) >= 50:
+                tchrom = F[0]
+                tpos = F[1]
+                skey = ','.join([tchrom, tpos, '+', tchrom, tpos, '-', str(len(inserted_seq))])
+
+                result = classify_record(skey, skey2source_info, skey2ppseudo_info)
+                if result is not None:
+                    insert_type, is_inversion, source_info, ppseudo_info = result
+
+                    annot_info = f"INSERT_TYPE={insert_type};IS_INVERSION={is_inversion}"
+                    annot_info += f";L1_RATIO={source_info[1]};ALU_RATIO={source_info[2]};SVA_RATIO={source_info[3]}"
+                    if source_info[4] != "---":
+                        annot_info += f";RMSK_INFO={source_info[4]}"
+                    if source_info[8] != "---" and source_info[8] != "None":
+                        annot_info += f";TSD={source_info[8]}"
+                    if source_info[10] != "None" and source_info[10] != "---":
+                        annot_info += f";L1_SOURCE={source_info[9]}"
+                    if ppseudo_info is not None:
+                        annot_info += f";PSD_GENE={ppseudo_info[0]};PSD_OVERLAP_RATIO={ppseudo_info[1]};PSD_EXON_NUM={ppseudo_info[2]}"
+
+                    F[7] = F[7] + ';' + annot_info
+
+            print('\t'.join(F), file=hout)
+
+    hin.close()
 
 
