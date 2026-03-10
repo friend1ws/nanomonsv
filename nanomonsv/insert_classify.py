@@ -845,7 +845,7 @@ def annotate_vcf_file(vcf_file, source_file, ppseudo_file, seq_list, output_file
                 skey2ppseudo_info[skey] = F[1:4]
 
     info_header_lines = \
-        '##INFO=<ID=INSERT_TYPE,Number=1,Type=String,Description="Type of mobile element insertion (Solo_L1, Partnered_L1, Orphan_L1, Alu, SVA, PSD)">\n'\
+        '##INFO=<ID=INSERT_TYPE,Number=1,Type=String,Description="Type of mobile element insertion (Solo_L1, Partnered_L1, Orphan_L1, Alu, SVA, PSD, Unclassified)">\n'\
         '##INFO=<ID=IS_INVERSION,Number=1,Type=String,Description="Inversion status of LINE1 insertion (Simple, Inverted, Other, NA)">\n'\
         '##INFO=<ID=L1_RATIO,Number=1,Type=Float,Description="Match ratio with LINE1 sequences">\n'\
         '##INFO=<ID=ALU_RATIO,Number=1,Type=Float,Description="Match ratio with Alu sequences">\n'\
@@ -884,7 +884,8 @@ def annotate_vcf_file(vcf_file, source_file, ppseudo_file, seq_list, output_file
                 if result is not None:
                     insert_type, is_inversion, source_info, ppseudo_info = result
 
-                    annot_info = f"INSERT_TYPE={insert_type};IS_INVERSION={is_inversion}"
+                    vcf_insert_type = "Unclassified" if insert_type == "---" else insert_type
+                    annot_info = f"INSERT_TYPE={vcf_insert_type};IS_INVERSION={is_inversion}"
                     annot_info += f";L1_RATIO={source_info[1]};ALU_RATIO={source_info[2]};SVA_RATIO={source_info[3]}"
                     if source_info[4] != "---":
                         annot_info += f";RMSK_INFO={source_info[4]}"

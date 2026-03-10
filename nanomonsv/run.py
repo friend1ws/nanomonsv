@@ -522,7 +522,12 @@ def insert_classify_main(args):
     is_tool("bwa")
     is_tool("RepeatMasker")
 
-    make_fasta_file(args.sv_list_file, args.output_file + ".tmp.fasta", args.output_file + ".tmp.seq_id.txt")
+    is_vcf = args.sv_list_file.endswith(".vcf") or args.sv_list_file.endswith(".vcf.gz")
+
+    if is_vcf:
+        make_fasta_file_from_vcf(args.sv_list_file, args.output_file + ".tmp.fasta", args.output_file + ".tmp.seq_id.txt")
+    else:
+        make_fasta_file(args.sv_list_file, args.output_file + ".tmp.fasta", args.output_file + ".tmp.seq_id.txt")
    
     ##########
     # processed pseudo gene
@@ -571,8 +576,12 @@ def insert_classify_main(args):
                  args.output_file + ".tmp.tsd.polyAT.txt", args.output_file + ".tmp.seq_id.txt", 
                  args.output_file + ".tmp.org.txt", args.LINE1_db)
 
-    annotate_sv_file(args.sv_list_file, args.output_file + ".tmp.org.txt", args.output_file + ".tmp.ppseudo.txt",
-                     args.output_file + ".tmp.seq_id.txt", args.output_file)
+    if is_vcf:
+        annotate_vcf_file(args.sv_list_file, args.output_file + ".tmp.org.txt", args.output_file + ".tmp.ppseudo.txt",
+                          args.output_file + ".tmp.seq_id.txt", args.output_file)
+    else:
+        annotate_sv_file(args.sv_list_file, args.output_file + ".tmp.org.txt", args.output_file + ".tmp.ppseudo.txt",
+                         args.output_file + ".tmp.seq_id.txt", args.output_file)
 
     if not args.debug:
         os.remove(args.output_file + ".tmp.fasta")
