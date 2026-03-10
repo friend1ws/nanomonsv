@@ -128,9 +128,9 @@ nanomonsv get [-h] [--control_prefix CONTROL_PREFIX]
 
 | Preset | Recommended for |
 |--------|----------------|
-| `--qv10` | ONT data called by Guppy before version 5 |
-| `--qv15` | ONT data called by Guppy version 5 or 6 |
-| `--qv20` | ONT data with Q20+ chemistry |
+| `--qv10` | ONT data with median Q10 (e.g., Guppy before v5) |
+| `--qv15` | ONT data with median Q15 (e.g., Guppy v5/v6) |
+| `--qv20` | ONT data with median Q20+ (e.g., Dorado SUP, Q20+ chemistry) |
 | `--qv25` | PacBio HiFi data |
 
 ### merge_control

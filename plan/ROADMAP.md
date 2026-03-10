@@ -13,10 +13,13 @@ Low risk. No change to existing canonical SV output format.
 
 ## v0.9.0 — insert_classify extension + misc cleanup + default options
 
-- [ ] [insert_classify](insert_classify.md) — VCF input/output support for insert_classify
-- [x] [hgsvc3_mei_db](hgsvc3_mei_db.md) — Prepare HGSVC3 MEI database (LINE1 from 1,604 records + Alu/SVA)
-- [x] [misc_cleanup](misc_cleanup.md) — Remove misc/ scripts whose functionality has been integrated into `nanomonsv get`
-- [ ] [default_options](default_options.md) — Make `--use_racon` and `--single_bnd` default on in `nanomonsv get`
+- [x] [insert_classify](done/insert_classify.md) — VCF input/output support for insert_classify
+- [x] [hgsvc3_mei_db](done/hgsvc3_mei_db.md) — Prepare HGSVC3 MEI database (LINE1 from 1,604 records + Alu/SVA)
+- [x] [misc_cleanup](done/misc_cleanup.md) — Remove misc/ scripts whose functionality has been integrated into `nanomonsv get`
+- [x] [insert_classify_minor](done/insert_classify_minor.md) — Fix duplicate file opens, unused variables, header typos
+- [x] [readme_improve](readme_improve.md) — Key features section, GTF description, quality presets
+- [ ] [insert_classify_logic](insert_classify_logic.md) — Fix VCF output issues (L1_SOURCE=None, RMSK_INFO semicolons, is_polyAT bug)
+- [ ] [default_options](default_options.md) — Make racon and `--single_bnd` default on in `nanomonsv get`
 
 ## v0.9.1 — Haplotype support
 
@@ -35,7 +38,8 @@ v0.8.2  vcf_fix                 ✓
         sbnd_vcf                ✓
             │
             ▼
-v0.9.0  insert_classify + hgsvc3_mei_db ✓ + misc_cleanup ✓ + default_options
+v0.9.0  insert_classify ✓ + hgsvc3_mei_db ✓ + misc_cleanup ✓ + insert_classify_minor ✓
+        + readme_improve ✓ + insert_classify_logic + default_options
             │
             ▼
 v0.9.1  haplotag
