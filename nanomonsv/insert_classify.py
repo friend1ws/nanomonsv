@@ -626,7 +626,6 @@ def organize_info(rmsk_file, alignment_file, tsd_file, seq_list, output_file, LI
             
             line1_ratio = float(line1_ratio)
             line1_info = "---"
-            overlap_ratio = None
             transduction_class = "---"
 
             if repeat_type.endswith("LINE1"): transduction_class = "Solo"
