@@ -655,7 +655,7 @@ def organize_info(rmsk_file, alignment_file, tsd_file, seq_list, output_file, LI
             tabix_error_flag = 0
             if source_dir == '+':
                 cur_L1_pos = float("Inf")
-                is_rmsk, is_1000g, is_gnomad = False, False, False
+                is_ref_source = None
                 try:
                     records = line1_tb.fetch(achr, int(astart) - 50, int(aend) + 5000)
                 except Exception as inst:
@@ -667,14 +667,10 @@ def organize_info(rmsk_file, alignment_file, tsd_file, seq_list, output_file, LI
                         if int(FF[1]) > cur_L1_pos: continue
                         line1_info = FF[3]
 
-                        if "umary_LINE1" in line1_info:
-                            if is_rmsk: continue
-                            is_1000g = True
-                        elif "gnomAD-SV" in line1_info:
-                            if is_1000g or is_rmsk: continue
-                            is_gnomad = True
-                        else:
-                            is_rmsk = True
+                        # ref_source (rmsk) takes priority over non-ref (HGSVC3, 1000genomes, gnomAD)
+                        cur_is_ref = not ("HGSVC3" in line1_info or "gnomAD-SV" in line1_info or "umary_LINE1" in line1_info)
+                        if is_ref_source and not cur_is_ref: continue
+                        is_ref_source = cur_is_ref
 
                         if line1_ratio < 0.01:
                             transduction_class = "Orphan"
@@ -684,7 +680,7 @@ def organize_info(rmsk_file, alignment_file, tsd_file, seq_list, output_file, LI
 
             elif source_dir == '-':
                 cur_L1_pos = -float("Inf")
-                is_rmsk, is_1000g, is_gnomad = False, False, False
+                is_ref_source = None
                 try:
                     records = line1_tb.fetch(achr, int(astart) - 5000, int(aend) + 50)
                 except Exception as inst:
@@ -693,17 +689,13 @@ def organize_info(rmsk_file, alignment_file, tsd_file, seq_list, output_file, LI
                     for record in records:
                         FF = record.split('\t')
                         if FF[5] == '-': continue
-                        if int(FF[1]) < cur_L1_pos: continue 
+                        if int(FF[1]) < cur_L1_pos: continue
                         line1_info = FF[3]
 
-                        if "umary_LINE1" in line1_info:                  
-                            if is_rmsk: continue
-                            is_1000g = True
-                        elif "gnomAD-SV" in line1_info:
-                            if is_1000g or is_rmsk: continue
-                            is_gnomad = True
-                        else:
-                            is_rmsk = True
+                        # ref_source (rmsk) takes priority over non-ref (HGSVC3, 1000genomes, gnomAD)
+                        cur_is_ref = not ("HGSVC3" in line1_info or "gnomAD-SV" in line1_info or "umary_LINE1" in line1_info)
+                        if is_ref_source and not cur_is_ref: continue
+                        is_ref_source = cur_is_ref
 
                         if line1_ratio < 0.01:
                             transduction_class = "Orphan"
