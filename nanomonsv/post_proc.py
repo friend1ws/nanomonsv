@@ -10,8 +10,9 @@ logger = get_logger(__name__)
 
 class Sv(object):
 
-    def __init__(self, tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq, sv_id, 
-        total_read_tumor, var_read_tumor, total_read_ctrl, var_read_ctrl):
+    def __init__(self, tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq, sv_id,
+        total_read_tumor, var_read_tumor, total_read_ctrl, var_read_ctrl,
+        hp1_count = 0, hp2_count = 0, hp0_count = 0):
 
         self.chr1 = tchr1
         self.pos1 = tpos1
@@ -20,18 +21,21 @@ class Sv(object):
         self.pos2 = tpos2
         self.dir2 = tdir2
         self.inseq = tinseq
-        self.sv_id = sv_id 
+        self.sv_id = sv_id
         self.total_read_tumor = total_read_tumor
         self.var_read_tumor = var_read_tumor
         self.total_read_ctrl = total_read_ctrl
         self.var_read_ctrl = var_read_ctrl
+        self.hp1_count = hp1_count
+        self.hp2_count = hp2_count
+        self.hp0_count = hp0_count
         self.filter = []
 
 
 class Sv_filterer(object):
 
-    def __init__(self, output_file, reference_fasta, is_control, simple_repeat_bed,  
-        min_tumor_VAF = 0.05, min_indel_size = 50, bp_dist_margin = 30, validate_seg_len = 100):
+    def __init__(self, output_file, reference_fasta, is_control, simple_repeat_bed,
+        min_tumor_VAF = 0.05, min_indel_size = 50, bp_dist_margin = 30, validate_seg_len = 100, hp_ratio_thres = 0.9):
         self.sv_list = []
         self.hout = open(output_file, 'w')
         self.bp_dist_margin = bp_dist_margin
@@ -41,7 +45,8 @@ class Sv_filterer(object):
         self.min_indel_size = min_indel_size
         self.bp_dist_margin = bp_dist_margin
         self.validate_seg_len = validate_seg_len
-        self.simple_repeat_tb = pysam.TabixFile(simple_repeat_bed) if simple_repeat_bed is not None else None 
+        self.simple_repeat_tb = pysam.TabixFile(simple_repeat_bed) if simple_repeat_bed is not None else None
+        self.hp_ratio_thres = hp_ratio_thres
         self.header = None
         
 
@@ -173,6 +178,14 @@ class Sv_filterer(object):
         if float(sv.var_read_tumor) / float(sv.total_read_tumor) < self.min_tumor_VAF:
             sv.filter.append(filter_item)
 
+    def filter_haplotype_dispersion(self, sv, filter_item = "Haplotype_Dispersion"):
+
+        phased_count = sv.hp1_count + sv.hp2_count
+        if phased_count == 0: return
+        dominant_ratio = max(sv.hp1_count, sv.hp2_count) / phased_count
+        if dominant_ratio < self.hp_ratio_thres:
+            sv.filter.append(filter_item)
+
    
     def filter_simple_repeat(self, sv, filter_item = "Simple_repeat", simple_repeat_dist_margin = 30):
 
@@ -196,10 +209,12 @@ class Sv_filterer(object):
 
             
     def add_sv(self, tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq, sv_id,
-        total_read_tumor, var_read_tumor, total_read_ctrl, var_read_ctrl):
-    
+        total_read_tumor, var_read_tumor, total_read_ctrl, var_read_ctrl,
+        hp1_count = 0, hp2_count = 0, hp0_count = 0):
+
         sv = Sv(tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq, sv_id,
-            total_read_tumor, var_read_tumor, total_read_ctrl, var_read_ctrl)
+            total_read_tumor, var_read_tumor, total_read_ctrl, var_read_ctrl,
+            hp1_count, hp2_count, hp0_count)
         self.sv_list.append(sv)
 
 
@@ -217,6 +232,9 @@ class Sv_filterer(object):
         if self.simple_repeat_tb is not None:
             for sv in self.sv_list:
                 self.filter_simple_repeat(sv)
+
+        for sv in self.sv_list:
+            self.filter_haplotype_dispersion(sv)
 
         # logger.info("filter_close_both_breakpoints")
         for sv1, sv2 in itertools.combinations(self.sv_list, 2):
@@ -240,7 +258,8 @@ class Sv_filterer(object):
 
     def flush_sv_list(self):
 
-        header = "Chr_1\tPos_1\tDir_1\tChr_2\tPos_2\tDir_2\tInserted_Seq\tSV_ID\tChecked_Read_Num_Tumor\tSupporting_Read_Num_Tumor" 
+        header = "Chr_1\tPos_1\tDir_1\tChr_2\tPos_2\tDir_2\tInserted_Seq\tSV_ID\tChecked_Read_Num_Tumor\tSupporting_Read_Num_Tumor"
+        header = header + "\tSupporting_Read_Num_Tumor_HP0\tSupporting_Read_Num_Tumor_HP1\tSupporting_Read_Num_Tumor_HP2"
         if self.is_control: header = header + "\tChecked_Read_Num_Control\tSupporting_Read_Num_Control"
         header = header + '\t' + "Is_Filter"
         print(header, file = self.hout)
@@ -248,6 +267,7 @@ class Sv_filterer(object):
 
             print_sv_line = f"{sv.chr1}\t{sv.pos1}\t{sv.dir1}\t{sv.chr2}\t{sv.pos2}\t{sv.dir2}\t{sv.inseq}\t{sv.sv_id}"
             print_sv_line = print_sv_line + f"\t{sv.total_read_tumor}\t{sv.var_read_tumor}"
+            print_sv_line = print_sv_line + f"\t{sv.hp0_count}\t{sv.hp1_count}\t{sv.hp2_count}"
 
             if self.is_control: print_sv_line = print_sv_line + f"\t{sv.total_read_ctrl}\t{sv.var_read_ctrl}"
             if len(sv.filter) == 0: 
@@ -262,7 +282,7 @@ class Sv_filterer(object):
 
     
 def integrate_realignment_result(tumor_file, control_file, output_file, reference_fasta, simple_repeat_bed = None, min_indel_size = 50,
-    min_tumor_variant_read_num = 3, min_tumor_VAF = 0.05, max_control_variant_read_num = 1, max_control_VAF = 0.03):
+    min_tumor_variant_read_num = 3, min_tumor_VAF = 0.05, max_control_variant_read_num = 1, max_control_VAF = 0.03, hp_ratio_thres = 0.9):
 
     is_control = True if control_file is not None else False
     svkey2control_info = {}
@@ -273,7 +293,7 @@ def integrate_realignment_result(tumor_file, control_file, output_file, referenc
                 svkey = (F[0], int(F[1]), F[2], F[3], int(F[4]), F[5], F[6], F[7])
                 svkey2control_info[svkey] = (int(F[8]), int(F[9]))
 
-    sv_filterer = Sv_filterer(output_file, reference_fasta, is_control, simple_repeat_bed, min_tumor_VAF, min_indel_size)
+    sv_filterer = Sv_filterer(output_file, reference_fasta, is_control, simple_repeat_bed, min_tumor_VAF, min_indel_size, hp_ratio_thres = hp_ratio_thres)
     with open(tumor_file, 'r') as hin:
         for line in hin:
             F = line.rstrip('\n').split('\t')
@@ -281,6 +301,7 @@ def integrate_realignment_result(tumor_file, control_file, output_file, referenc
             tkey = (tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq, tid)
 
             total_read_tumor, var_read_tumor = int(F[8]), int(F[9])
+            hp1_count, hp2_count, hp0_count = int(F[10]), int(F[11]), int(F[12])
             total_read_ctrl, var_read_ctrl = None, None
 
             if tkey in svkey2control_info: total_read_ctrl, var_read_ctrl = svkey2control_info[tkey][0], svkey2control_info[tkey][1]
@@ -294,9 +315,9 @@ def integrate_realignment_result(tumor_file, control_file, output_file, referenc
                 if var_read_ctrl > max_control_variant_read_num: continue
                 if float(var_read_ctrl) / float(total_read_ctrl) > max_control_VAF: continue
 
-
             sv_filterer.add_sv(tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq, tid,
-                total_read_tumor, var_read_tumor, total_read_ctrl, var_read_ctrl)
+                total_read_tumor, var_read_tumor, total_read_ctrl, var_read_ctrl,
+                hp1_count, hp2_count, hp0_count)
 
     sv_filterer.apply_filters()
     sv_filterer.flush_sv_list()
@@ -359,7 +380,7 @@ def filter_sbnd_in_simple_repeat(tchr, tpos, simple_repeat_tb, margin=50):
 def integrate_realignment_result_sbnd(tumor_sbnd_count_file, ctrl_sbnd_count_file, output_file,
     nonsbnd_result_file, refined_bp_sbnd_file,
     min_tumor_variant_read_num = 3, min_tumor_VAF = 0.05, max_control_variant_read_num = 1, max_control_VAF = 0.03,
-    simple_repeat_bed = None):
+    simple_repeat_bed = None, hp_ratio_thres = 0.9):
 
     margin_bp = 50
     nanomonsv_bp_list = []
@@ -391,6 +412,7 @@ def integrate_realignment_result_sbnd(tumor_sbnd_count_file, ctrl_sbnd_count_fil
 
     with open(tumor_sbnd_count_file, 'r') as hin, open(output_file, 'w') as hout:
         header = "Chr_1\tPos_1\tDir_1\tContig\tSV_ID\tChecked_Read_Num_Tumor\tSupporting_Read_Num_Tumor"
+        header = header + "\tSupporting_Read_Num_Tumor_HP0\tSupporting_Read_Num_Tumor_HP1\tSupporting_Read_Num_Tumor_HP2"
         if ctrl_sbnd_count_file is not None: header = header + "\tChecked_Read_Num_Control\tSupporting_Read_Num_Control"
         header = header + "\tIs_Filter"
         print(header, file = hout)
@@ -398,6 +420,7 @@ def integrate_realignment_result_sbnd(tumor_sbnd_count_file, ctrl_sbnd_count_fil
         for line in hin:
             F = line.rstrip('\n').split('\t')
             key = F[4]
+            hp1_count, hp2_count, hp0_count = int(F[7]), int(F[8]), int(F[9])
             canonical_overlap = False
             for bp in nanomonsv_bp_list:
                 if F[0] == bp[0] and F[2] == bp[2] and abs(int(F[1]) - bp[1]) < margin_bp:
@@ -422,12 +445,19 @@ def integrate_realignment_result_sbnd(tumor_sbnd_count_file, ctrl_sbnd_count_fil
                 filter_list.append("Simple_repeat")
             if canonical_overlap:
                 filter_list.append("Canonical_SV_overlap")
+
+            # haplotype dispersion filter
+            phased_count = hp1_count + hp2_count
+            if phased_count > 0 and max(hp1_count, hp2_count) / phased_count < hp_ratio_thres:
+                filter_list.append("Haplotype_Dispersion")
+
             is_filter = ";".join(filter_list) if filter_list else "PASS"
 
+            hp_str = f"{hp0_count}\t{hp1_count}\t{hp2_count}"
             if ctrl_sbnd_count_file is not None:
-                print(f"{F[0]}\t{F[1]}\t{F[2]}\t{key2contig[key]}\t{F[4]}\t{F[5]}\t{F[6]}\t{ctrl_count[0]}\t{ctrl_count[1]}\t{is_filter}", file = hout)
+                print(f"{F[0]}\t{F[1]}\t{F[2]}\t{key2contig[key]}\t{F[4]}\t{F[5]}\t{F[6]}\t{hp_str}\t{ctrl_count[0]}\t{ctrl_count[1]}\t{is_filter}", file = hout)
             else:
-                print(f"{F[0]}\t{F[1]}\t{F[2]}\t{key2contig[key]}\t{F[4]}\t{F[5]}\t{F[6]}\t{is_filter}", file = hout)
+                print(f"{F[0]}\t{F[1]}\t{F[2]}\t{key2contig[key]}\t{F[4]}\t{F[5]}\t{F[6]}\t{hp_str}\t{is_filter}", file = hout)
     
 
 if __name__ == "__main__":

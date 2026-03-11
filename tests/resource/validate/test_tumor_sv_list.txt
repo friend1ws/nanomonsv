@@ -1,2 +1,2 @@
-Chr_1	Pos_1	Dir_1	Chr_2	Pos_2	Dir_2	Inserted_Seq	SV_ID	Checked_Read_Num_Tumor	Supporting_Read_Num_Tumor	Checked_Read_Num_Control	Supporting_Read_Num_Control	Is_Filter
-chr15	84141974	-	chr7	151049571	+	---	sv_3	46	10	37	0	PASS
+Chr_1	Pos_1	Dir_1	Chr_2	Pos_2	Dir_2	Inserted_Seq	SV_ID	Checked_Read_Num_Tumor	Supporting_Read_Num_Tumor	Supporting_Read_Num_Tumor_HP0	Supporting_Read_Num_Tumor_HP1	Supporting_Read_Num_Tumor_HP2	Checked_Read_Num_Control	Supporting_Read_Num_Control	Is_Filter
+chr15	84141974	-	chr7	151049571	+	---	sv_3	46	10	10	0	0	37	0	PASS

@@ -416,8 +416,9 @@ def get_main(args):
     control_sread_count_file = args.tumor_prefix + ".realignment.control.sread_count.txt" if args.control_bam is not None else None
     integrate_realignment_result(args.tumor_prefix + ".realignment.tumor.sread_count.txt", control_sread_count_file,
         args.tumor_prefix + ".nanomonsv.result.txt", args.reference_fasta, args.simple_repeat_bed, min_indel_size = args.min_indel_size,
-        min_tumor_variant_read_num = args.min_tumor_variant_read_num, min_tumor_VAF = args.min_tumor_VAF, 
-        max_control_variant_read_num = args.max_control_variant_read_num, max_control_VAF = args.max_control_VAF)
+        min_tumor_variant_read_num = args.min_tumor_variant_read_num, min_tumor_VAF = args.min_tumor_VAF,
+        max_control_variant_read_num = args.max_control_variant_read_num, max_control_VAF = args.max_control_VAF,
+        hp_ratio_thres = args.hp_ratio_thres)
 
     genomesv2vcf_convert(args.tumor_prefix + ".nanomonsv.result.txt", args.tumor_prefix + ".nanomonsv.result.vcf", 
         args.reference_fasta)
@@ -430,7 +431,7 @@ def get_main(args):
     integrate_realignment_result_sbnd(args.tumor_prefix + ".realignment.tumor.sread_count.sbnd.txt", control_sread_count_file_sbnd,
         args.tumor_prefix + ".nanomonsv.sbnd.result.txt",
         args.tumor_prefix + ".nanomonsv.result.txt", args.tumor_prefix + ".refined_bp.sbnd.txt",
-        simple_repeat_bed = args.simple_repeat_bed)
+        simple_repeat_bed = args.simple_repeat_bed, hp_ratio_thres = args.hp_ratio_thres)
 
     if args.single_bnd:
         sbnd2vcf_convert(args.tumor_prefix + ".nanomonsv.sbnd.result.txt",
@@ -494,27 +495,31 @@ def validate_main(args):
     logger.info("Counting the number of supporting read for the tumor by realignment of SV candidate segments")
     count_sread_by_alignment(args.sv_list_file, args.tumor_bam,
         args.output + ".realignment.tumor.sread_count.txt", args.output + ".realignment.tumor.sread_info.txt",
-        args.reference_fasta, var_read_min_mapq = args.var_read_min_mapq, use_ssw_lib = False, 
+        args.reference_fasta, var_read_min_mapq = args.var_read_min_mapq,
+        score_ratio_thres = args.validation_score_ratio_thres, use_ssw_lib = False,
         sort_option = args.sort_option, debug = args.debug)
 
     if args.control_bam is not None:
         logger.info("Counting the number of supporting read for the control by realignment of SV candidate segments")
         count_sread_by_alignment(args.sv_list_file, args.control_bam,
             args.output + ".realignment.control.sread_count.txt", args.output + ".realignment.control.sread_info.txt",
-            args.reference_fasta, var_read_min_mapq = args.var_read_min_mapq, use_ssw_lib = False, 
+            args.reference_fasta, var_read_min_mapq = args.var_read_min_mapq,
+            score_ratio_thres = args.validation_score_ratio_thres, use_ssw_lib = False,
             sort_option = args.sort_option, debug = args.debug)
 
     logger.info("Final processing")
     control_sread_count_file = args.output + ".realignment.control.sread_count.txt" if args.control_bam is not None else None
     integrate_realignment_result(args.output + ".realignment.tumor.sread_count.txt", control_sread_count_file, args.output,
         args.reference_fasta, min_indel_size = 0, min_tumor_variant_read_num = 0, min_tumor_VAF = 0,
-        max_control_variant_read_num = float("inf"), max_control_VAF = float("inf"))
+        max_control_variant_read_num = float("inf"), max_control_VAF = float("inf"),
+        hp_ratio_thres = args.hp_ratio_thres)
 
     if not args.debug:
         os.remove(args.output + ".realignment.tumor.sread_count.txt")
         os.remove(args.output + ".realignment.tumor.sread_info.txt")
-        os.remove(args.output + ".realignment.control.sread_count.txt")
-        os.remove(args.output + ".realignment.control.sread_info.txt")
+        if args.control_bam is not None:
+            os.remove(args.output + ".realignment.control.sread_count.txt")
+            os.remove(args.output + ".realignment.control.sread_info.txt")
     ####################
     
 

@@ -151,6 +151,9 @@ def create_parser():
     # get.add_argument("--threads", default = 1, type = int,
     #                  help = "Number of parallel threads to use (not recommended) (default: 1)")
 
+    get.add_argument("--hp_ratio_thres", default = 0.9, type = float,
+                     help = "Haplotype dispersion filter threshold. Filter SVs where the dominant haplotype ratio among phased supporting reads is below this value (default: 0.9)")
+
     get.add_argument("--processes", default = 1, type = int,
                      help = "Number of parallel processes to use (default: 1)")
 
@@ -203,8 +206,11 @@ def create_parser():
     validate.add_argument("--qv25", default = False, action = 'store_true',
                      help = "Parameter preset for PacBio HiFi data")
 
-    validate.add_argument("--sort_option", metavar = "-S 1G", type = str, default = "-S 2G", 
+    validate.add_argument("--sort_option", metavar = "-S 1G", type = str, default = "-S 2G",
                      help = "options for sort command")
+
+    validate.add_argument("--hp_ratio_thres", default = 0.9, type = float,
+                     help = "Haplotype dispersion filter threshold (default: 0.9)")
 
     validate.add_argument("--debug", default = False, action = 'store_true', help = "keep intermediate files")
 

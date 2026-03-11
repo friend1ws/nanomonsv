@@ -27,6 +27,7 @@ def genomesv2vcf_convert(result_file, output_vcf, reference):
             '##FILTER=<ID=SV_with_decoy,Description="SVs involving decoy contigs">\n'\
             '##FILTER=<ID=Too_small_size,Description="Insertions whose size is below the threshould (currently 100bp)">\n'\
             '##FILTER=<ID=Too_low_VAF,Description="SVs whose variant allele frequencies are inferred to be low">\n'\
+            '##FILTER=<ID=Haplotype_Dispersion,Description="SVs where supporting reads are dispersed across both haplotypes">\n'\
             '##INFO=<ID=SVTYPE,Number=1,Type=String,Description="Type of structural variant">\n'\
             '##INFO=<ID=SVLEN,Number=1,Type=Integer,Description="Difference in length between REF and ALT alleles">\n'\
             '##INFO=<ID=END,Number=1,Type=Integer,Description="End position of the variant described in this record">\n'\
@@ -37,7 +38,10 @@ def genomesv2vcf_convert(result_file, output_vcf, reference):
             '##ALT=<ID=INS,Description="Insertion">\n'\
             '##ALT=<ID=DUP,Description="Duplication">\n'\
             '##FORMAT=<ID=TR,Number=1,Type=Integer,Description="The number of reads around the breakpoints">\n'\
-            '##FORMAT=<ID=VR,Number=1,Type=Integer,Description="The number of variant supporting reads determined in the validation realignment step">'
+            '##FORMAT=<ID=VR,Number=1,Type=Integer,Description="The number of variant supporting reads determined in the validation realignment step">\n'\
+            '##FORMAT=<ID=VR_HP0,Number=1,Type=Integer,Description="The number of variant supporting reads without haplotype tag">\n'\
+            '##FORMAT=<ID=VR_HP1,Number=1,Type=Integer,Description="The number of variant supporting reads from haplotype 1">\n'\
+            '##FORMAT=<ID=VR_HP2,Number=1,Type=Integer,Description="The number of variant supporting reads from haplotype 2">'
 
     chrom_order = {chrom: i for i, chrom in enumerate(ref_tb.references)}
 
@@ -66,8 +70,8 @@ def genomesv2vcf_convert(result_file, output_vcf, reference):
             else:
                 tsvinsseq = ''
                 tsvinslen = 0
-            
-            tformat_sample = f'TR:VR\t{F["Checked_Read_Num_Tumor"]}:{F["Supporting_Read_Num_Tumor"]}'
+
+            tformat_sample = f'TR:VR:VR_HP0:VR_HP1:VR_HP2\t{F["Checked_Read_Num_Tumor"]}:{F["Supporting_Read_Num_Tumor"]}:{F["Supporting_Read_Num_Tumor_HP0"]}:{F["Supporting_Read_Num_Tumor_HP1"]}:{F["Supporting_Read_Num_Tumor_HP2"]}'
             if is_control:
                 tformat_sample = tformat_sample + f'\t{F["Checked_Read_Num_Control"]}:{F["Supporting_Read_Num_Control"]}' 
 
@@ -212,9 +216,13 @@ def sbnd2vcf_convert(sbnd_result_file, output_vcf, reference):
         header = header + '\n' + f"##contig=<ID={tchr},length={tlen}>"
 
     header = header + '\n' + \
+            '##FILTER=<ID=Haplotype_Dispersion,Description="SVs where supporting reads are dispersed across both haplotypes">\n'\
             '##INFO=<ID=SVTYPE,Number=1,Type=String,Description="Type of structural variant">\n'\
             '##FORMAT=<ID=TR,Number=1,Type=Integer,Description="The number of reads around the breakpoints">\n'\
-            '##FORMAT=<ID=VR,Number=1,Type=Integer,Description="The number of variant supporting reads determined in the validation realignment step">'
+            '##FORMAT=<ID=VR,Number=1,Type=Integer,Description="The number of variant supporting reads determined in the validation realignment step">\n'\
+            '##FORMAT=<ID=VR_HP0,Number=1,Type=Integer,Description="The number of variant supporting reads without haplotype tag">\n'\
+            '##FORMAT=<ID=VR_HP1,Number=1,Type=Integer,Description="The number of variant supporting reads from haplotype 1">\n'\
+            '##FORMAT=<ID=VR_HP2,Number=1,Type=Integer,Description="The number of variant supporting reads from haplotype 2">'
 
     chrom_order = {chrom: i for i, chrom in enumerate(ref_tb.references)}
 
@@ -252,7 +260,7 @@ def sbnd2vcf_convert(sbnd_result_file, output_vcf, reference):
 
             tinfo = "SVTYPE=BND"
 
-            tformat_sample = f'TR:VR\t{F["Checked_Read_Num_Tumor"]}:{F["Supporting_Read_Num_Tumor"]}'
+            tformat_sample = f'TR:VR:VR_HP0:VR_HP1:VR_HP2\t{F["Checked_Read_Num_Tumor"]}:{F["Supporting_Read_Num_Tumor"]}:{F["Supporting_Read_Num_Tumor_HP0"]}:{F["Supporting_Read_Num_Tumor_HP1"]}:{F["Supporting_Read_Num_Tumor_HP2"]}'
             if is_control:
                 tformat_sample = tformat_sample + f'\t{F["Checked_Read_Num_Control"]}:{F["Supporting_Read_Num_Control"]}'
 
