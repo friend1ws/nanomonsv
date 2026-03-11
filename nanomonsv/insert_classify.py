@@ -314,7 +314,7 @@ def proc_rmsk_info(tkey, rmsk_info):
             polyAT_len = polyAT_len + total_len - int(F[5]) + 1
 
 
-    repeat_class = "None"
+    repeat_class = "---"
     L1_ratio, Alu_ratio, SVA_ratio = 0.0, 0.0, 0.0
     if float(total_len) - float(polyAT_len) > 0:
         L1_ratio = min(1.0, float(L1_len) / (float(total_len) - float(polyAT_len)))
@@ -422,12 +422,13 @@ def check_tsd_polyAT(input_file, seq_list, reference, output_file):
             else:
                 tsd = None
 
-            polyAT = None
+            polyAT = "---"
             if is_polyT: polyAT = "polyT"
             if is_polyA: polyAT = "polyA"
+            tsd_str = tsd if tsd is not None else "---"
 
-            # print(sid + '\t' + str(polyAT) + '\t' + str(tsd) + '\t' + tsd_cand1 + '\t' + local_seq1 + '\t' + tsd_cand2 + '\t' + local_seq2, file = hout) 
-            print(f'{sid}\t{polyAT}\t{tsd}\t{tsd_cand1}\t{local_seq1}\t{alignment1.q_pos}\t{alignment1.r_pos}\t{alignment1.matches}\t{alignment1.identity}\t{tsd_cand2}\t{local_seq2}\t{alignment2.q_pos}\t{alignment2.r_pos}\t{alignment2.matches}\t{alignment2.identity}', file = hout)
+            # print(sid + '\t' + str(polyAT) + '\t' + str(tsd) + '\t' + tsd_cand1 + '\t' + local_seq1 + '\t' + tsd_cand2 + '\t' + local_seq2, file = hout)
+            print(f'{sid}\t{polyAT}\t{tsd_str}\t{tsd_cand1}\t{local_seq1}\t{alignment1.q_pos}\t{alignment1.r_pos}\t{alignment1.matches}\t{alignment1.identity}\t{tsd_cand2}\t{local_seq2}\t{alignment2.q_pos}\t{alignment2.r_pos}\t{alignment2.matches}\t{alignment2.identity}', file = hout)
 
 
 
@@ -610,25 +611,30 @@ def organize_info(rmsk_file, alignment_file, tsd_file, seq_list, output_file, LI
     """
     line1_tb = pysam.TabixFile(LINE1_db_file)
 
+    # Output columns (= source_info indices in annotate_*):
+    # [0]repeat_type [1]l1_ratio [2]alu_ratio [3]sva_ratio [4]rmsk_info
+    # [5]alignment_infos [6]inserted_pos [7]is_polyAT [8]tsd
+    # [9]line1_info [10]transduction_class
+    # Missing values are represented as "---" throughout.
     with open(output_file, 'w') as hout:
 
         for key in keys:
 
-            repeat_type, line1_ratio, alu_ratio, sva_ratio, rmsk_info = key2rmsk[key] if key in key2rmsk else ["None", 0.0, 0.0, 0.0, "---"]
+            repeat_type, line1_ratio, alu_ratio, sva_ratio, rmsk_info = key2rmsk[key] if key in key2rmsk else ["---", 0.0, 0.0, 0.0, "---"]
             alignment_infos, inserted_pos = key2alignment[key] if key in key2alignment else ["---", "---"]
             is_polyAT, tsd = key2tsd_polyAT[key] if key in key2tsd_polyAT else ["---", "---"]
             
             line1_ratio = float(line1_ratio)
-            line1_info = None
+            line1_info = "---"
             overlap_ratio = None
-            transduction_class = None
+            transduction_class = "---"
 
             if repeat_type.endswith("LINE1"): transduction_class = "Solo"
 
-            if alignment_infos == "---" or is_polyAT == None: 
-                print('\t'.join([key, repeat_type, str(line1_ratio), str(alu_ratio), str(sva_ratio), 
+            if alignment_infos == "---":
+                print('\t'.join([key, repeat_type, str(line1_ratio), str(alu_ratio), str(sva_ratio),
                                  rmsk_info, alignment_infos, inserted_pos, is_polyAT, tsd,
-                                 str(line1_info), str(transduction_class)]), file = hout)
+                                 line1_info, transduction_class]), file = hout)
                 continue
 
 
@@ -707,12 +713,12 @@ def organize_info(rmsk_file, alignment_file, tsd_file, seq_list, output_file, LI
 
 
             print('\t'.join([key, repeat_type, str(line1_ratio), str(alu_ratio), str(sva_ratio),
-                             rmsk_info, alignment_infos, inserted_pos, is_polyAT, tsd, 
-                             str(line1_info), str(transduction_class)]), file = hout)
+                             rmsk_info, alignment_infos, inserted_pos, is_polyAT, tsd,
+                             line1_info, transduction_class]), file = hout)
  
 
 
-def annotate_sv_file(sv_file, source_file, ppseudo_file, seq_list, output_file):
+def _load_annotation_data(source_file, ppseudo_file, seq_list):
 
     sid2skey = {}
     with open(seq_list, 'r') as hin:
@@ -739,6 +745,12 @@ def annotate_sv_file(sv_file, source_file, ppseudo_file, seq_list, output_file):
             else:
                 skey2ppseudo_info[skey] = F[1:4]
 
+    return skey2source_info, skey2ppseudo_info
+
+
+def annotate_sv_file(sv_file, source_file, ppseudo_file, seq_list, output_file):
+
+    skey2source_info, skey2ppseudo_info = _load_annotation_data(source_file, ppseudo_file, seq_list)
 
     with open(sv_file, 'r') as hin, open(output_file, 'w') as hout:
         header = hin.readline().rstrip('\n')
@@ -750,7 +762,7 @@ def annotate_sv_file(sv_file, source_file, ppseudo_file, seq_list, output_file):
             skey = ','.join(F[:6] + [str(len(F[6]))])
 
             if skey not in skey2source_info:
-                print('\t'.join(F) + '\t' + "None" + '\t' + '\t'.join(["---"] * 13), file = hout)
+                print('\t'.join(F) + '\t' + "---" + '\t' + '\t'.join(["---"] * 13), file = hout)
                 continue
         
             source_info = skey2source_info[skey]
@@ -819,30 +831,7 @@ def classify_record(skey, skey2source_info, skey2ppseudo_info):
 
 def annotate_vcf_file(vcf_file, source_file, ppseudo_file, seq_list, output_file):
 
-    sid2skey = {}
-    with open(seq_list, 'r') as hin:
-        for line in hin:
-            F = line.rstrip('\n').split('\t')
-            sid2skey[F[0]] = F[1]
-
-    skey2source_info = {}
-    with open(source_file, 'r') as hin:
-        for line in hin:
-            F = line.rstrip('\n').split('\t')
-            skey = sid2skey[F[0]]
-            skey2source_info[skey] = F[1:]
-
-    skey2ppseudo_info = {}
-    with open(ppseudo_file, 'r') as hin:
-        for line in hin:
-            F = line.rstrip('\n').split('\t')
-            skey = sid2skey[F[0]]
-            if skey in skey2ppseudo_info:
-                tmatch_ratio = float(skey2ppseudo_info[skey][1])
-                if float(F[2]) > tmatch_ratio:
-                    skey2ppseudo_info[skey] = F[1:4]
-            else:
-                skey2ppseudo_info[skey] = F[1:4]
+    skey2source_info, skey2ppseudo_info = _load_annotation_data(source_file, ppseudo_file, seq_list)
 
     info_header_lines = \
         '##INFO=<ID=INSERT_TYPE,Number=1,Type=String,Description="Type of mobile element insertion (Solo_L1, Partnered_L1, Orphan_L1, Alu, SVA, PSD, Unclassified)">\n'\
@@ -888,10 +877,11 @@ def annotate_vcf_file(vcf_file, source_file, ppseudo_file, seq_list, output_file
                     annot_info = f"INSERT_TYPE={vcf_insert_type};IS_INVERSION={is_inversion}"
                     annot_info += f";L1_RATIO={source_info[1]};ALU_RATIO={source_info[2]};SVA_RATIO={source_info[3]}"
                     if source_info[4] != "---":
-                        annot_info += f";RMSK_INFO={source_info[4]}"
-                    if source_info[8] != "---" and source_info[8] != "None":
+                        # Replace ';' with '|' because ';' is the VCF INFO field separator
+                        annot_info += f";RMSK_INFO={source_info[4].replace(';', '|')}"
+                    if source_info[8] != "---":
                         annot_info += f";TSD={source_info[8]}"
-                    if source_info[10] != "None" and source_info[10] != "---":
+                    if source_info[9] != "---":
                         annot_info += f";L1_SOURCE={source_info[9]}"
                     if ppseudo_info is not None:
                         annot_info += f";PSD_GENE={ppseudo_info[0]};PSD_OVERLAP_RATIO={ppseudo_info[1]};PSD_EXON_NUM={ppseudo_info[2]}"
