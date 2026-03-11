@@ -89,7 +89,7 @@ def create_parser():
                      help = "Maximum allowed supporting read number for a control sample (default: 1)")
         
     get.add_argument("--max_control_VAF", default = 0.03, type = float,
-                     help = "Maximum allowed variant allele frequeycy for a control sample (default: 0.03)")
+                     help = "Maximum allowed variant allele frequency for a control sample (default: 0.03)")
 
     get.add_argument("--min_indel_size", default = 50, type = int,
                      help = "Minimum indel size for the output (default: 50)")
@@ -101,22 +101,22 @@ def create_parser():
                      help= "Maximum allowed sample number for a nonmatched control sample (default: 0)")
 
     get.add_argument("--cluster_margin_size", default = 100, type = int,
-                     help = "Two breakpoints are margined if they are within this threshould value (default: 100)")
+                     help = "Two breakpoints are margined if they are within this threshold value (default: 100)")
 
     get.add_argument("--median_mapQ_thres", default = 20, type = int,
-                     help = "Threshould for median mapping quality (default: 20)")
+                     help = "Threshold for median mapping quality (default: 20)")
 
     get.add_argument("--max_overhang_size_thres", default = 100, type = int,
-                     help = "Threshould for maximum overhang size (default: 100)")
+                     help = "Threshold for maximum overhang size (default: 100)")
 
     get.add_argument("--check_read_max_num", default = 500, type = int,
                      help = "The maximum number of reads to check per breakpoint in the phase of realignment validation (default: 500)")
 
     get.add_argument("--var_read_min_mapq", default = 0, type = int,
-                     help = "Threshould for mapping quality in validate step (default: 0)")
+                     help = "Threshold for mapping quality in validate step (default: 0)")
 
     get.add_argument("--validation_score_ratio_thres", default = 1.2, type = float,
-                     help = "Threshould for threshould for SV segment validation by alignment")
+                     help = "Threshold for SV segment validation by alignment")
 
     get.add_argument("--sw_jump_params", nargs = 4, default = [1, 3, 3, 2], type = int,
                      help = "Parameters (match score, mismatch penalty, gap penalty, insertion penalty) for one-time smith-waterman algorithm (default: [1, 3, 3, 2]")
@@ -125,22 +125,25 @@ def create_parser():
     #                  help = "Use SSW Library. This is for backward comaptibility, and may be removed in the future (default: False)")
 
     get.add_argument("--qv10", default = False, action = 'store_true',
-                     help = "Parameter preset for sequencing data with a base quality of around 10. Recommended for ONT data called by Guppy before version 5")
+                     help = "Parameter preset for ONT data with median Q10 (e.g., Guppy before v5)")
 
     get.add_argument("--qv15", default = False, action = 'store_true',
-                     help = "Parameter preset for sequencing data with a base quality of around 15. Recommended for ONT data called by Guppy version 5, 6.")
+                     help = "Parameter preset for ONT data with median Q15 (e.g., Guppy v5/v6)")
 
     get.add_argument("--qv20", default = False, action = 'store_true',
-                     help = "Parameter preset for sequencing data with a base quality of around 20. Recommended for ONT data with Q20+ chemistry.")
+                     help = "Parameter preset for ONT data with median Q20+ (e.g., Dorado SUP, Q20+ chemistry)")
 
     get.add_argument("--qv25", default = False, action = 'store_true',
-                     help = "Parameter preset for sequencing data with a base quality above 25. Recommended for PacBio Hifi data.")
+                     help = "Parameter preset for PacBio HiFi data")
 
-    get.add_argument("--use_racon", default = False, action = 'store_true',
-                     help = "Use racon for error correction of clustered putative supporting reads (default: False)")
+    get.add_argument("--use_mafft", default = False, action = 'store_true',
+                     help = "Use mafft instead of racon for consensus generation")
 
-    get.add_argument("--single_bnd", default = False, action = 'store_true',
-                     help = "Generate single end breakpoints (default: False)")
+    get.add_argument("--single_bnd", default = True, action = 'store_true',
+                     help = "Generate single end breakpoints (default: True)")
+
+    get.add_argument("--no_single_bnd", default = False, action = 'store_true',
+                     help = "Disable single breakend SV detection")
 
     # get.add_argument("--control_read_num_thres", default = 0, type = int,
     #                  help = "Filter if the number of supporting reads for the control sample is larger than this value")
@@ -183,22 +186,22 @@ def create_parser():
                           help = "Path to control BAM file")
 
     validate.add_argument("--var_read_min_mapq", default = 40, type = int,
-                          help = "Threshould for mapping quality in validate step")
+                          help = "Threshold for mapping quality in validate step")
 
     validate.add_argument("--validation_score_ratio_thres", default = 1.2, type = float, 
-                     help = "Threshould for threshould for SV segment validation by alignment")
+                     help = "Threshold for SV segment validation by alignment")
 
     validate.add_argument("--qv10", default = False, action = 'store_true',
-                     help = "Parameter preset for sequencing data with a base quality of around 10. Recommended for ONT data called by Guppy before version 5")
-    
+                     help = "Parameter preset for ONT data with median Q10 (e.g., Guppy before v5)")
+
     validate.add_argument("--qv15", default = False, action = 'store_true',
-                     help = "Parameter preset for sequencing data with a base quality of around 15. Recommended for ONT data called by Guppy version 5, 6.")
-    
+                     help = "Parameter preset for ONT data with median Q15 (e.g., Guppy v5/v6)")
+
     validate.add_argument("--qv20", default = False, action = 'store_true',
-                     help = "Parameter preset for sequencing data with a base quality of around 20. Recommended for ONT data with Q20+ chemistry.")
+                     help = "Parameter preset for ONT data with median Q20+ (e.g., Dorado SUP, Q20+ chemistry)")
 
     validate.add_argument("--qv25", default = False, action = 'store_true',
-                     help = "Parameter preset for sequencing data with a base quality above 25. Recommended for PacBio Hifi data.")
+                     help = "Parameter preset for PacBio HiFi data")
 
     validate.add_argument("--sort_option", metavar = "-S 1G", type = str, default = "-S 2G", 
                      help = "options for sort command")
@@ -214,7 +217,7 @@ def create_parser():
                                             help = "Classify long insertion into LINE1, Alu, SVA, and so on")
     
     insert_classify.add_argument("sv_list_file", default = None, type =str,
-                                 help = "Path to nanomonsv get result file")
+                                 help = "Path to VCF file or nanomonsv get result file (nanomonsv.result.txt)")
     
     insert_classify.add_argument("output_file", type = str,
                                  help = "Path to output file")
@@ -225,7 +228,7 @@ def create_parser():
     # insert_classify.add_argument("--grc", default = False, action = 'store_true',
     #                              help = "Deprecated. This is not used any more. Convert chromosome names to Genome Reference Consortium nomenclature (default: %(default)s)")
     insert_classify.add_argument("gtf_file", metavar = "gencode.gtf.gz", default = None, type = str,
-                                 help = "Path to GFT file for transcript")
+                                 help = "Path to GTF file for transcript")
 
     # insert_classify.add_argument("--genome_id", choices = ["hg19", "hg38", "mm10"], default = "hg38",
     #                              help = "Genome id used for selecting UCSC-GRC chromosome name corresponding files (default: %(default)s)")

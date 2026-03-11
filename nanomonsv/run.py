@@ -177,17 +177,24 @@ def call_slow_request_main(args, index):
 def get_main(args):
 
     # check if the executables exist
-    if args.use_racon: 
-        is_tool("racon")
-    else:
+    if args.use_mafft:
         is_tool("mafft")
+    else:
+        is_tool("racon")
     # libssw_check()
 
-    if args.single_bnd: 
+    # handle --no_single_bnd
+    if args.no_single_bnd:
+        args.single_bnd = False
+
+    if args.single_bnd:
         is_tool("minimap2")
-        if not args.use_racon:
-            logger.error("single_bnd option has to be used with use_racon option")
+        if args.use_mafft:
+            logger.error("single_bnd requires racon (default). Cannot be used with --use_mafft")
             sys.exit(1)
+
+    # internal functions still use use_racon
+    args.use_racon = not args.use_mafft
 
     parallel_num = 1
     # if args.threads > 1:
