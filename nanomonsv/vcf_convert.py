@@ -39,9 +39,8 @@ def genomesv2vcf_convert(result_file, output_vcf, reference):
             '##ALT=<ID=DUP,Description="Duplication">\n'\
             '##FORMAT=<ID=TR,Number=1,Type=Integer,Description="The number of reads around the breakpoints">\n'\
             '##FORMAT=<ID=VR,Number=1,Type=Integer,Description="The number of variant supporting reads determined in the validation realignment step">\n'\
-            '##FORMAT=<ID=VR_HP0,Number=1,Type=Integer,Description="The number of variant supporting reads without haplotype tag">\n'\
-            '##FORMAT=<ID=VR_HP1,Number=1,Type=Integer,Description="The number of variant supporting reads from haplotype 1">\n'\
-            '##FORMAT=<ID=VR_HP2,Number=1,Type=Integer,Description="The number of variant supporting reads from haplotype 2">'
+            '##FORMAT=<ID=VR_HP_BP1,Number=3,Type=Integer,Description="Variant supporting reads per haplotype at BP1 (HP1,HP2,HP0)">\n'\
+            '##FORMAT=<ID=VR_HP_BP2,Number=3,Type=Integer,Description="Variant supporting reads per haplotype at BP2 (HP1,HP2,HP0)">'
 
     chrom_order = {chrom: i for i, chrom in enumerate(ref_tb.references)}
 
@@ -71,7 +70,7 @@ def genomesv2vcf_convert(result_file, output_vcf, reference):
                 tsvinsseq = ''
                 tsvinslen = 0
 
-            tformat_sample = f'TR:VR:VR_HP0:VR_HP1:VR_HP2\t{F["Checked_Read_Num_Tumor"]}:{F["Supporting_Read_Num_Tumor"]}:{F["Supporting_Read_Num_Tumor_HP0"]}:{F["Supporting_Read_Num_Tumor_HP1"]}:{F["Supporting_Read_Num_Tumor_HP2"]}'
+            tformat_sample = f'TR:VR:VR_HP_BP1:VR_HP_BP2\t{F["Checked_Read_Num_Tumor"]}:{F["Supporting_Read_Num_Tumor"]}:{F["Supporting_Read_Num_Tumor_HP_BP1"]}:{F["Supporting_Read_Num_Tumor_HP_BP2"]}'
             if is_control:
                 tformat_sample = tformat_sample + f'\t{F["Checked_Read_Num_Control"]}:{F["Supporting_Read_Num_Control"]}' 
 
@@ -220,9 +219,7 @@ def sbnd2vcf_convert(sbnd_result_file, output_vcf, reference):
             '##INFO=<ID=SVTYPE,Number=1,Type=String,Description="Type of structural variant">\n'\
             '##FORMAT=<ID=TR,Number=1,Type=Integer,Description="The number of reads around the breakpoints">\n'\
             '##FORMAT=<ID=VR,Number=1,Type=Integer,Description="The number of variant supporting reads determined in the validation realignment step">\n'\
-            '##FORMAT=<ID=VR_HP0,Number=1,Type=Integer,Description="The number of variant supporting reads without haplotype tag">\n'\
-            '##FORMAT=<ID=VR_HP1,Number=1,Type=Integer,Description="The number of variant supporting reads from haplotype 1">\n'\
-            '##FORMAT=<ID=VR_HP2,Number=1,Type=Integer,Description="The number of variant supporting reads from haplotype 2">'
+            '##FORMAT=<ID=VR_HP,Number=3,Type=Integer,Description="Variant supporting reads per haplotype (HP1,HP2,HP0)">'
 
     chrom_order = {chrom: i for i, chrom in enumerate(ref_tb.references)}
 
@@ -260,7 +257,7 @@ def sbnd2vcf_convert(sbnd_result_file, output_vcf, reference):
 
             tinfo = "SVTYPE=BND"
 
-            tformat_sample = f'TR:VR:VR_HP0:VR_HP1:VR_HP2\t{F["Checked_Read_Num_Tumor"]}:{F["Supporting_Read_Num_Tumor"]}:{F["Supporting_Read_Num_Tumor_HP0"]}:{F["Supporting_Read_Num_Tumor_HP1"]}:{F["Supporting_Read_Num_Tumor_HP2"]}'
+            tformat_sample = f'TR:VR:VR_HP\t{F["Checked_Read_Num_Tumor"]}:{F["Supporting_Read_Num_Tumor"]}:{F["Supporting_Read_Num_Tumor_HP"]}'
             if is_control:
                 tformat_sample = tformat_sample + f'\t{F["Checked_Read_Num_Control"]}:{F["Supporting_Read_Num_Control"]}'
 

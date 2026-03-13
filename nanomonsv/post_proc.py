@@ -12,7 +12,8 @@ class Sv(object):
 
     def __init__(self, tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq, sv_id,
         total_read_tumor, var_read_tumor, total_read_ctrl, var_read_ctrl,
-        hp1_count = 0, hp2_count = 0, hp0_count = 0):
+        hp1_count_bp1 = 0, hp2_count_bp1 = 0, hp0_count_bp1 = 0,
+        hp1_count_bp2 = 0, hp2_count_bp2 = 0, hp0_count_bp2 = 0):
 
         self.chr1 = tchr1
         self.pos1 = tpos1
@@ -26,9 +27,12 @@ class Sv(object):
         self.var_read_tumor = var_read_tumor
         self.total_read_ctrl = total_read_ctrl
         self.var_read_ctrl = var_read_ctrl
-        self.hp1_count = hp1_count
-        self.hp2_count = hp2_count
-        self.hp0_count = hp0_count
+        self.hp1_count_bp1 = hp1_count_bp1
+        self.hp2_count_bp1 = hp2_count_bp1
+        self.hp0_count_bp1 = hp0_count_bp1
+        self.hp1_count_bp2 = hp1_count_bp2
+        self.hp2_count_bp2 = hp2_count_bp2
+        self.hp0_count_bp2 = hp0_count_bp2
         self.filter = []
 
 
@@ -180,11 +184,13 @@ class Sv_filterer(object):
 
     def filter_haplotype_dispersion(self, sv, filter_item = "Haplotype_Dispersion"):
 
-        phased_count = sv.hp1_count + sv.hp2_count
-        if phased_count == 0: return
-        dominant_ratio = max(sv.hp1_count, sv.hp2_count) / phased_count
-        if dominant_ratio < self.hp_ratio_thres:
-            sv.filter.append(filter_item)
+        for hp1, hp2 in [(sv.hp1_count_bp1, sv.hp2_count_bp1), (sv.hp1_count_bp2, sv.hp2_count_bp2)]:
+            phased_count = hp1 + hp2
+            if phased_count == 0: continue
+            dominant_ratio = max(hp1, hp2) / phased_count
+            if dominant_ratio < self.hp_ratio_thres:
+                sv.filter.append(filter_item)
+                return
 
    
     def filter_simple_repeat(self, sv, filter_item = "Simple_repeat", simple_repeat_dist_margin = 30):
@@ -210,11 +216,13 @@ class Sv_filterer(object):
             
     def add_sv(self, tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq, sv_id,
         total_read_tumor, var_read_tumor, total_read_ctrl, var_read_ctrl,
-        hp1_count = 0, hp2_count = 0, hp0_count = 0):
+        hp1_count_bp1 = 0, hp2_count_bp1 = 0, hp0_count_bp1 = 0,
+        hp1_count_bp2 = 0, hp2_count_bp2 = 0, hp0_count_bp2 = 0):
 
         sv = Sv(tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq, sv_id,
             total_read_tumor, var_read_tumor, total_read_ctrl, var_read_ctrl,
-            hp1_count, hp2_count, hp0_count)
+            hp1_count_bp1, hp2_count_bp1, hp0_count_bp1,
+            hp1_count_bp2, hp2_count_bp2, hp0_count_bp2)
         self.sv_list.append(sv)
 
 
@@ -259,7 +267,7 @@ class Sv_filterer(object):
     def flush_sv_list(self):
 
         header = "Chr_1\tPos_1\tDir_1\tChr_2\tPos_2\tDir_2\tInserted_Seq\tSV_ID\tChecked_Read_Num_Tumor\tSupporting_Read_Num_Tumor"
-        header = header + "\tSupporting_Read_Num_Tumor_HP0\tSupporting_Read_Num_Tumor_HP1\tSupporting_Read_Num_Tumor_HP2"
+        header = header + "\tSupporting_Read_Num_Tumor_HP_BP1\tSupporting_Read_Num_Tumor_HP_BP2"
         if self.is_control: header = header + "\tChecked_Read_Num_Control\tSupporting_Read_Num_Control"
         header = header + '\t' + "Is_Filter"
         print(header, file = self.hout)
@@ -267,7 +275,7 @@ class Sv_filterer(object):
 
             print_sv_line = f"{sv.chr1}\t{sv.pos1}\t{sv.dir1}\t{sv.chr2}\t{sv.pos2}\t{sv.dir2}\t{sv.inseq}\t{sv.sv_id}"
             print_sv_line = print_sv_line + f"\t{sv.total_read_tumor}\t{sv.var_read_tumor}"
-            print_sv_line = print_sv_line + f"\t{sv.hp0_count}\t{sv.hp1_count}\t{sv.hp2_count}"
+            print_sv_line = print_sv_line + f"\t{sv.hp1_count_bp1},{sv.hp2_count_bp1},{sv.hp0_count_bp1}\t{sv.hp1_count_bp2},{sv.hp2_count_bp2},{sv.hp0_count_bp2}"
 
             if self.is_control: print_sv_line = print_sv_line + f"\t{sv.total_read_ctrl}\t{sv.var_read_ctrl}"
             if len(sv.filter) == 0: 
@@ -301,7 +309,8 @@ def integrate_realignment_result(tumor_file, control_file, output_file, referenc
             tkey = (tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq, tid)
 
             total_read_tumor, var_read_tumor = int(F[8]), int(F[9])
-            hp1_count, hp2_count, hp0_count = int(F[10]), int(F[11]), int(F[12])
+            hp1_count_bp1, hp2_count_bp1, hp0_count_bp1 = int(F[10]), int(F[11]), int(F[12])
+            hp1_count_bp2, hp2_count_bp2, hp0_count_bp2 = int(F[13]), int(F[14]), int(F[15])
             total_read_ctrl, var_read_ctrl = None, None
 
             if tkey in svkey2control_info: total_read_ctrl, var_read_ctrl = svkey2control_info[tkey][0], svkey2control_info[tkey][1]
@@ -317,7 +326,8 @@ def integrate_realignment_result(tumor_file, control_file, output_file, referenc
 
             sv_filterer.add_sv(tchr1, tpos1, tdir1, tchr2, tpos2, tdir2, tinseq, tid,
                 total_read_tumor, var_read_tumor, total_read_ctrl, var_read_ctrl,
-                hp1_count, hp2_count, hp0_count)
+                hp1_count_bp1, hp2_count_bp1, hp0_count_bp1,
+                hp1_count_bp2, hp2_count_bp2, hp0_count_bp2)
 
     sv_filterer.apply_filters()
     sv_filterer.flush_sv_list()
@@ -412,7 +422,7 @@ def integrate_realignment_result_sbnd(tumor_sbnd_count_file, ctrl_sbnd_count_fil
 
     with open(tumor_sbnd_count_file, 'r') as hin, open(output_file, 'w') as hout:
         header = "Chr_1\tPos_1\tDir_1\tContig\tSV_ID\tChecked_Read_Num_Tumor\tSupporting_Read_Num_Tumor"
-        header = header + "\tSupporting_Read_Num_Tumor_HP0\tSupporting_Read_Num_Tumor_HP1\tSupporting_Read_Num_Tumor_HP2"
+        header = header + "\tSupporting_Read_Num_Tumor_HP"
         if ctrl_sbnd_count_file is not None: header = header + "\tChecked_Read_Num_Control\tSupporting_Read_Num_Control"
         header = header + "\tIs_Filter"
         print(header, file = hout)
@@ -453,7 +463,7 @@ def integrate_realignment_result_sbnd(tumor_sbnd_count_file, ctrl_sbnd_count_fil
 
             is_filter = ";".join(filter_list) if filter_list else "PASS"
 
-            hp_str = f"{hp0_count}\t{hp1_count}\t{hp2_count}"
+            hp_str = f"{hp1_count},{hp2_count},{hp0_count}"
             if ctrl_sbnd_count_file is not None:
                 print(f"{F[0]}\t{F[1]}\t{F[2]}\t{key2contig[key]}\t{F[4]}\t{F[5]}\t{F[6]}\t{hp_str}\t{ctrl_count[0]}\t{ctrl_count[1]}\t{is_filter}", file = hout)
             else:
