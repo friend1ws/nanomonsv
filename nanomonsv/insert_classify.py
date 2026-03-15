@@ -184,11 +184,12 @@ def sam2bed_split(input_file, output_file):
             elif cigar[0] == 2:
                 reference_pos_cur = reference_pos_cur + cigar[1]
             elif cigar[0] == 3:
-                exon_size = reference_pos_cur - reference_exon_cur 
-                query_name2 = query_name + ',' + str(min(query_exon_cur, query_pos_cur) + 1) + ',' + \
-                  str(max(query_exon_cur, query_pos_cur))
-                print('\t'.join([reference_name, str(reference_exon_cur), str(reference_pos_cur), 
-                                 query_name2, str(exon_size), query_strand]), file = hout)
+                exon_size = reference_pos_cur - reference_exon_cur
+                if exon_size > 0:
+                    query_name2 = query_name + ',' + str(min(query_exon_cur, query_pos_cur) + 1) + ',' + \
+                      str(max(query_exon_cur, query_pos_cur))
+                    print('\t'.join([reference_name, str(reference_exon_cur), str(reference_pos_cur),
+                                     query_name2, str(exon_size), query_strand]), file = hout)
 
                 reference_pos_cur = reference_pos_cur + cigar[1]
                 reference_exon_cur = reference_pos_cur
