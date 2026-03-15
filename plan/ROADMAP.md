@@ -11,25 +11,29 @@ Low risk. No change to existing canonical SV output format.
 - [x] [sbnd_dedup_canonical](done/sbnd_dedup_canonical.md) — Remove sbnd overlapping canonical SVs (coordinate comparison only, no RepeatMasker/BWA dependency)
 - [x] [sbnd_vcf](done/sbnd_vcf.md) — VCF output for single breakends (VCF 4.3 single breakend format with contig sequence)
 
-## v0.9.0 — insert_classify extension + misc cleanup + default options
+## v0.9.0 — insert_classify extension + misc cleanup + default options (Released)
 
 - [x] [insert_classify_improve](done/insert_classify_improve2603.md) — VCF input/output, minor fixes, annotation logic audit & sentinel unification
 - [x] [hgsvc3_mei_db](done/hgsvc3_mei_db.md) — Prepare HGSVC3 MEI database (LINE1 from 1,604 records + Alu/SVA)
 - [x] [misc_cleanup](done/misc_cleanup.md) — Remove misc/ scripts whose functionality has been integrated into `nanomonsv get`
-- [x] [readme_improve](readme_improve.md) — Key features section, GTF description, quality presets
-- [ ] [default_options](default_options.md) — Make racon and `--single_bnd` default on in `nanomonsv get`
+- [~] [readme_improve](readme_improve.md) — Key features section, GTF description, quality presets (mostly done; Zenodo URL, panel threshold docs, get option list pending)
+- [x] [default_options](done/default_options.md) — Make racon and `--single_bnd` default on in `nanomonsv get`
+- [x] [haplotag](done/haplotag.md) — Per-haplotype supporting read counts (HP1/HP2/unphased)
+- [x] [giab_bugfix](done/giab_bugfix.md) — Fix crash on long sbnd contigs (csv field limit), minimap2 `-f 0.05` for satellite repeats, insert_classify negative start fix
 
-## v0.9.0 bugfix — GIAB workflow test issues
+## v0.9.0 post-release — Control panel tuning + known issues
 
-- [ ] [giab_bugfix](giab_bugfix.md) — Fix crash on long sbnd contigs (csv field limit), cap consensus length at 100KB, suppress minimap2 core dumps
+- [x] Default panel thresholds: `max_panel_read_num=2`, `max_panel_sample_num=2` (tuned for 1000-sample ONT panels)
+- [x] Haplotype_Dispersion filter disabled (removes true somatic SVs; see [known_issues_haplotype_filter](known_issues_haplotype_filter.md))
+- [x] 1kg-ont-vienna control panels: singleton removal for size reduction, Zenodo upload
+- [ ] [known_issues_generate_consensus](known_issues_generate_consensus.md) — sbnd consensus length cap, RLIMIT_CORE suppression (mitigated, not fully resolved)
+- [ ] [known_issues_haplotype_filter](known_issues_haplotype_filter.md) — HP filter too aggressive for somatic SVs (disabled, future improvement needed)
 
-## v0.9.1 — Haplotype support
+## Future
 
-- [ ] [haplotag](haplotag.md) — Per-haplotype supporting read counts (HP1/HP2/unphased), haplotype dispersion filter
-
-## v0.9.2 — Micro homology
-
+- [ ] [insert_classify_2604](insert_classify_2604.md) — Documentation, literature review, label/naming review, TXT/VCF compatibility
 - [ ] [micro_homology](micro_homology.md) — Detect micro homology at breakpoints, add HOMLEN/HOMSEQ/CIPOS to VCF
+- [ ] [fix_zero_length_exon_in_sam2bed_split](fix_zero_length_exon_in_sam2bed_split.md) — Fix zero-length exon bug in sam2bed_split
 
 ## Dependency graph
 
@@ -41,11 +45,11 @@ v0.8.2  vcf_fix                 ✓
             │
             ▼
 v0.9.0  insert_classify_improve ✓ + hgsvc3_mei_db ✓ + misc_cleanup ✓
-        + readme_improve ✓ + default_options
+        + readme_improve ✓ + default_options ✓
+        + haplotag ✓ + giab_bugfix ✓
             │
             ▼
-v0.9.1  haplotag
-            │
-            ▼
-v0.9.2  micro_homology
+Future  insert_classify_2604
+        micro_homology
+        fix_zero_length_exon_in_sam2bed_split
 ```

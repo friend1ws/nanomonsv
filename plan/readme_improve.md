@@ -1,7 +1,14 @@
 # README.md improvement
 
-## Status: TODO
+## Status: MOSTLY DONE
 - Created: 2026-03-08
+- Updated: 2026-03-16
+
+### Remaining items
+1. Quick Start: control panel download URL points to `1kg-ont-vienna_hg38_no_singleton.tar.gz` on Zenodo, but Zenodo upload not yet completed
+2. Control Panel section: no mention of default filter thresholds (`max_panel_read_num=2, max_panel_sample_num=2`) — users should understand what these mean when using large panels
+3. get option list (L108-123): `--max_panel_read_num` and `--max_panel_sample_num` not shown despite default change from 1/0 to 2/2
+4. Wiki pages: not verified against current README content
 
 ## Overview
 Restructure README.md to improve readability without losing essential information.

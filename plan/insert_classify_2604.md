@@ -41,6 +41,33 @@ Should cover:
 - L1_Source_Info: inferred source LINE1 element for transductions
 - VCF INFO fields (currently 3 fields missing compared to TSV: Alignment_Info, Inserted_Pos, Is_PolyA_T)
 
+### 2b. TXT vs VCF compatibility issues (verified 2026-03-16)
+Verified with COLO829, H2009, HCC1954 (v0.9.0b3).
+
+#### Entry count difference
+- VCF converts `r_` (rearrangement) based on breakpoint structure:
+  - Same chr +/- → SVTYPE=DEL
+  - Same chr -/+ → SVTYPE=DUP
+  - Inter-chr or same direction → SVTYPE=BND (2 rows per SV)
+- So VCF has more rows than TXT (e.g. COLO829: 67 entries → 85 VCF rows, +18 from BND pairs)
+
+#### Insert_Type scope difference
+- TXT (`filt.pass.insert_classify.txt`): only `i_` entries get Insert_Type classification; `d_` and `r_` get `---`
+- VCF (`insert_classify.vcf`): any entry with SVINSLEN ≥ 50 gets INSERT_TYPE, including DEL/DUP/BND converted from `d_`/`r_`
+- This means VCF has INSERT_TYPE=Unclassified on many `d_`/`r_` entries where TXT has `---`
+- Rarely, a `d_` with insertion > deletion (e.g. HCC1954 d_286: del=137bp, ins=286bp) becomes SVTYPE=INS in VCF and gets classified (SVA), while TXT keeps it as `d_` with `---`
+
+#### For `i_` entries only: compatible
+- COLO829: 8 vs 8, IDENTICAL
+- H2009: 547 vs 547, IDENTICAL
+- HCC1954: 18 vs 19 (1 diff: d_286 converted to INS in VCF, classified as SVA)
+- Insert_Type values match for all shared entries
+
+#### Action items
+- Consider: should TXT also classify `d_` entries with large insertions? (consistency with VCF)
+- Consider: should VCF skip INSERT_TYPE for entries originally classified as `d_`/`r_`? (consistency with TXT)
+- Document the difference clearly in user docs
+
 ### 3. Literature review: what annotations should be reported
 Review existing tools and papers to understand best practices for MEI annotation.
 
