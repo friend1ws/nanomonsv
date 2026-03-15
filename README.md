@@ -49,25 +49,36 @@ Python >=3.9, pysam, numpy, parasail
 
 ## Quick Start
 
-1. Prepare the reference genome (here, GDC reference genome).
+1. Prepare the reference genome (here, GDC GRCh38 reference genome).
 ```
 wget https://api.gdc.cancer.gov/data/254f697d-310d-4d7d-a27b-27fbf767a834 -O GRCh38.d1.vd1.fa.tar.gz
 tar xvf GRCh38.d1.vd1.fa.tar.gz
 ```
 
-2. Parse putative SV supporting reads.
+2. (Optional but highly recommended) Download a control panel from [zenodo](https://zenodo.org/records/11470934). See [Control Panel](#control-panel) for available panels and how to choose.
 ```
-nanomonsv parse tests/resource/bam/test_tumor.bam output/test_tumor
-nanomonsv parse tests/resource/bam/test_ctrl.bam output/test_ctrl
-```
-
-3. Get the final result.
-```
-nanomonsv get output/test_tumor tests/resource/bam/test_tumor.bam GRCh38.d1.vd1.fa \
-    --control_prefix output/test_ctrl --control_bam tests/resource/bam/test_ctrl.bam
+wget https://zenodo.org/api/records/11470934/files/1kg-ont-vienna_hg38_no_singleton.tar.gz/content \
+    -O 1kg-ont-vienna_hg38_no_singleton.tar.gz
+tar xvf 1kg-ont-vienna_hg38_no_singleton.tar.gz
 ```
 
-You will find the result file `test_tumor.nanomonsv.result.txt`.
+3. (Optional but highly recommended) Download a simple repeat BED file. Pre-built files for GRCh38 and CHM13 are included in this repository under [resource/simple_repeats](https://github.com/friend1ws/nanomonsv/tree/master/resource/simple_repeats).
+
+4. Parse putative SV supporting reads.
+```
+nanomonsv parse tumor.bam output/tumor
+nanomonsv parse ctrl.bam output/ctrl
+```
+
+5. Get the final result.
+```
+nanomonsv get output/tumor tumor.bam GRCh38.d1.vd1.fa \
+    --control_prefix output/ctrl --control_bam ctrl.bam \
+    --control_panel_prefix 1kg-ont-vienna_hg38_no_singleton \
+    --simple_repeat_bed resource/simple_repeats/human_GRCh38_simpleRepeat.bed.gz
+```
+
+You will find the result file `tumor.nanomonsv.result.txt`.
 
 ## Usage
 
@@ -245,19 +256,26 @@ using VCF single breakend notation (e.g., `N.` or `.N` in ALT field with `SVTYPE
 
 ## Control Panel
 
-We recommend using a control panel for filtering common SVs and noise.
-Use `merge_control` to create one from your own sequencing data.
+We **strongly recommend** using a control panel for filtering common SVs and sequencing noise.
+Pre-built control panels are available at [zenodo](https://zenodo.org/records/11470934).
+You can also create your own from your sequencing data using `merge_control`.
 
-For users without sufficient control data, we provide a pre-built control panel
-created from 30 Nanopore sequencing samples from the [Human Pangenome Reference Consortium](https://humanpangenome.org/),
-available at [zenodo](https://zenodo.org/records/11470934).
+### Pre-built control panels
 
-This control panel was built by aligning 30-40 Nanopore (basecalled by Guppy ver. 4 and 6) and PacBio HiFi sequencing data
-to the GRCh38/CHM13 reference genome with minimap2 version 2.24.
+| Panel | Samples | Reference | Source |
+|-------|---------|-----------|--------|
+| 1000G ONT Vienna | 1,019 | GRCh38 / CHM13 | [1000 Genomes Project](https://www.internationalgenome.org/) |
+| HPRC Nanopore (Guppy v4) | ~30 | GRCh38 / CHM13 | [HPRC](https://humanpangenome.org/) release 1 |
+| HPRC Nanopore (Guppy v6) | ~40 | GRCh38 / CHM13 | HPRC release 1 |
+| HPRC PacBio HiFi | ~30 | GRCh38 / CHM13 | HPRC release 1 |
+
+For ONT data, the **1000G ONT Vienna panel** (1,019 samples) is recommended for its large sample size.
 We recommend using a control panel as close as possible in platform and basecall quality.
-When unsure, use the Nanopore control panel from Guppy version 4 (noisier panels tend to be more versatile).
+When unsure, a noisier panel (e.g., Guppy v4) tends to be more versatile.
 
-**When you use these control panels and publish, do not forget to credit [HPRC](https://github.com/human-pangenomics/HG002_Data_Freeze_v1.0#citations)!**
+**When you use these control panels and publish, please cite:**
+- Liao et al., Nature, 2023 ([doi:10.1038/s41586-023-05896-x](https://doi.org/10.1038/s41586-023-05896-x)) for HPRC panels
+- Schloissnig et al., Nature, 2025 ([doi:10.1038/s41586-025-09290-7](https://doi.org/10.1038/s41586-025-09290-7)) for 1000G ONT Vienna panels
 
 
 ## Example Data
