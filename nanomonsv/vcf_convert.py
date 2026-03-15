@@ -5,6 +5,9 @@ import pysam
 from .version import __version__
 from .my_seq import reverse_complement
 
+# ONT single breakend contigs can exceed the default 128KB csv field limit
+csv.field_size_limit(10 * 1024 * 1024)
+
 
 def genomesv2vcf_convert(result_file, output_vcf, reference):
 
@@ -27,7 +30,6 @@ def genomesv2vcf_convert(result_file, output_vcf, reference):
             '##FILTER=<ID=SV_with_decoy,Description="SVs involving decoy contigs">\n'\
             '##FILTER=<ID=Too_small_size,Description="Insertions whose size is below the threshould (currently 100bp)">\n'\
             '##FILTER=<ID=Too_low_VAF,Description="SVs whose variant allele frequencies are inferred to be low">\n'\
-            '##FILTER=<ID=Haplotype_Dispersion,Description="SVs where supporting reads are dispersed across both haplotypes">\n'\
             '##INFO=<ID=SVTYPE,Number=1,Type=String,Description="Type of structural variant">\n'\
             '##INFO=<ID=SVLEN,Number=1,Type=Integer,Description="Difference in length between REF and ALT alleles">\n'\
             '##INFO=<ID=END,Number=1,Type=Integer,Description="End position of the variant described in this record">\n'\
@@ -215,7 +217,6 @@ def sbnd2vcf_convert(sbnd_result_file, output_vcf, reference):
         header = header + '\n' + f"##contig=<ID={tchr},length={tlen}>"
 
     header = header + '\n' + \
-            '##FILTER=<ID=Haplotype_Dispersion,Description="SVs where supporting reads are dispersed across both haplotypes">\n'\
             '##INFO=<ID=SVTYPE,Number=1,Type=String,Description="Type of structural variant">\n'\
             '##FORMAT=<ID=TR,Number=1,Type=Integer,Description="The number of reads around the breakpoints">\n'\
             '##FORMAT=<ID=VR,Number=1,Type=Integer,Description="The number of variant supporting reads determined in the validation realignment step">\n'\

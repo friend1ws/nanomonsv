@@ -33,6 +33,9 @@ dependencies = [
     "h5py"
 ]
 
+[project.optional-dependencies]
+s3 = ["boto3"]
+
 [project.scripts]
 nanomonsv = "nanomonsv:main"
 

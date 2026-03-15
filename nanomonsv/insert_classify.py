@@ -408,7 +408,7 @@ def check_tsd_polyAT(input_file, seq_list, reference, output_file):
 
 
             tsd_cand2 = reverse_complement(seq[-20:])
-            local_seq2 = reverse_complement(get_seq(reference, tchr, int(tpos1) - len(tsd_cand2), int(tpos1)))
+            local_seq2 = reverse_complement(get_seq(reference, tchr, max(1, int(tpos1) - len(tsd_cand2)), int(tpos1)))
             alignment2 = sw.align(tsd_cand2, local_seq2)
             if alignment2.q_pos <= 2 and alignment2.r_pos <= 2 and alignment2.matches >= 5 and alignment2.identity >= 0.8: 
                 tsd2 = reverse_complement(alignment2.query[(alignment2.q_pos):(alignment2.q_pos + alignment2.matches)])

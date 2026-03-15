@@ -242,7 +242,7 @@ class Consensus_generator(object):
         # Map all reads to top longest candidates
         try:
             with open(self.tmp_dir + '/' + self.temp_key + "_top_minimap2.paf", 'w') as hout:
-                subprocess.check_call(["minimap2", "-x", "map-ont",
+                subprocess.check_call(["minimap2", "-x", "map-ont", "-f", "0.05",
                     self.tmp_dir + '/' + self.temp_key + ".top_longest.fa",
                     self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa"],
                     stderr=subprocess.DEVNULL, stdout=hout, preexec_fn=self.preexec_fn)
@@ -276,8 +276,9 @@ class Consensus_generator(object):
 
         try:
             with open(self.tmp_dir + '/' + self.temp_key + "_ova_minimap2.paf", 'w') as hout:
-                subprocess.check_call(["minimap2", "-x", "map-ont", self.tmp_dir + '/' + self.temp_key + "_ref.fa",
-                    self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa"], 
+                subprocess.check_call(["minimap2", "-x", "map-ont", "-f", "0.05",
+                    self.tmp_dir + '/' + self.temp_key + "_ref.fa",
+                    self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa"],
                     stderr = subprocess.DEVNULL, stdout = hout, preexec_fn = self.preexec_fn)
         except Exception as e:
             logger.warning(f'{e}')
@@ -316,7 +317,8 @@ class Consensus_generator(object):
 
         try:
             with open(self.tmp_dir + '/' + self.temp_key + "_ova_minimap2_2nd.paf", 'w') as hout:
-                subprocess.check_call(["minimap2", "-x", "map-ont", self.tmp_dir + '/' + self.temp_key + "_ref_2nd.fa",
+                subprocess.check_call(["minimap2", "-x", "map-ont", "-f", "0.05",
+                    self.tmp_dir + '/' + self.temp_key + "_ref_2nd.fa",
                     self.tmp_dir + '/' + self.temp_key + ".supporting_read.fa"],
                     stderr = subprocess.DEVNULL, stdout = hout, preexec_fn = self.preexec_fn)
         except Exception as e:

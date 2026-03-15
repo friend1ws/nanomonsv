@@ -417,10 +417,9 @@ def get_main(args):
     integrate_realignment_result(args.tumor_prefix + ".realignment.tumor.sread_count.txt", control_sread_count_file,
         args.tumor_prefix + ".nanomonsv.result.txt", args.reference_fasta, args.simple_repeat_bed, min_indel_size = args.min_indel_size,
         min_tumor_variant_read_num = args.min_tumor_variant_read_num, min_tumor_VAF = args.min_tumor_VAF,
-        max_control_variant_read_num = args.max_control_variant_read_num, max_control_VAF = args.max_control_VAF,
-        hp_ratio_thres = args.hp_ratio_thres)
+        max_control_variant_read_num = args.max_control_variant_read_num, max_control_VAF = args.max_control_VAF)
 
-    genomesv2vcf_convert(args.tumor_prefix + ".nanomonsv.result.txt", args.tumor_prefix + ".nanomonsv.result.vcf", 
+    genomesv2vcf_convert(args.tumor_prefix + ".nanomonsv.result.txt", args.tumor_prefix + ".nanomonsv.result.vcf",
         args.reference_fasta)
 
     proc_sread_info_file(args.tumor_prefix + ".realignment.tumor.sread_info.txt",
@@ -431,7 +430,7 @@ def get_main(args):
     integrate_realignment_result_sbnd(args.tumor_prefix + ".realignment.tumor.sread_count.sbnd.txt", control_sread_count_file_sbnd,
         args.tumor_prefix + ".nanomonsv.sbnd.result.txt",
         args.tumor_prefix + ".nanomonsv.result.txt", args.tumor_prefix + ".refined_bp.sbnd.txt",
-        simple_repeat_bed = args.simple_repeat_bed, hp_ratio_thres = args.hp_ratio_thres)
+        simple_repeat_bed = args.simple_repeat_bed)
 
     if args.single_bnd:
         sbnd2vcf_convert(args.tumor_prefix + ".nanomonsv.sbnd.result.txt",
@@ -511,8 +510,7 @@ def validate_main(args):
     control_sread_count_file = args.output + ".realignment.control.sread_count.txt" if args.control_bam is not None else None
     integrate_realignment_result(args.output + ".realignment.tumor.sread_count.txt", control_sread_count_file, args.output,
         args.reference_fasta, min_indel_size = 0, min_tumor_variant_read_num = 0, min_tumor_VAF = 0,
-        max_control_variant_read_num = float("inf"), max_control_VAF = float("inf"),
-        hp_ratio_thres = args.hp_ratio_thres)
+        max_control_variant_read_num = float("inf"), max_control_VAF = float("inf"))
 
     if not args.debug:
         os.remove(args.output + ".realignment.tumor.sread_count.txt")

@@ -39,6 +39,17 @@ conda create -n nanomonsv -c conda-forge -c bioconda nanomonsv
 
 Python >=3.9, pysam, numpy, parasail
 
+### S3 support
+
+nanomonsv can directly process BAM files stored on Amazon S3 (e.g., `s3://giab/data_somatic/...`).
+To enable S3 support, install with the `s3` extra:
+
+```
+pip install nanomonsv[s3]
+```
+
+This installs `boto3`, which is required for S3 access. For public buckets (e.g., GIAB), no AWS credentials are needed.
+
 ### Input requirements
 
 - BAM or CRAM file aligned by minimap2

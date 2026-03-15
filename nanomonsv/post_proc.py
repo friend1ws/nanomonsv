@@ -241,8 +241,8 @@ class Sv_filterer(object):
             for sv in self.sv_list:
                 self.filter_simple_repeat(sv)
 
-        for sv in self.sv_list:
-            self.filter_haplotype_dispersion(sv)
+        # for sv in self.sv_list:
+        #     self.filter_haplotype_dispersion(sv)
 
         # logger.info("filter_close_both_breakpoints")
         for sv1, sv2 in itertools.combinations(self.sv_list, 2):
@@ -456,10 +456,10 @@ def integrate_realignment_result_sbnd(tumor_sbnd_count_file, ctrl_sbnd_count_fil
             if canonical_overlap:
                 filter_list.append("Canonical_SV_overlap")
 
-            # haplotype dispersion filter
-            phased_count = hp1_count + hp2_count
-            if phased_count > 0 and max(hp1_count, hp2_count) / phased_count < hp_ratio_thres:
-                filter_list.append("Haplotype_Dispersion")
+            # haplotype dispersion filter (disabled for now)
+            # phased_count = hp1_count + hp2_count
+            # if phased_count > 0 and max(hp1_count, hp2_count) / phased_count < hp_ratio_thres:
+            #     filter_list.append("Haplotype_Dispersion")
 
             is_filter = ";".join(filter_list) if filter_list else "PASS"
 

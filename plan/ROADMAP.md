@@ -19,6 +19,10 @@ Low risk. No change to existing canonical SV output format.
 - [x] [readme_improve](readme_improve.md) — Key features section, GTF description, quality presets
 - [ ] [default_options](default_options.md) — Make racon and `--single_bnd` default on in `nanomonsv get`
 
+## v0.9.0 bugfix — GIAB workflow test issues
+
+- [ ] [giab_bugfix](giab_bugfix.md) — Fix crash on long sbnd contigs (csv field limit), cap consensus length at 100KB, suppress minimap2 core dumps
+
 ## v0.9.1 — Haplotype support
 
 - [ ] [haplotag](haplotag.md) — Per-haplotype supporting read counts (HP1/HP2/unphased), haplotype dispersion filter
