@@ -33,7 +33,7 @@ Low risk. No change to existing canonical SV output format.
 
 - [ ] [insert_classify_2604](insert_classify_2604.md) — Documentation, literature review, label/naming review, TXT/VCF compatibility
 - [ ] [micro_homology](micro_homology.md) — Detect micro homology at breakpoints, add HOMLEN/HOMSEQ/CIPOS to VCF
-- [ ] [fix_zero_length_exon_in_sam2bed_split](fix_zero_length_exon_in_sam2bed_split.md) — Fix zero-length exon bug in sam2bed_split
+- [x] [fix_zero_length_exon_in_sam2bed_split](done/fix_zero_length_exon_in_sam2bed_split.md) — Fix zero-length exon bug in sam2bed_split
 
 ## Dependency graph
 
