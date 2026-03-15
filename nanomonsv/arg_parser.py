@@ -94,11 +94,11 @@ def create_parser():
     get.add_argument("--min_indel_size", default = 50, type = int,
                      help = "Minimum indel size for the output (default: 50)")
 
-    get.add_argument("--max_panel_read_num", default = 1, type = int,
-                     help= "Maximum allowed supporting read number for a nonmatched control sample (default: 1)")
+    get.add_argument("--max_panel_read_num", default = 2, type = int,
+                     help= "Maximum allowed supporting read number for a nonmatched control sample (default: 2)")
 
-    get.add_argument("--max_panel_sample_num", default = 0, type = int,
-                     help= "Maximum allowed sample number for a nonmatched control sample (default: 0)")
+    get.add_argument("--max_panel_sample_num", default = 2, type = int,
+                     help= "Maximum allowed sample number for a nonmatched control sample (default: 2)")
 
     get.add_argument("--cluster_margin_size", default = 100, type = int,
                      help = "Two breakpoints are margined if they are within this threshold value (default: 100)")
